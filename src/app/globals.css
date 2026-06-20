@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --color-rojo: #D63B2A;
+  --color-rojo-pro: #A82D1E;
+  --color-verde: #2E8B4A;
+  --color-verde-bosque: #1A5C30;
+  --color-crema: #F5F0E8;
+  --color-crema-medio: #EDE8DD;
+  --color-gris: #5A5A58;
+  --color-gris-claro: #7A7A7A;
+  --color-dorado: #C9A84C;
+  --color-negro: #1A1A1A;
+  --color-blanco: #FFFFFF;
+  --color-blush: #F5E6E0;
+
+  /* Helvetica es fuente del sistema — se define directamente como fallback stack */
+  --font-helvetica: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --background: var(--color-crema);
+  --foreground: var(--color-negro);
+}
+
+@theme inline {
+  --color-rojo: var(--color-rojo);
+  --color-rojo-pro: var(--color-rojo-pro);
+  --color-verde: var(--color-verde);
+  --color-verde-bosque: var(--color-verde-bosque);
+  --color-crema: var(--color-crema);
+  --color-crema-medio: var(--color-crema-medio);
+  --color-gris: var(--color-gris);
+  --color-gris-claro: var(--color-gris-claro);
+  --color-dorado: var(--color-dorado);
+  --color-negro: var(--color-negro);
+  --color-blanco: var(--color-blanco);
+  --color-blush: var(--color-blush);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-helvetica);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Helvetica, Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), Georgia, serif;
+  letter-spacing: -0.03em;
+}
