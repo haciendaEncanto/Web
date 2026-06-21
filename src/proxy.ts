@@ -31,13 +31,20 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtected =
-    pathname.startsWith("/portal") || pathname.startsWith("/admin");
+  const isProtected = pathname.startsWith("/portal") || pathname.startsWith("/admin");
+  const isAuthPage = pathname === "/login" || pathname === "/registro";
 
   if (isProtected && !user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Evita que usuarios autenticados vean las páginas de auth
+  if (isAuthPage && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/portal";
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

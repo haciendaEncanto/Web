@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   description:
     "Celebra tus momentos más especiales en Hacienda El Encanto. Bodas, quinces años, eventos empresariales y revelación de género en Cota, Cundinamarca.",
   keywords: ["hacienda eventos", "bodas Cota", "quinces Cundinamarca", "salón eventos Cota"],
+  icons: {
+    icon: "/trebol-original.svg",
+    shortcut: "/trebol-original.svg",
+  },
   openGraph: {
     title: "Hacienda El Encanto | Casa de Eventos",
     description:
