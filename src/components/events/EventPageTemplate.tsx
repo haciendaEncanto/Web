@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/home/NavBar";
 import { Footer } from "@/components/home/Footer";
 import { WhatsAppButton } from "@/components/home/WhatsAppButton";
+import { SliderGaleria } from "@/components/ui/SliderGaleria";
 import { EventHero } from "./EventHero";
 import { EventDescripcion } from "./EventDescripcion";
 import { EventGaleria } from "./EventGaleria";
@@ -24,7 +25,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .eq("is_published", true)
       .eq("category", config.gallery.category)
       .order("sort_order")
-      .limit(5),
+      .limit(8),
     supabase
       .from("packages")
       .select("id, name, description, includes, sort_order")
@@ -39,7 +40,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .order("sort_order"),
   ]);
 
-  const displayImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
+  const allImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
 
   const packages = (rawPackages ?? []).map((p) => ({
     ...p,
@@ -52,13 +53,18 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <main className="pt-[72px]">
         <EventHero {...config.hero} />
         <EventDescripcion config={config.experiencia} />
-        <EventGaleria images={displayImages} config={config.gallery} />
+        <EventGaleria images={allImages} config={config.gallery} />
         <EventPaquetes packages={packages} config={config.paquetes} />
         <EventTestimonios
           testimonials={testimonials ?? []}
           title={config.testimonios.title}
         />
         <EventContacto config={config.contacto} />
+        <SliderGaleria
+          images={allImages}
+          supertitle="Nuestra galería"
+          title={config.gallery.title}
+        />
       </main>
       <Footer />
       <WhatsAppButton />
