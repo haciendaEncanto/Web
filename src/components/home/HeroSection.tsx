@@ -70,14 +70,21 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
       )}
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-negro/30 to-negro/60" />
+      <div className="absolute inset-0 bg-negro/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-negro/30 via-negro/10 to-negro/40" />
 
       {/* Contenido */}
       <div className="relative z-10 px-8 max-w-[800px]">
-        <p className="text-[11px] tracking-[6px] uppercase text-dorado mb-6 font-light">
+        <p
+          className="text-[11px] tracking-[6px] uppercase text-dorado mb-6 font-light"
+          style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.75)" }}
+        >
           Casa de Eventos &bull; Cota, Cundinamarca
         </p>
-        <h1 className="font-serif text-[2.8rem] md:text-[4.5rem] font-light text-blanco leading-[1.1] tracking-[-0.03em] mb-4">
+        <h1
+          className="font-serif text-[2.8rem] md:text-[4.5rem] font-light text-blanco leading-[1.1] tracking-[-0.03em] mb-4"
+          style={{ textShadow: "0 2px 12px rgba(0,0,0,0.75), 0 4px 28px rgba(0,0,0,0.5)" }}
+        >
           El lugar donde tus{" "}
           <em className="italic text-dorado not-italic">sueños</em> se celebran
         </h1>
