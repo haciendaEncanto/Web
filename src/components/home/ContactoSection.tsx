@@ -64,7 +64,7 @@ export function ContactoSection() {
             {/* Mapa */}
             <div className="mt-8 rounded-xl overflow-hidden h-[220px] bg-crema-medio">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.5!2d-74.1058!3d4.7969!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDcnNDguOCJOIDc0wrAwNicyMC45Ilc!5e0!3m2!1ses!2sco!4v1700000000000"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.5!2d-74.0898!3d4.7826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDYnNTcuNCJOIDc0wrAwNSczNS4zIlc!5e0!3m2!1ses!2sco!4v1700000000000"
                 width="100%"
                 height="220"
                 style={{ border: 0 }}
@@ -74,6 +74,15 @@ export function ContactoSection() {
                 title="Ubicación Hacienda El Encanto"
               />
             </div>
+            <a
+              href="https://www.google.com/maps/dir/?api=1&destination=4.7826,-74.0898"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-[12px] font-medium tracking-[1px] uppercase text-rojo hover:text-rojo-pro transition-colors duration-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              ¿Cómo llegar?
+            </a>
           </div>
         </div>
       </div>
