@@ -43,14 +43,14 @@ export default async function HomePage() {
         <EventosSection />
         <NosotrosSection />
         <ServiciosSection />
-        <TestimoniosSection testimonials={testimonials ?? []} />
-        <CTASection />
-        <ContactoSection />
         <SliderGaleria
           images={sliderImages ?? []}
           supertitle="Momentos reales"
           title="Así vivimos los eventos"
         />
+        <TestimoniosSection testimonials={testimonials ?? []} />
+        <CTASection />
+        <ContactoSection />
       </main>
       <Footer />
       <WhatsAppButton />

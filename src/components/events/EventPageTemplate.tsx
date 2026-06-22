@@ -52,17 +52,17 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <main className="pt-[72px]">
         <EventHero {...config.hero} />
         <EventDescripcion config={config.experiencia} />
+        <SliderGaleria
+          images={allImages}
+          supertitle={config.gallery.supertitle}
+          title={config.gallery.title}
+        />
         <EventPaquetes packages={packages} config={config.paquetes} />
         <EventTestimonios
           testimonials={testimonials ?? []}
           title={config.testimonios.title}
         />
         <EventContacto config={config.contacto} />
-        <SliderGaleria
-          images={allImages}
-          supertitle={config.gallery.supertitle}
-          title={config.gallery.title}
-        />
       </main>
       <Footer />
       <WhatsAppButton />
