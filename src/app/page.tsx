@@ -4,7 +4,6 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { EventosSection } from "@/components/home/EventosSection";
 import { NosotrosSection } from "@/components/home/NosotrosSection";
 import { ServiciosSection } from "@/components/home/ServiciosSection";
-import { GaleriaSection } from "@/components/home/GaleriaSection";
 import { TestimoniosSection } from "@/components/home/TestimoniosSection";
 import { CTASection } from "@/components/home/CTASection";
 import { ContactoSection } from "@/components/home/ContactoSection";
@@ -44,7 +43,6 @@ export default async function HomePage() {
         <EventosSection />
         <NosotrosSection />
         <ServiciosSection />
-        <GaleriaSection />
         <TestimoniosSection testimonials={testimonials ?? []} />
         <CTASection />
         <ContactoSection />

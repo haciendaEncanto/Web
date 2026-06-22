@@ -5,7 +5,6 @@ import { WhatsAppButton } from "@/components/home/WhatsAppButton";
 import { SliderGaleria } from "@/components/ui/SliderGaleria";
 import { EventHero } from "./EventHero";
 import { EventDescripcion } from "./EventDescripcion";
-import { EventGaleria } from "./EventGaleria";
 import { EventPaquetes } from "./EventPaquetes";
 import { EventTestimonios } from "./EventTestimonios";
 import { EventContacto } from "./EventContacto";
@@ -53,7 +52,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <main className="pt-[72px]">
         <EventHero {...config.hero} />
         <EventDescripcion config={config.experiencia} />
-        <EventGaleria images={allImages} config={config.gallery} />
         <EventPaquetes packages={packages} config={config.paquetes} />
         <EventTestimonios
           testimonials={testimonials ?? []}
@@ -62,7 +60,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
         <EventContacto config={config.contacto} />
         <SliderGaleria
           images={allImages}
-          supertitle="Nuestra galería"
+          supertitle={config.gallery.supertitle}
           title={config.gallery.title}
         />
       </main>
