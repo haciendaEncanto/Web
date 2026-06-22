@@ -8,6 +8,7 @@ import { EventDescripcion } from "./EventDescripcion";
 import { EventPaquetes } from "./EventPaquetes";
 import { EventTestimonios } from "./EventTestimonios";
 import { EventContacto } from "./EventContacto";
+import { Vista360 } from "./Vista360";
 import type { EventPageConfig } from "./types";
 
 export async function EventPageTemplate({ config }: { config: EventPageConfig }) {
@@ -17,6 +18,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     { data: galleryImages },
     { data: rawPackages },
     { data: testimonials },
+    { data: tourContent },
   ] = await Promise.all([
     supabase
       .from("gallery_images")
@@ -37,6 +39,11 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .eq("is_published", true)
       .eq("event_type", config.testimonios.eventType)
       .order("sort_order"),
+    supabase
+      .from("site_content")
+      .select("content")
+      .eq("key", "tour_360_url")
+      .maybeSingle(),
   ]);
 
   const allImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
@@ -51,6 +58,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <NavBar />
       <main className="pt-[72px]">
         <EventHero {...config.hero} />
+        <Vista360 tourUrl={tourContent?.content ?? null} />
         <EventDescripcion config={config.experiencia} />
         <SliderGaleria
           images={allImages}
