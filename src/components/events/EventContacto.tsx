@@ -58,7 +58,7 @@ export function EventContacto({ config }: { config: ContactoConfig }) {
 
             <div className="mt-8 rounded-xl overflow-hidden h-[220px] bg-crema-medio">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.5!2d-74.0898!3d4.7826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDYnNTcuNCJOIDc0wrAwNSczNS4zIlc!5e0!3m2!1ses!2sco!4v1700000000000"
+                src="https://maps.google.com/maps?q=4.782638,-74.089686&z=17&output=embed"
                 width="100%"
                 height="220"
                 style={{ border: 0 }}
@@ -69,7 +69,7 @@ export function EventContacto({ config }: { config: ContactoConfig }) {
               />
             </div>
             <a
-              href="https://www.google.com/maps/dir/?api=1&destination=4.7826,-74.0898"
+              href="https://www.google.com/maps/dir/?api=1&destination=4.782638,-74.089686"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 text-[12px] font-medium tracking-[1px] uppercase text-rojo hover:text-rojo-pro transition-colors duration-300"
