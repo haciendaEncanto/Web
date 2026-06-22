@@ -1,0 +1,76 @@
+import { EventContactForm } from "./EventContactForm";
+
+const infoItems = [
+  { label: "WhatsApp", text: "+57 324 783 6852" },
+  { label: "Correo", text: "contacto@hacienda-encanto.com" },
+  { label: "Ubicación", text: "Vía Suba Km 5.5, Cota, Cundinamarca" },
+  { label: "Instagram", text: "@haciendaelencanto" },
+];
+
+interface ContactoConfig {
+  defaultEventType: string;
+  title: string;
+  subtitle: string;
+}
+
+export function EventContacto({ config }: { config: ContactoConfig }) {
+  return (
+    <section id="contacto" className="py-24 bg-crema">
+      <div className="max-w-[1200px] mx-auto px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
+          <div className="bg-blanco p-10 rounded-2xl">
+            <p className="text-[11px] tracking-[4px] uppercase text-dorado font-medium mb-2">
+              Escríbenos
+            </p>
+            <h3 className="font-serif text-[2rem] text-negro font-light tracking-[-0.02em] mb-1">
+              {config.title}
+            </h3>
+            <p className="text-[0.85rem] text-gris font-light mb-8">{config.subtitle}</p>
+            <EventContactForm defaultEventType={config.defaultEventType} />
+          </div>
+
+          <div>
+            <p className="text-[11px] tracking-[4px] uppercase text-dorado font-medium mb-2">
+              Encuéntranos
+            </p>
+            <h3 className="font-serif text-[2rem] text-negro font-light tracking-[-0.02em] mb-2">
+              Estamos más cerca
+              <br />
+              de lo que imaginas
+            </h3>
+            <div className="w-[50px] h-px bg-dorado mb-6" />
+            <p className="text-[0.9rem] text-gris font-light leading-[1.8] mb-8">
+              Visítanos y enamórate del espacio. Agenda tu visita y recorre cada
+              rincón de El Encanto.
+            </p>
+
+            {infoItems.map((item) => (
+              <div key={item.label} className="flex gap-4 mb-5 items-start">
+                <div className="w-11 h-11 rounded-full bg-rojo flex items-center justify-center flex-shrink-0">
+                  <span className="text-blanco text-xs font-medium">{item.label[0]}</span>
+                </div>
+                <div className="text-[0.9rem] text-gris font-light">
+                  <strong className="block text-negro font-medium mb-0.5">{item.label}</strong>
+                  {item.text}
+                </div>
+              </div>
+            ))}
+
+            <div className="mt-8 rounded-xl overflow-hidden h-[220px] bg-crema-medio">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.2!2d-74.1!3d4.75!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwNDUnMDAuMCJOIDc0wrAwNicwMC4wIlc!5e0!3m2!1ses!2sco!4v1"
+                width="100%"
+                height="220"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación Hacienda El Encanto"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

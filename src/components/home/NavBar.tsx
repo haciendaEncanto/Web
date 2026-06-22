@@ -5,8 +5,8 @@ import Link from "next/link";
 const links = [
   { href: "/bodas", label: "Bodas" },
   { href: "/quince-anos", label: "Quince Años" },
-  { href: "/empresariales", label: "Eventos Empresariales" },
-  { href: "/revelacion", label: "Revelación de Género" },
+  { href: "/eventos-empresariales", label: "Eventos Empresariales" },
+  { href: "/revelacion-de-genero", label: "Revelación de Género" },
 ];
 
 export function NavBar() {

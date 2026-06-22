@@ -3,8 +3,8 @@ import Link from "next/link";
 const eventLinks = [
   { href: "/bodas", label: "Bodas" },
   { href: "/quince-anos", label: "Quince Años" },
-  { href: "/empresariales", label: "Empresariales" },
-  { href: "/revelacion", label: "Revelación de Género" },
+  { href: "/eventos-empresariales", label: "Empresariales" },
+  { href: "/revelacion-de-genero", label: "Revelación de Género" },
 ];
 
 const encanto = [
