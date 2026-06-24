@@ -6,15 +6,37 @@ interface EventHeroProps {
   title: string;
   subtitle: string;
   ctaLabel: string;
+  videoUrl?: string | null;
 }
 
-export function EventHero({ image, tagline, title, subtitle, ctaLabel }: EventHeroProps) {
+export function EventHero({
+  image,
+  tagline,
+  title,
+  subtitle,
+  ctaLabel,
+  videoUrl,
+}: EventHeroProps) {
   return (
-    <section className="min-h-screen flex items-center justify-center text-center relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${image}')` }}
-      />
+    <section className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center text-center">
+      {videoUrl ? (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={image}
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={videoUrl} type="video/mp4" />
+        </video>
+      ) : (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${image}')` }}
+        />
+      )}
+
       <div className="absolute inset-0 bg-negro/55" />
       <div className="absolute inset-0 bg-gradient-to-b from-negro/30 via-negro/10 to-negro/40" />
 

@@ -41,6 +41,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
           ref={ref1}
           autoPlay
           muted
+          loop
           playsInline
           poster={videos[0].thumbnail_url ?? POSTER}
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
@@ -60,6 +61,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
         <video
           ref={ref2}
           muted
+          loop
           playsInline
           poster={videos[1].thumbnail_url ?? undefined}
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
