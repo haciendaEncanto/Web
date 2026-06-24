@@ -85,19 +85,23 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
 
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-negro/70 to-transparent pointer-events-none" />
 
-        <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center z-10">
           {items.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setCurrent(i)}
               aria-label={`Imagen ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                i === current
-                  ? "w-6 bg-dorado"
-                  : "w-2 bg-blanco/50 hover:bg-blanco/80"
-              }`}
-            />
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none"
+            >
+              <span
+                className={`block h-2 rounded-full transition-all duration-300 ${
+                  i === current
+                    ? "w-6 bg-dorado"
+                    : "w-2 bg-blanco/50 hover:bg-blanco/80"
+                }`}
+              />
+            </button>
           ))}
         </div>
       </div>

@@ -34,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${cormorant.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="es" className={`${cormorant.variable} h-full antialiased overflow-x-hidden`}>
+      <body className="min-h-full flex flex-col overflow-x-hidden">{children}</body>
     </html>
   );
 }

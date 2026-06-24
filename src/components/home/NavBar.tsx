@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 const links = [
@@ -10,10 +11,15 @@ const links = [
 ];
 
 export function NavBar() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const close = () => setIsOpen(false);
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] py-4 bg-crema/95 backdrop-blur-md border-b border-black/[0.04]">
-      <div className="max-w-[1200px] mx-auto px-8 flex items-center justify-between">
-        <Link href="/">
+    <nav className="fixed top-0 left-0 right-0 z-[100] bg-crema/95 backdrop-blur-md border-b border-black/[0.04]">
+      {/* Barra principal */}
+      <div className="max-w-[1200px] mx-auto px-6 md:px-8 flex items-center justify-between h-[72px]">
+        <Link href="/" onClick={close}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-principal-fondo-claro.svg"
@@ -22,6 +28,7 @@ export function NavBar() {
           />
         </Link>
 
+        {/* Desktop */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/" className="text-rojo font-medium text-sm">
             Inicio
@@ -38,6 +45,65 @@ export function NavBar() {
           <Link
             href="#contacto"
             className="bg-rojo text-blanco text-[12px] tracking-[1px] uppercase px-5 py-2 rounded-md hover:bg-rojo-pro transition-colors duration-300"
+          >
+            Contáctanos
+          </Link>
+        </div>
+
+        {/* Hamburger mobile */}
+        <button
+          type="button"
+          aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((v) => !v)}
+          className="md:hidden flex flex-col justify-center gap-[5px] w-11 h-11 -mr-2 focus:outline-none"
+        >
+          <span
+            className={`block h-[2px] w-6 mx-auto bg-negro transition-transform duration-300 origin-center ${
+              isOpen ? "rotate-45 translate-y-[7px]" : ""
+            }`}
+          />
+          <span
+            className={`block h-[2px] w-6 mx-auto bg-negro transition-opacity duration-300 ${
+              isOpen ? "opacity-0" : ""
+            }`}
+          />
+          <span
+            className={`block h-[2px] w-6 mx-auto bg-negro transition-transform duration-300 origin-center ${
+              isOpen ? "-rotate-45 -translate-y-[7px]" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Panel mobile — animación height */}
+      <div
+        className={`md:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out bg-crema border-t border-black/[0.04] ${
+          isOpen ? "max-h-[400px]" : "max-h-0"
+        }`}
+      >
+        <div className="px-6 py-2 flex flex-col">
+          <Link
+            href="/"
+            onClick={close}
+            className="text-rojo font-medium text-[0.95rem] py-3 border-b border-black/[0.05]"
+          >
+            Inicio
+          </Link>
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={close}
+              className="text-negro text-[0.95rem] py-3 border-b border-black/[0.05] hover:text-rojo transition-colors duration-300"
+            >
+              {l.label}
+            </Link>
+          ))}
+          <Link
+            href="#contacto"
+            onClick={close}
+            className="my-4 bg-rojo text-blanco text-[12px] tracking-[1px] uppercase px-5 py-3 rounded-md hover:bg-rojo-pro transition-colors duration-300 text-center"
           >
             Contáctanos
           </Link>

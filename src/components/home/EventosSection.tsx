@@ -47,9 +47,10 @@ export function EventosSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {eventos.map((e) => (
-            <div
+            <Link
               key={e.href}
-              className="relative rounded-2xl overflow-hidden h-[420px] group cursor-pointer"
+              href={e.href}
+              className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
               <Image
                 src={e.img}
@@ -63,14 +64,11 @@ export function EventosSection() {
                   {e.title}
                 </h3>
                 <p className="text-[0.85rem] text-blanco/70 font-light">{e.desc}</p>
-                <Link
-                  href={e.href}
-                  className="text-[11px] tracking-[2px] uppercase text-dorado mt-3 inline-block hover:text-blanco transition-colors duration-300"
-                >
+                <span className="text-[11px] tracking-[2px] uppercase text-dorado mt-3 inline-block group-hover:text-blanco transition-colors duration-300">
                   Conoce más →
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
