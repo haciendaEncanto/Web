@@ -34,7 +34,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
   }, [videos]);
 
   return (
-    <section className="min-h-screen flex items-center justify-center text-center relative overflow-hidden">
+    <section className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center text-center">
       {/* Video 1 */}
       {videos.length >= 1 ? (
         <video
