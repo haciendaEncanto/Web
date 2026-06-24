@@ -520,6 +520,7 @@ export type Database = {
           notes: string | null
           payment_date: string
           payment_method: Database["public"]["Enums"]["payment_method_type"]
+          receipt_url: string | null
           recorded_by: string | null
           reference_number: string | null
           updated_at: string
@@ -532,6 +533,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receipt_url?: string | null
           recorded_by?: string | null
           reference_number?: string | null
           updated_at?: string
@@ -544,6 +546,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receipt_url?: string | null
           recorded_by?: string | null
           reference_number?: string | null
           updated_at?: string
