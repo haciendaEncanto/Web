@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
 import { login } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
@@ -65,13 +64,6 @@ export default function LoginPage() {
           className="w-full bg-rojo text-blanco py-3 font-serif tracking-wider text-sm hover:bg-rojo-pro mt-2"
         />
       </form>
-
-      <p className="text-center text-sm text-gris mt-8">
-        ¿No tienes cuenta?{" "}
-        <Link href="/registro" className="text-verde hover:text-verde-bosque transition-colors">
-          Regístrate aquí
-        </Link>
-      </p>
     </div>
   );
 }

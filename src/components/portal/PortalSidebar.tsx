@@ -95,14 +95,14 @@ export function PortalSidebar({
       </button>
 
       {/* Logo */}
-      <div className="px-6 pt-8 pb-6 border-b border-blanco/[0.06]">
+      <div className="px-6 pt-7 pb-5 border-b border-blanco/[0.06]">
         <Link href="/" className="block" onClick={onClose}>
-          <span className="block text-[0.6rem] tracking-[0.4em] text-dorado uppercase font-light mb-0.5">
-            Hacienda
-          </span>
-          <span className="block font-serif text-[1.6rem] text-blanco leading-none tracking-[-0.02em]">
-            El Encanto
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-principal-fondo-claro.svg"
+            alt="Hacienda El Encanto"
+            style={{ height: "36px", width: "auto" }}
+          />
         </Link>
       </div>
 
