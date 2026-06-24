@@ -5,8 +5,12 @@ import { Menu, Bell } from "lucide-react";
 import type { PortalProfile } from "@/app/portal/layout";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/portal": "Dashboard",
+  "/portal/dashboard": "Dashboard",
   "/portal/evento": "Mi Evento",
+  "/portal/planner": "Panel Planner",
+  "/portal/asesor-comercial": "Panel Comercial",
+  "/portal/asesor-logistica": "Panel Logística",
+  "/portal/staff": "Panel Staff",
   "/portal/documentos": "Documentos",
   "/portal/pagos": "Pagos",
   "/portal/mensajes": "Mensajes",

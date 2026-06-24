@@ -33,7 +33,7 @@ type NavItem = { href: string; label: string; icon: React.ElementType };
 function getNavItems(role: string): NavItem[] {
   if (role === "client") {
     return [
-      { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/portal/evento", label: "Mi Evento", icon: CalendarDays },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
@@ -42,7 +42,7 @@ function getNavItems(role: string): NavItem[] {
     ];
   }
   const base: NavItem[] = [
-    { href: "/portal", label: "Panel", icon: LayoutDashboard },
+    { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
     { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
     { href: "/portal/reservas", label: "Reservas", icon: BookOpen },
     { href: "/portal/ordenes", label: "Órdenes de Servicio", icon: ClipboardList },
@@ -67,8 +67,7 @@ export function PortalSidebar({
   const pathname = usePathname();
   const navItems = getNavItems(profile.role);
 
-  const isActive = (href: string) =>
-    href === "/portal" ? pathname === "/portal" : pathname.startsWith(href);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const initials = (profile.full_name ?? profile.email)
     .split(" ")

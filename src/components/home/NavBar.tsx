@@ -43,6 +43,12 @@ export function NavBar() {
             </Link>
           ))}
           <Link
+            href="/login"
+            className="text-dorado text-sm font-medium hover:text-dorado/75 transition-colors duration-300 tracking-[0.3px]"
+          >
+            Mi evento
+          </Link>
+          <Link
             href="#contacto"
             className="bg-rojo text-blanco text-[12px] tracking-[1px] uppercase px-5 py-2 rounded-md hover:bg-rojo-pro transition-colors duration-300"
           >
@@ -100,6 +106,13 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/login"
+            onClick={close}
+            className="text-dorado text-[0.95rem] py-3 border-b border-black/[0.05] font-medium"
+          >
+            Mi evento
+          </Link>
           <Link
             href="#contacto"
             onClick={close}
