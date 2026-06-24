@@ -67,6 +67,9 @@ export type Database = {
           guest_count: number
           id: string
           notes: string | null
+          service_order_approved: boolean | null
+          service_order_approved_at: string | null
+          service_order_elaborated_by: string | null
           space_id: string
           status: Database["public"]["Enums"]["booking_status"]
           total_amount: number
@@ -82,6 +85,9 @@ export type Database = {
           guest_count?: number
           id?: string
           notes?: string | null
+          service_order_approved?: boolean | null
+          service_order_approved_at?: string | null
+          service_order_elaborated_by?: string | null
           space_id: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
@@ -97,6 +103,9 @@ export type Database = {
           guest_count?: number
           id?: string
           notes?: string | null
+          service_order_approved?: boolean | null
+          service_order_approved_at?: string | null
+          service_order_elaborated_by?: string | null
           space_id?: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
@@ -630,6 +639,127 @@ export type Database = {
         }
         Relationships: []
       }
+      service_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_type: string
+          label: string
+          options: Json
+          section_id: string
+          sort_order: number
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_type?: string
+          label: string
+          options?: Json
+          section_id: string
+          sort_order?: number
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_type?: string
+          label?: string
+          options?: Json
+          section_id?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_order_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "service_order_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_order_sections: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["service_order_status"]
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["service_order_status"]
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["service_order_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_order_sections_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_order_templates: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          item_label: string
+          item_sort: number
+          item_type: string
+          options: Json
+          section_name: string
+          section_sort: number
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          item_label: string
+          item_sort?: number
+          item_type?: string
+          options?: Json
+          section_name: string
+          section_sort?: number
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          item_label?: string
+          item_sort?: number
+          item_type?: string
+          options?: Json
+          section_name?: string
+          section_sort?: number
+        }
+        Relationships: []
+      }
       service_orders: {
         Row: {
           booking_id: string
@@ -802,6 +932,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      initialize_service_order: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_any_staff: { Args: never; Returns: boolean }
       is_planner_or_admin: { Args: never; Returns: boolean }
