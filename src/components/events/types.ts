@@ -21,6 +21,7 @@ export interface EventTestimonio {
 export interface EventPageConfig {
   hero: {
     image: string;
+    videoEventType: string;
     tagline: string;
     title: string;
     subtitle: string;

@@ -19,6 +19,7 @@ const config: EventPageConfig = {
   hero: {
     image:
       "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+    videoEventType: "revelacion",
     tagline: "Revelación de Género · Hacienda El Encanto · Cota, Cundinamarca",
     title: "El momento más esperado",
     subtitle:

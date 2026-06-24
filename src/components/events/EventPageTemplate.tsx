@@ -19,6 +19,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     { data: rawPackages },
     { data: testimonials },
     { data: tourContent },
+    { data: heroVideo },
   ] = await Promise.all([
     supabase
       .from("gallery_images")
@@ -44,6 +45,14 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .select("content")
       .eq("key", "tour_360_url")
       .maybeSingle(),
+    supabase
+      .from("hero_videos")
+      .select("url")
+      .eq("event_type", config.hero.videoEventType)
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const allImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
@@ -57,7 +66,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     <>
       <NavBar />
       <main className="pt-[72px]">
-        <EventHero {...config.hero} />
+        <EventHero {...config.hero} videoUrl={heroVideo?.url ?? null} />
         <Vista360 tourUrl={tourContent?.content ?? null} />
         <EventDescripcion config={config.experiencia} />
         <SliderGaleria

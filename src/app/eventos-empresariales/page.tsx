@@ -19,6 +19,7 @@ const config: EventPageConfig = {
   hero: {
     image:
       "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+    videoEventType: "empresarial",
     tagline: "Corporativo · Hacienda El Encanto · Cota, Cundinamarca",
     title: "Eventos empresariales que inspiran",
     subtitle:
