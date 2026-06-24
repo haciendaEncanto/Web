@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 const stats = [
-  { value: "+300", label: "Invitados" },
-  { value: "+150", label: "Eventos realizados" },
+  { value: "+300", label: "Eventos realizados" },
+  { value: "+150", label: "Invitados" },
   { value: "100%", label: "Acompañamiento" },
 ];
 
