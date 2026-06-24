@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 const links = [
   { href: "/bodas", label: "Bodas" },
@@ -12,6 +13,20 @@ const links = [
 
 export function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(!!data.user);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const miEventoHref = isLoggedIn ? "/portal" : "/login";
 
   const close = () => setIsOpen(false);
 
@@ -42,6 +57,12 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href={miEventoHref}
+            className="text-dorado text-sm font-medium hover:text-dorado/75 transition-colors duration-300 tracking-[0.3px]"
+          >
+            Mi evento
+          </Link>
           <Link
             href="#contacto"
             className="bg-rojo text-blanco text-[12px] tracking-[1px] uppercase px-5 py-2 rounded-md hover:bg-rojo-pro transition-colors duration-300"
@@ -100,6 +121,13 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href={miEventoHref}
+            onClick={close}
+            className="text-dorado text-[0.95rem] py-3 border-b border-black/[0.05] font-medium"
+          >
+            Mi evento
+          </Link>
           <Link
             href="#contacto"
             onClick={close}

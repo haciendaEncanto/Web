@@ -38,13 +38,28 @@ export async function login(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error, data } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     return { error: "Credenciales inválidas. Verifica tu email y contraseña." };
   }
 
-  redirect("/portal");
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+
+  const destinations: Record<string, string> = {
+    client: "/portal/dashboard",
+    admin: "/admin/dashboard",
+    wedding_planner: "/portal/planner",
+    asesor_comercial: "/portal/asesor-comercial",
+    asesor_logistica: "/portal/asesor-logistica",
+    staff: "/portal/staff",
+  };
+
+  redirect(destinations[profile?.role ?? "client"] ?? "/portal/dashboard");
 }
 
 export type RegisterState = { error?: string; success?: boolean } | null;

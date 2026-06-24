@@ -33,7 +33,7 @@ type NavItem = { href: string; label: string; icon: React.ElementType };
 function getNavItems(role: string): NavItem[] {
   if (role === "client") {
     return [
-      { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/portal/evento", label: "Mi Evento", icon: CalendarDays },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
@@ -42,7 +42,7 @@ function getNavItems(role: string): NavItem[] {
     ];
   }
   const base: NavItem[] = [
-    { href: "/portal", label: "Panel", icon: LayoutDashboard },
+    { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
     { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
     { href: "/portal/reservas", label: "Reservas", icon: BookOpen },
     { href: "/portal/ordenes", label: "Órdenes de Servicio", icon: ClipboardList },
@@ -67,8 +67,7 @@ export function PortalSidebar({
   const pathname = usePathname();
   const navItems = getNavItems(profile.role);
 
-  const isActive = (href: string) =>
-    href === "/portal" ? pathname === "/portal" : pathname.startsWith(href);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const initials = (profile.full_name ?? profile.email)
     .split(" ")
@@ -96,14 +95,14 @@ export function PortalSidebar({
       </button>
 
       {/* Logo */}
-      <div className="px-6 pt-8 pb-6 border-b border-blanco/[0.06]">
+      <div className="px-6 pt-7 pb-5 border-b border-blanco/[0.06]">
         <Link href="/" className="block" onClick={onClose}>
-          <span className="block text-[0.6rem] tracking-[0.4em] text-dorado uppercase font-light mb-0.5">
-            Hacienda
-          </span>
-          <span className="block font-serif text-[1.6rem] text-blanco leading-none tracking-[-0.02em]">
-            El Encanto
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-principal-fondo-claro.svg"
+            alt="Hacienda El Encanto"
+            style={{ height: "36px", width: "auto", filter: "brightness(0) invert(1)" }}
+          />
         </Link>
       </div>
 
