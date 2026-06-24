@@ -52,13 +52,13 @@ export function NosotrosSection() {
             </p>
 
             {/* Estadísticas */}
-            <div className="grid grid-cols-3 gap-6 mt-10 pt-8 border-t border-crema-medio">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-10 pt-8 border-t border-crema-medio">
               {stats.map((s) => (
                 <div key={s.label} className="text-center">
-                  <div className="font-serif text-[2.8rem] font-semibold text-rojo leading-none">
+                  <div className="font-serif text-[2rem] sm:text-[2.8rem] font-semibold text-rojo leading-none">
                     {s.value}
                   </div>
-                  <div className="text-[0.75rem] text-gris tracking-[1px] uppercase mt-1">
+                  <div className="text-[0.6rem] sm:text-[0.75rem] text-gris tracking-[0px] sm:tracking-[1px] uppercase mt-1 leading-tight [overflow-wrap:anywhere]">
                     {s.label}
                   </div>
                 </div>

@@ -101,7 +101,7 @@ export function PortalSidebar({
           <img
             src="/logo-principal-fondo-claro.svg"
             alt="Hacienda El Encanto"
-            style={{ height: "36px", width: "auto" }}
+            style={{ height: "36px", width: "auto", filter: "brightness(0) invert(1)" }}
           />
         </Link>
       </div>

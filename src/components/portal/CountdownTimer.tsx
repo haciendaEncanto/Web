@@ -24,10 +24,10 @@ function compute(eventDate: string, startTime: string): TimeLeft | null {
 function Unit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="font-serif text-[3rem] md:text-[3.8rem] leading-none text-blanco tracking-[-0.04em]">
+      <span className="font-serif text-[2rem] sm:text-[3rem] md:text-[3.8rem] leading-none text-blanco tracking-[-0.04em]">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-[0.6rem] tracking-[0.25em] text-blanco/40 uppercase mt-1">
+      <span className="text-[0.55rem] sm:text-[0.6rem] tracking-[0.2em] sm:tracking-[0.25em] text-blanco/40 uppercase mt-1">
         {label}
       </span>
     </div>
@@ -36,7 +36,7 @@ function Unit({ value, label }: { value: number; label: string }) {
 
 function Separator() {
   return (
-    <span className="font-serif text-[2.5rem] text-dorado/50 leading-none pb-5 select-none">
+    <span className="font-serif text-[1.4rem] sm:text-[2rem] md:text-[2.5rem] text-dorado/50 leading-none pb-3 sm:pb-5 select-none">
       :
     </span>
   );
@@ -72,7 +72,7 @@ export function CountdownTimer({
   }
 
   return (
-    <div className="flex items-end justify-center gap-3 md:gap-5">
+    <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
       <Unit value={timeLeft.days} label="días" />
       <Separator />
       <Unit value={timeLeft.hours} label="horas" />

@@ -127,7 +127,7 @@ export default async function ClientDashboard() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             {/* Cuenta regresiva */}
-            <div className="lg:col-span-3 bg-negro rounded-2xl p-7 md:p-9 flex flex-col gap-6">
+            <div className="lg:col-span-3 bg-negro rounded-2xl p-5 sm:p-7 md:p-9 flex flex-col gap-5 sm:gap-6">
               <div>
                 <p className="text-[0.6rem] tracking-[0.35em] text-dorado uppercase font-light">
                   Cuenta regresiva
