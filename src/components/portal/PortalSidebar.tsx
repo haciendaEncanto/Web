@@ -75,7 +75,7 @@ export function PortalSidebar({
   const pathname = usePathname();
   const navItems = getNavItems(profile.role);
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => pathname === href;
 
   const initials = (profile.full_name ?? profile.email)
     .split(" ")
