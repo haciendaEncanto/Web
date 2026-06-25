@@ -44,11 +44,7 @@ function getNavItems(role: string): NavItem[] {
   }
   if (role === "wedding_planner") {
     return [
-      { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
-      { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
-      { href: "/portal/mensajes", label: "Mensajes", icon: MessageSquare },
-      { href: "/portal/clientes", label: "Clientes", icon: Users },
     ];
   }
   const base: NavItem[] = [

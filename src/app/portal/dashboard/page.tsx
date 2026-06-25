@@ -89,6 +89,18 @@ export default async function ClientDashboard() {
 
   if (!profile) redirect("/login");
 
+  // Roles de staff van a su propio panel
+  if (profile.role !== "client") {
+    const staffDest: Record<string, string> = {
+      admin: "/admin/dashboard",
+      wedding_planner: "/portal/planner",
+      asesor_comercial: "/portal/asesor-comercial",
+      asesor_logistica: "/portal/asesor-logistica",
+      staff: "/portal/staff",
+    };
+    redirect(staffDest[profile.role] ?? "/portal/planner");
+  }
+
   const firstName = profile.full_name?.split(" ")[0] ?? "bienvenido";
 
   const { data } = await supabase
