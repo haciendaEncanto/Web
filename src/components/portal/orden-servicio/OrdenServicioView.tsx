@@ -58,7 +58,14 @@ function formatDisplayValue(item: Item): string {
 
 // ─── Sección solo lectura (cabecera / bebidas) ────────────────────────
 
+const COND_PARENT = "Actividades adicionales";
+const COND_CHILD  = "Descripción de actividades adicionales";
+
 function ReadOnlySection({ section }: { section: Section }) {
+  const items = sortedItems(section.service_order_items);
+  const parentItem = items.find((i) => i.label === COND_PARENT);
+  const actividades = parentItem?.value;
+
   return (
     <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
       <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30">
@@ -67,22 +74,26 @@ function ReadOnlySection({ section }: { section: Section }) {
         </h3>
       </div>
       <div className="px-6 py-1">
-        {sortedItems(section.service_order_items).map((item) => (
-          <div
-            key={item.id}
-            className="flex items-start justify-between gap-4 py-3 border-b border-negro/[0.04] last:border-0"
-          >
-            <span className="text-[0.8rem] text-gris">{item.label}</span>
-            <span
-              className={[
-                "text-[0.82rem] font-medium text-right max-w-[55%] break-words",
-                item.value ? "text-negro" : "text-negro/25",
-              ].join(" ")}
+        {items.map((item) => {
+          // Descripción: solo visible cuando Actividades adicionales = Sí
+          if (item.label === COND_CHILD && actividades !== "Sí") return null;
+          return (
+            <div
+              key={item.id}
+              className="flex items-start justify-between gap-4 py-3 border-b border-negro/[0.04] last:border-0"
             >
-              {formatDisplayValue(item)}
-            </span>
-          </div>
-        ))}
+              <span className="text-[0.8rem] text-gris">{item.label}</span>
+              <span
+                className={[
+                  "text-[0.82rem] font-medium text-right max-w-[55%] break-words",
+                  item.value ? "text-negro" : "text-negro/25",
+                ].join(" ")}
+              >
+                {formatDisplayValue(item)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -7,8 +7,10 @@ import type { PortalProfile } from "@/app/portal/layout";
 const PAGE_TITLES: Record<string, string> = {
   "/portal/dashboard": "Dashboard",
   "/portal/evento": "Mi Evento",
+  "/portal/actividades": "Mi Agenda",
   "/portal/orden-servicio": "Mi Orden de Servicio",
   "/portal/planner": "Órdenes de Servicio",
+  "/portal/planner/clientes": "Clientes",
   "/portal/planner/orden-servicio": "Orden de Servicio",
   "/portal/planner/nuevo-cliente": "Nuevo Cliente",
   "/portal/asesor-comercial": "Panel Comercial",
@@ -28,9 +30,11 @@ const PAGE_TITLES: Record<string, string> = {
 export function PortalHeader({
   profile,
   onMenuClick,
+  unreadCount = 0,
 }: {
   profile: PortalProfile;
   onMenuClick: () => void;
+  unreadCount?: number;
 }) {
   const pathname = usePathname();
   const title =
@@ -66,6 +70,9 @@ export function PortalHeader({
       {/* Notificaciones */}
       <button className="relative text-gris hover:text-negro transition-colors p-1.5 rounded-lg hover:bg-negro/[0.04]">
         <Bell size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rojo" />
+        )}
       </button>
 
       {/* Avatar */}

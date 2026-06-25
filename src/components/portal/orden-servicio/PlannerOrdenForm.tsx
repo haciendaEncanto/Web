@@ -159,6 +159,9 @@ function FormField({
 
 // ─── Sección editable ─────────────────────────────────────────────────
 
+const COND_PARENT = "Actividades adicionales";
+const COND_CHILD  = "Descripción de actividades adicionales";
+
 function EditableSection({
   section,
   values,
@@ -171,6 +174,8 @@ function EditableSection({
   const items = [...section.service_order_items].sort(
     (a, b) => a.sort_order - b.sort_order
   );
+  const descItem = items.find((i) => i.label === COND_CHILD);
+  const parentItem = items.find((i) => i.label === COND_PARENT);
 
   return (
     <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
@@ -180,18 +185,35 @@ function EditableSection({
         </h3>
       </div>
       <div className="px-6 py-5 space-y-4">
-        {items.map((item) => (
-          <div key={item.id}>
-            <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-              {item.label}
-            </label>
-            <FormField
-              item={item}
-              value={values[item.id] ?? ""}
-              onChange={(v) => onChange(item.id, v)}
-            />
-          </div>
-        ))}
+        {items
+          .filter((i) => i.label !== COND_CHILD) // desc se renderiza inline
+          .map((item) => (
+            <div key={item.id}>
+              <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                {item.label}
+              </label>
+              <FormField
+                item={item}
+                value={values[item.id] ?? ""}
+                onChange={(v) => onChange(item.id, v)}
+              />
+              {/* Campo condicional: aparece solo cuando Actividades adicionales = Sí */}
+              {item.label === COND_PARENT &&
+                values[parentItem?.id ?? ""] === "Sí" &&
+                descItem && (
+                  <div className="mt-3 border-l-2 border-dorado/30 pl-4">
+                    <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                      {descItem.label}
+                    </label>
+                    <FormField
+                      item={descItem}
+                      value={values[descItem.id] ?? ""}
+                      onChange={(v) => onChange(descItem.id, v)}
+                    />
+                  </div>
+                )}
+            </div>
+          ))}
       </div>
     </div>
   );

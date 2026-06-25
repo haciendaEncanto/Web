@@ -38,6 +38,7 @@ function getNavItems(role: string): NavItem[] {
     return [
       { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/portal/evento", label: "Mi Evento", icon: CalendarDays },
+      { href: "/portal/actividades", label: "Mi agenda", icon: BookOpen },
       { href: "/portal/orden-servicio", label: "Mi Orden", icon: ClipboardList },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
