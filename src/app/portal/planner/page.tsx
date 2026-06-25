@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ClipboardList, Calendar, Users, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteClientButton } from "@/components/portal/DeleteClientButton";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
   boda: "Boda",
@@ -32,7 +33,7 @@ export default async function PlannerPanel() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      `id, event_type, event_date, event_start_time, guest_count, status,
+      `id, client_id, event_type, event_date, event_start_time, guest_count, status,
        service_order_approved,
        profiles (full_name, email)`
     )
@@ -41,6 +42,7 @@ export default async function PlannerPanel() {
 
   type Row = {
     id: string;
+    client_id: string;
     event_type: string | null;
     event_date: string | null;
     event_start_time: string | null;
@@ -137,13 +139,22 @@ export default async function PlannerPanel() {
                   </div>
                 </div>
 
-                <Link
-                  href={`/portal/planner/orden-servicio/${b.id}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-dorado/30 text-dorado text-[0.8rem] font-medium rounded-lg hover:bg-dorado/5 transition-colors shrink-0"
-                >
-                  <ClipboardList size={14} />
-                  Ver orden
-                </Link>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Link
+                    href={`/portal/planner/orden-servicio/${b.id}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-dorado/30 text-dorado text-[0.8rem] font-medium rounded-lg hover:bg-dorado/5 transition-colors"
+                  >
+                    <ClipboardList size={14} />
+                    Ver orden
+                  </Link>
+                  <DeleteClientButton
+                    clientId={b.client_id}
+                    bookingId={b.id}
+                    clientName={
+                      b.profiles?.full_name ?? b.profiles?.email ?? "Cliente"
+                    }
+                  />
+                </div>
               </div>
             );
           })}
