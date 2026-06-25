@@ -109,14 +109,30 @@ export async function savePlannerItems(
 }
 
 // ── Planner: inicializar orden de servicio ────────────────────────────
+// motivo: requerido al reinicializar (orden ya existía), opcional en primer init.
 export async function initServiceOrder(
-  bookingId: string
+  bookingId: string,
+  motivo?: string
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
   const { error } = await supabase.rpc("initialize_service_order", {
     p_booking_id: bookingId,
   });
   if (error) return { error: error.message };
+
+  if (motivo?.trim()) {
+    await supabase.from("booking_events").insert({
+      booking_id: bookingId,
+      event_type: "service_order_reinit",
+      actor_id: user.id,
+      notes: motivo.trim(),
+    });
+  }
+
   revalidatePath(`/portal/planner/orden-servicio/${bookingId}`);
   return {};
 }

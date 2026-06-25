@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_events: {
+        Row: {
+          actor_id: string | null
+          booking_id: string
+          created_at: string
+          event_type: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          booking_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          booking_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_packages: {
         Row: {
           booking_id: string
@@ -652,6 +694,7 @@ export type Database = {
           id: string
           item_type: string
           label: string
+          notes: string | null
           options: Json
           section_id: string
           sort_order: number
@@ -664,6 +707,7 @@ export type Database = {
           id?: string
           item_type?: string
           label: string
+          notes?: string | null
           options?: Json
           section_id: string
           sort_order?: number
@@ -676,6 +720,7 @@ export type Database = {
           id?: string
           item_type?: string
           label?: string
+          notes?: string | null
           options?: Json
           section_id?: string
           sort_order?: number
@@ -742,6 +787,7 @@ export type Database = {
           item_label: string
           item_sort: number
           item_type: string
+          notes: string | null
           options: Json
           section_name: string
           section_sort: number
@@ -754,6 +800,7 @@ export type Database = {
           item_label: string
           item_sort?: number
           item_type?: string
+          notes?: string | null
           options?: Json
           section_name: string
           section_sort?: number
@@ -766,6 +813,7 @@ export type Database = {
           item_label?: string
           item_sort?: number
           item_type?: string
+          notes?: string | null
           options?: Json
           section_name?: string
           section_sort?: number
