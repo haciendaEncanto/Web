@@ -64,6 +64,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes line-expand {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  0%   { transform: scaleX(0); }
+  75%  { transform: scaleX(1); }  /* llega al 100% en 600ms (75% de 800ms) */
+  100% { transform: scaleX(1); }  /* mantiene 200ms en 100% */
 }

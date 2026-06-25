@@ -38,7 +38,7 @@ export function NavBar() {
     e.preventDefault();
     close();
     setShowOverlay(true);
-    setTimeout(() => router.push(miEventoHref), 800);
+    setTimeout(() => router.push(miEventoHref), 1000);
   };
 
   return (

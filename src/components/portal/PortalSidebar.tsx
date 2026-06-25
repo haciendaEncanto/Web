@@ -80,7 +80,7 @@ export function PortalSidebar({
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await new Promise<void>((r) => setTimeout(r, 800));
+    await new Promise<void>((r) => setTimeout(r, 1000));
     await logout();
   };
 
