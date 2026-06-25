@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   X,
+  UserPlus,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import type { PortalProfile } from "@/app/portal/layout";
@@ -45,6 +46,7 @@ function getNavItems(role: string): NavItem[] {
   if (role === "wedding_planner") {
     return [
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
+      { href: "/portal/planner/nuevo-cliente", label: "Nuevo cliente", icon: UserPlus },
     ];
   }
   const base: NavItem[] = [
