@@ -57,6 +57,8 @@ export async function login(
     asesor_comercial: "/portal/asesor-comercial",
     asesor_logistica: "/portal/asesor-logistica",
     staff: "/portal/staff",
+    editor: "/editor/galeria",
+    gerente: "/portal/gerente",
   };
 
   redirect(destinations[profile?.role ?? "client"] ?? "/portal/dashboard");
