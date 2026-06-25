@@ -67,15 +67,17 @@
 
 5. **Panel de administración** (`/admin`) — gestión completa: reservas, mensajes de contacto, clientes, paquetes, galería, `tour_360_url`, pagos, usuarios.
 
-6. **Videos empresarial y revelación** — archivos los provee el cliente. Subir al bucket `videos`, seed en `hero_videos` con `event_type = 'empresarial'` / `'revelacion'`.
+6. **Rol Gerente** (`/portal/gerente`) — solo lectura en todo excepto reportes. Dashboard de estadísticas (eventos por mes, ingresos, ocupación del salón), vista de todos los pagos y estado financiero global, calendario de eventos. Sin acceso a editar órdenes de servicio ni datos de clientes. Construir después del panel `/admin`. Requiere nuevo valor en enum `profiles.role` + redirect post-login.
 
-7. **Fotos reales al bucket `gallery`** — insertar en `gallery_images` con `category` = `boda`/`quince`/`empresarial`/`revelacion`. SliderGaleria las toma automáticamente.
+7. **Videos empresarial y revelación** — archivos los provee el cliente. Subir al bucket `videos`, seed en `hero_videos` con `event_type = 'empresarial'` / `'revelacion'`.
 
-8. **Tour virtual 360°** — cuando el cliente contrate Matterport/Kuula, insertar URL en `site_content` donde `key = 'tour_360_url'`.
+8. **Fotos reales al bucket `gallery`** — insertar en `gallery_images` con `category` = `boda`/`quince`/`empresarial`/`revelacion`. SliderGaleria las toma automáticamente.
 
-9. **Ajustar contenido de paquetes** — los 12 paquetes actuales son placeholders. Refinar con el cliente.
+9. **Tour virtual 360°** — cuando el cliente contrate Matterport/Kuula, insertar URL en `site_content` donde `key = 'tour_360_url'`.
 
-10. **Conectar dominio hacienda-encanto.com a Vercel** — cuando el sitio esté listo para producción. Cuenta Vercel ya aprobada.
+10. **Ajustar contenido de paquetes** — los 12 paquetes actuales son placeholders. Refinar con el cliente.
+
+11. **Conectar dominio hacienda-encanto.com a Vercel** — cuando el sitio esté listo para producción. Cuenta Vercel ya aprobada.
 
 ### Archivos clave
 
