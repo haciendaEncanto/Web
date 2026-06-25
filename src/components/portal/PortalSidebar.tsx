@@ -17,6 +17,11 @@ import {
   LogOut,
   X,
   UserPlus,
+  Image,
+  Video,
+  Star,
+  Package,
+  Shield,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -29,6 +34,8 @@ const ROLE_LABEL: Record<string, string> = {
   asesor_logistica: "Asesor Logística",
   staff: "Staff",
   client: "Cliente",
+  editor: "Editor de Contenido",
+  gerente: "Gerente",
 };
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
@@ -46,6 +53,29 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/perfil", label: "Mi Perfil", icon: User },
     ];
   }
+  if (role === "admin") {
+    return [
+      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/usuarios", label: "Usuarios", icon: Shield },
+      { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
+      { href: "/editor/galeria", label: "Galería", icon: Image },
+      { href: "/editor/videos", label: "Videos Hero", icon: Video },
+      { href: "/editor/testimonios", label: "Testimonios", icon: Star },
+      { href: "/editor/paquetes", label: "Paquetes", icon: Package },
+      { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
+    ];
+  }
+
+  if (role === "editor") {
+    return [
+      { href: "/editor/galeria", label: "Galería", icon: Image },
+      { href: "/editor/videos", label: "Videos Hero", icon: Video },
+      { href: "/editor/testimonios", label: "Testimonios", icon: Star },
+      { href: "/editor/paquetes", label: "Paquetes", icon: Package },
+      { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
+    ];
+  }
+
   if (role === "wedding_planner") {
     return [
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },

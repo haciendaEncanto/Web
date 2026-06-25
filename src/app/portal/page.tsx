@@ -8,6 +8,8 @@ const ROLE_DESTINATIONS: Record<string, string> = {
   asesor_comercial: "/portal/asesor-comercial",
   asesor_logistica: "/portal/asesor-logistica",
   staff: "/portal/staff",
+  editor: "/editor/galeria",
+  gerente: "/portal/gerente",
 };
 
 export default async function PortalRoot() {

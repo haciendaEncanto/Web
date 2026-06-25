@@ -1052,6 +1052,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_any_staff: { Args: never; Returns: boolean }
+      is_editor: { Args: never; Returns: boolean }
       is_planner_or_admin: { Args: never; Returns: boolean }
       is_staff_or_admin: { Args: never; Returns: boolean }
     }
@@ -1085,6 +1086,8 @@ export type Database = {
         | "wedding_planner"
         | "asesor_comercial"
         | "asesor_logistica"
+        | "editor"
+        | "gerente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1243,6 +1246,8 @@ export const Constants = {
         "wedding_planner",
         "asesor_comercial",
         "asesor_logistica",
+        "editor",
+        "gerente",
       ],
     },
   },
