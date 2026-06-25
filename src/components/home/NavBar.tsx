@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
 
 const links = [
   { href: "/bodas", label: "Bodas" },
@@ -37,17 +38,12 @@ export function NavBar() {
     e.preventDefault();
     close();
     setShowOverlay(true);
-    setTimeout(() => router.push(miEventoHref), 300);
+    setTimeout(() => router.push(miEventoHref), 800);
   };
 
   return (
     <>
-      {/* Overlay de transición — cubre la página con crema antes de navegar */}
-      <div
-        className={`fixed inset-0 z-[200] bg-[#F5F0E8] pointer-events-none transition-opacity duration-300 ${
-          showOverlay ? "opacity-100" : "opacity-0"
-        }`}
-      />
+      <TransitionOverlay visible={showOverlay} />
 
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-crema/95 backdrop-blur-md border-b border-black/[0.04]">
         {/* Barra principal */}

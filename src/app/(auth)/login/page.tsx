@@ -5,15 +5,15 @@ import { login } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const inputClass =
-  "w-full border border-crema-medio bg-blanco px-4 py-3 text-negro text-sm placeholder:text-gris-claro focus:outline-none focus:border-dorado transition-colors duration-150";
+  "w-full border border-crema-medio bg-blanco px-4 py-3 text-negro text-sm placeholder:text-gris-claro focus:outline-none focus:border-dorado rounded-lg transition-colors duration-150";
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
 
   return (
-    <div className="bg-blanco border border-crema-medio shadow-sm px-8 py-10">
+    <div className="bg-blanco border border-crema-medio shadow-sm rounded-2xl px-8 py-10">
       <h2 className="font-serif text-2xl text-negro tracking-[-0.02em] mb-1">
-        Bienvenido de nuevo
+        Bienvenido
       </h2>
       <p className="text-sm text-gris mb-8">Accede a tu portal de eventos</p>
 

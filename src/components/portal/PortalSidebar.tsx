@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
 import type { PortalProfile } from "@/app/portal/layout";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -79,7 +80,7 @@ export function PortalSidebar({
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await new Promise<void>((r) => setTimeout(r, 300));
+    await new Promise<void>((r) => setTimeout(r, 800));
     await logout();
   };
 
@@ -173,17 +174,12 @@ export function PortalSidebar({
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[0.78rem] text-blanco/40 hover:text-blanco/70 hover:bg-blanco/[0.04] transition-all duration-150 disabled:opacity-50"
         >
           <LogOut size={14} />
-          {loggingOut ? "Cerrando…" : "Cerrar sesión"}
+          Cerrar sesión
         </button>
       </div>
     </aside>
 
-    {/* Overlay fade-out al cerrar sesión */}
-    <div
-      className={`fixed inset-0 z-[200] bg-crema transition-opacity duration-300 ${
-        loggingOut ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-      }`}
-    />
+    <TransitionOverlay visible={loggingOut} />
     </>
   );
 }
