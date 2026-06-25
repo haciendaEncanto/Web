@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -74,6 +75,13 @@ export function PortalSidebar({
 }) {
   const pathname = usePathname();
   const navItems = getNavItems(profile.role);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await new Promise<void>((r) => setTimeout(r, 300));
+    await logout();
+  };
 
   const isActive = (href: string) => pathname === href;
 
@@ -85,6 +93,7 @@ export function PortalSidebar({
     .toUpperCase();
 
   return (
+    <>
     <aside
       className={[
         "fixed left-0 top-0 h-full w-[248px] z-30 flex flex-col",
@@ -157,16 +166,24 @@ export function PortalSidebar({
             </p>
           </div>
         </div>
-        <form action={logout}>
-          <button
-            type="submit"
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[0.78rem] text-blanco/40 hover:text-blanco/70 hover:bg-blanco/[0.04] transition-all duration-150"
-          >
-            <LogOut size={14} />
-            Cerrar sesión
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[0.78rem] text-blanco/40 hover:text-blanco/70 hover:bg-blanco/[0.04] transition-all duration-150 disabled:opacity-50"
+        >
+          <LogOut size={14} />
+          {loggingOut ? "Cerrando…" : "Cerrar sesión"}
+        </button>
       </div>
     </aside>
+
+    {/* Overlay fade-out al cerrar sesión */}
+    <div
+      className={`fixed inset-0 z-[200] bg-crema transition-opacity duration-300 ${
+        loggingOut ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
+    />
+    </>
   );
 }
