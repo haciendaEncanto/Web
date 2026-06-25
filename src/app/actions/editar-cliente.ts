@@ -1,0 +1,127 @@
+"use server";
+
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
+
+const schema = z.object({
+  full_name:         z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  phone:             z.string().min(7, "Ingresa un número de teléfono válido"),
+  address:           z.string().min(4, "Ingresa la dirección"),
+  email:             z.string().email("Correo inválido"),
+  event_type:        z.enum(["boda", "quince", "empresarial", "revelacion"] as const),
+  event_date:        z.string().min(1, "La fecha es requerida"),
+  event_start_time:  z.string().min(1, "La hora de inicio es requerida"),
+  event_end_time:    z.string().min(1, "La hora de fin es requerida"),
+  guest_count:       z.coerce.number().int().min(1, "Mínimo 1 invitado"),
+});
+
+export type EditClientState =
+  | { error: string; field?: string }
+  | { success: true }
+  | null;
+
+// ─── Helpers de solapamiento (igual que crear-cliente) ────────────────
+
+function toMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function normEnd(start: string, end: string): number {
+  const s = toMin(start);
+  const e = toMin(end);
+  return e >= s ? e : e + 1440;
+}
+
+function overlaps(s1: string, e1: string, s2: string, e2: string): boolean {
+  return toMin(s1) < normEnd(s2, e2) && toMin(s2) < normEnd(s1, e1);
+}
+
+// ─── Action ──────────────────────────────────────────────────────────
+
+export async function editarCliente(
+  clientId: string,
+  bookingId: string,
+  formData: FormData
+): Promise<EditClientState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: caller } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!caller || !["admin", "wedding_planner"].includes(caller.role)) {
+    return { error: "Sin permisos" };
+  }
+
+  const parsed = schema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return { error: first.message, field: first.path[0] as string };
+  }
+
+  const d = parsed.data;
+  const admin = createAdminClient();
+
+  // Verificar solapamiento de horario — excluir el booking actual
+  const { data: sameDay } = await admin
+    .from("bookings")
+    .select("id, event_start_time, event_end_time")
+    .eq("event_date", d.event_date)
+    .neq("id", bookingId)
+    .neq("status", "cancelled");
+
+  if (sameDay) {
+    for (const b of sameDay) {
+      if (
+        b.event_start_time &&
+        b.event_end_time &&
+        overlaps(d.event_start_time, d.event_end_time, b.event_start_time, b.event_end_time)
+      ) {
+        return {
+          error: "Ya existe un evento en ese horario. Elige otro horario disponible.",
+          field: "event_start_time",
+        };
+      }
+    }
+  }
+
+  // Actualizar auth email (admin, sin verificación)
+  const { error: authErr } = await admin.auth.admin.updateUserById(clientId, {
+    email: d.email,
+  });
+  if (authErr) return { error: `Email: ${authErr.message}` };
+
+  // Actualizar perfil
+  const { error: profileErr } = await admin
+    .from("profiles")
+    .update({ full_name: d.full_name, phone: d.phone, address: d.address, email: d.email })
+    .eq("id", clientId);
+  if (profileErr) return { error: profileErr.message };
+
+  // Actualizar booking
+  const { error: bookingErr } = await admin
+    .from("bookings")
+    .update({
+      event_type:       d.event_type,
+      event_date:       d.event_date,
+      event_start_time: d.event_start_time,
+      event_end_time:   d.event_end_time,
+      guest_count:      d.guest_count,
+    })
+    .eq("id", bookingId);
+  if (bookingErr) return { error: bookingErr.message };
+
+  revalidatePath("/portal/planner/clientes");
+  revalidatePath(`/portal/planner/clientes/${clientId}/editar`);
+  revalidatePath("/portal/planner");
+  return { success: true };
+}

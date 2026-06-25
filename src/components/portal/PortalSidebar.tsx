@@ -48,6 +48,7 @@ function getNavItems(role: string): NavItem[] {
   if (role === "wedding_planner") {
     return [
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
+      { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
       { href: "/portal/planner/nuevo-cliente", label: "Nuevo cliente", icon: UserPlus },
     ];
   }

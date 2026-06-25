@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ClipboardList, Calendar, Users, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { DeleteClientButton } from "@/components/portal/DeleteClientButton";
+import { CancelEventButton } from "@/components/portal/CancelEventButton";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
   boda: "Boda",
@@ -147,7 +147,7 @@ export default async function PlannerPanel() {
                     <ClipboardList size={14} />
                     Ver orden
                   </Link>
-                  <DeleteClientButton
+                  <CancelEventButton
                     clientId={b.client_id}
                     bookingId={b.id}
                     clientName={
