@@ -18,6 +18,7 @@
 | **Fase 6 — Portal base** | Layout portal (`PortalShell` + `PortalSidebar` + `PortalHeader`). `/portal/page.tsx` con redirect por rol. Dashboard cliente con cuenta regresiva (`CountdownTimer`), detalles del evento y accesos rápidos. Sidebar oscuro con logo blanco (filtro CSS). Responsive: hamburger mobile, countdown adaptable. | ✅ |
 | **Fase 7 — Módulo orden de servicio** | Vista cliente `/portal/orden-servicio`: barra de progreso, secciones read-only (planner), sección Música editable por cliente, botón "Aprobar". Vista planner `/portal/planner/orden-servicio/[bookingId]`: formulario completo con campos por tipo (text, date, time, select, boolean), botón "Inicializar" para órdenes vacías. Plantillas para 4 tipos de evento + secciones universales (`event_type='all'`). Modelo dos actores: `filled_by='planner'` (Cabecera + Bebidas) y `filled_by='client'` (Música). Pre-llenado automático de Cabecera desde el booking al inicializar. | ✅ |
 | **Fase 8 — Onboarding de clientes (planner)** | `/portal/planner/nuevo-cliente`: flujo completo en una acción — Auth user → profile → booking → initialize_service_order con rollback. Validación Zod v4, solapamiento de horario (normaliza medianoche), guard de rol, admin client para todo DB. `createAdminClient()` en `src/lib/supabase/admin.ts`. RLS `"bookings: staff insert"` para planner/admin. Fix `is_staff_or_admin()` incluye todos los roles staff. Fix sidebar: `isActive` usa igualdad exacta (`pathname === href`). | ✅ |
+| **Fase 9 — Panel de administración y rol Editor** | Roles `editor` y `gerente` en enum (migración 20260625000004). `is_editor()` SQL helper. RLS ampliada para gallery_images, hero_videos, testimonials, packages, site_content y Storage (migración 20260625000005). `/admin`: layout protegido solo admin, dashboard KPIs (eventos activos, este mes, contactos 7 días, sin leer), lista de próximos eventos, gestión completa de usuarios (crear/editar/activar). `/editor`: layout para admin y editor, galería (upload JPG/PNG/WebP al bucket `gallery`, reorder, toggle), videos hero (upload al bucket `videos`, toggle), testimonios (CRUD + rating estrellas), paquetes (CRUD + lista de incluidos, sin precios), textos del sitio (edición de title/content/data por key). proxy.ts protege `/editor/*`. auth.ts y portal/page.tsx incluyen redirect para `editor` y `gerente`. PortalShell reutilizado en admin y editor. | ✅ |
 
 ### Decisiones de arquitectura
 
@@ -45,7 +46,12 @@
 - **NavBar "Mi evento"** — client component con `useEffect` + `supabase.auth.onAuthStateChange`. Si hay sesión → `/portal` (redirect por rol en `/portal/page.tsx`). Si no → `/login`.
 - **Portal layout** — `PortalShell` (shell con estado de sidebar), `PortalSidebar` (fixed, `w-[248px]`, fondo `#0F0F0F`, hamburger mobile, logo blanco), `PortalHeader` (sticky, título de página, bell, avatar). Main content: `md:ml-[248px]`.
 - **PortalSidebar isActive** — `pathname === href` (igualdad exacta). No usar `startsWith` porque `/portal/planner` es prefijo de subrutas y causa activación múltiple.
-- **Redirect por rol post-login** — `auth.ts` lee `profiles.role` tras `signInWithPassword` y redirige a: `client → /portal/dashboard`, `admin → /admin/dashboard`, `wedding_planner → /portal/planner`, `asesor_comercial → /portal/asesor-comercial`, `asesor_logistica → /portal/asesor-logistica`, `staff → /portal/staff`.
+- **Redirect por rol post-login** — `auth.ts` lee `profiles.role` tras `signInWithPassword` y redirige a: `client → /portal/dashboard`, `admin → /admin/dashboard`, `wedding_planner → /portal/planner`, `asesor_comercial → /portal/asesor-comercial`, `asesor_logistica → /portal/asesor-logistica`, `staff → /portal/staff`, `editor → /editor/galeria`, `gerente → /portal/gerente`.
+- **Roles editor y gerente** — `editor`: gestiona gallery_images, hero_videos, testimonials, packages (sin precios), site_content. NO accede a clientes, pagos, órdenes. `gerente`: solo lectura, estadísticas (portal pendiente). Enum ampliado con migración `20260625000004`; RLS con `is_editor()` en `20260625000005`.
+- **Panel /admin** — solo rol `admin`. Layout usa `PortalShell` (reutiliza sidebar/header sin duplicar). Dashboard: KPIs con `createAdminClient()`. `UsuariosManager`: `admin.auth.admin.createUser()` → update profile. Acciones en `src/app/actions/admin/`.
+- **Portal /editor** — roles `admin` y `editor`. Layout usa `PortalShell`. Acciones en `src/app/actions/editor/`. File upload: client-side con `createBrowserClient` → Storage → URL pública → Server Action inserta en DB.
+- **site_content schema** — columnas: `key` (unique), `title` (text null), `content` (text null), `data` (jsonb). La key `hero` usa title+content; `stats` y `contact` usan data JSON; `tour_360_url` usa content. `ContenidoManager` edita title/content como texto y data como JSON textarea.
+- **updateSiteContentText(key, field, value)** — recibe `field: "title" | "content"`, construye el update con `field === "title" ? { title } : { content }` para evitar error TypeScript con computed property names contra tipos Supabase.
 - **payments.receipt_url** — columna `text NULL` en migración `20260624000008`. El cliente sube el PDF al bucket `documents/{booking_id}/` y la Server Action actualiza solo ese campo. El admin confirma el pago manualmente. No hay pasarela de pagos.
 - **Flujo de pagos**: 100% manual. Admin registra monto/método/referencia. Cliente sube comprobante PDF desde el portal. Admin confirma. `payment_method_type` enum: `transferencia`, `efectivo`, `cheque`, `otro`.
 - **Modelo dos actores en orden de servicio** — `filled_by` en `service_order_templates` y `service_order_items`: `'planner'` (Cabecera + Bebidas), `'client'` (Música y playlist). Los templates con `event_type='all'` aplican a todos los eventos; los de tipo específico (`'boda'`, etc.) se suman. La vista cliente solo puede editar ítems con `filled_by='client'`.
@@ -65,9 +71,9 @@
 
 4. **Extras portal cliente** — `/portal/playlist` (tabla `playlists`, cliente agrega canciones), distribución de invitados por mesa (`/portal/invitados`, tabla `guest_tables`).
 
-5. **Panel de administración** (`/admin`) — gestión completa: reservas, mensajes de contacto, clientes, paquetes, galería, `tour_360_url`, pagos, usuarios.
+5. **Panel de administración — ampliar** (`/admin`) — la Fase 9 creó el panel base. Pendiente: gestión de reservas (lista, filtros, cancelar), mensajes de contacto (marcar leído), vista de pagos globales.
 
-6. **Rol Gerente** (`/portal/gerente`) — solo lectura en todo excepto reportes. Dashboard de estadísticas (eventos por mes, ingresos, ocupación del salón), vista de todos los pagos y estado financiero global, calendario de eventos. Sin acceso a editar órdenes de servicio ni datos de clientes. Construir después del panel `/admin`. Requiere nuevo valor en enum `profiles.role` + redirect post-login.
+6. **Rol Gerente** (`/portal/gerente`) — solo lectura en todo excepto reportes. Dashboard de estadísticas (eventos por mes, ingresos, ocupación del salón), vista de todos los pagos y estado financiero global, calendario de eventos. El enum ya tiene `gerente` (migración 20260625000004); solo falta el portal. Sin acceso a editar órdenes de servicio ni datos de clientes.
 
 7. **Videos empresarial y revelación** — archivos los provee el cliente. Subir al bucket `videos`, seed en `hero_videos` con `event_type = 'empresarial'` / `'revelacion'`.
 
@@ -94,6 +100,15 @@ src/
       contact.ts                                  ← submitContactForm (Zod + reCAPTCHA + Supabase insert)
       crear-cliente.ts                            ← createClientAction: onboarding planner, admin client, overlap check, rollback
       orden-servicio.ts                           ← saveMusicItems, approveServiceOrder, savePlannerItems, initServiceOrder
+      actividades.ts                              ← createActivity, updateActivity, deleteActivity (+ notificación al cliente)
+      admin/
+        usuarios.ts                               ← crearUsuario, editarUsuario, toggleUsuarioActivo
+      editor/
+        galeria.ts                                ← insertGaleriaImage, updateGaleriaImage, deleteGaleriaImage, reorderGaleriaImages
+        videos.ts                                 ← insertVideo, updateVideo, deleteVideo
+        testimonios.ts                            ← createTestimonio, updateTestimonio, deleteTestimonio
+        paquetes.ts                               ← createPaquete, updatePaquete, deletePaquete
+        contenido.ts                              ← updateSiteContentText(key, field, value), updateSiteContentData(key, json)
     (auth)/
       login/page.tsx                              ← Solo formulario de acceso
       registro/page.tsx                           ← redirect("/login") — ruta deshabilitada
@@ -108,18 +123,43 @@ src/
       asesor-comercial/page.tsx
       asesor-logistica/page.tsx
       staff/page.tsx
+      actividades/page.tsx                        ← Timeline del cliente (próximas con borde dorado, pasadas tachadas)
+      planner/
+        clientes/[clientId]/actividades/page.tsx  ← Vista planner: CRUD actividades del cliente
+    admin/
+      layout.tsx                                  ← Solo admin, usa PortalShell
+      dashboard/page.tsx                          ← KPIs + próximos eventos + contactos recientes
+      usuarios/page.tsx                           ← Tabla de usuarios + crear/editar modales
+    editor/
+      layout.tsx                                  ← Admin y editor, usa PortalShell
+      page.tsx                                    ← redirect("/editor/galeria")
+      galeria/page.tsx
+      videos/page.tsx
+      testimonios/page.tsx
+      paquetes/page.tsx
+      contenido/page.tsx
   components/
     home/                                         ← NavBar, HeroSection, EventosSection, NosotrosSection, etc.
     events/                                       ← EventPageTemplate, EventHero, Vista360, EventDescripcion, etc.
     portal/
-      PortalShell.tsx                             ← Shell con estado sidebarOpen, overlay mobile
-      PortalSidebar.tsx                           ← Sidebar fijo 248px, fondo #0F0F0F, logo blanco, isActive exacto
-      PortalHeader.tsx                            ← Header sticky: hamburger, título de página, bell, avatar
+      PortalShell.tsx                             ← Shell con estado sidebarOpen, overlay mobile (reutilizado en admin y editor)
+      PortalSidebar.tsx                           ← Sidebar fijo 248px, fondo #0F0F0F, logo blanco, isActive exacto, nav por rol
+      PortalHeader.tsx                            ← Header sticky: hamburger, título de página, bell (unreadCount), avatar
       CountdownTimer.tsx                          ← Client component, intervalo 1s, responsive
       NuevoClienteForm.tsx                        ← useActionState, show/hide password, errores por campo
       orden-servicio/
         OrdenServicioView.tsx                     ← Vista cliente: barra progreso, secciones, música editable, aprobar
-        PlannerOrdenForm.tsx                      ← Vista planner: todos los ítems editables, InitButton
+        PlannerOrdenForm.tsx                      ← Vista planner: todos los ítems editables, InitButton, campo condicional adicionales
+      planner/
+        ActividadesPlanner.tsx                    ← CRUD inline actividades: form agregar, editar, confirmar borrar
+    admin/
+      UsuariosManager.tsx                         ← Tabla + CrearModal + EditarModal + toggleUsuarioActivo
+    editor/
+      GaleriaManager.tsx                          ← Grid, UploadModal (client-side Storage), reorder, toggle publicado
+      VideosManager.tsx                           ← Lista, AddModal (client-side Storage), toggle activo
+      TestimoniosManager.tsx                      ← CRUD inline, StarRating component
+      PaquetesManager.tsx                         ← CRUD inline, filtro por tipo, lista incluidos
+      ContenidoManager.tsx                        ← Acordeón por key, TextField + JsonField con guardado por campo
     contact/
       ContactForm.tsx
       HomeContactForm.tsx
@@ -162,4 +202,6 @@ supabase/migrations/
   20260624000014_profiles_add_address.sql         ← ADD COLUMN address text NULL
   20260624000015_bookings_staff_insert_policy.sql ← "bookings: staff insert" + initialize_service_order acepta service_role
   20260624000016_initialize_service_order_prefill.sql ← pre-llena 6 ítems de Cabecera desde el booking
+  20260625000004_editor_role.sql                      ← ADD VALUE editor, gerente al enum user_role
+  20260625000005_editor_rls.sql                       ← is_editor(), RLS gallery/videos/testimonials/packages/site_content + Storage
 ```
