@@ -28,10 +28,7 @@ export interface EventPageConfig {
     ctaLabel: string;
   };
   experiencia: {
-    supertitle: string;
-    title: string;
-    paragraphs: string[];
-    highlights: Array<{ value: string; label: string }>;
+    text: string;
   };
   gallery: {
     category: string;

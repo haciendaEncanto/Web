@@ -27,18 +27,7 @@ const config: EventPageConfig = {
     ctaLabel: "Cuéntanos tu revelación",
   },
   experiencia: {
-    supertitle: "La experiencia",
-    title: "Un momento único que merece celebrarse",
-    paragraphs: [
-      "La revelación de género es uno de los momentos más emocionantes de la vida familiar. En Hacienda El Encanto creamos el escenario perfecto para que ese instante mágico quede grabado en el corazón de todos.",
-      "Nuestros jardines y espacios ofrecen el ambiente ideal para una celebración íntima y colorida, llena de sorpresas y amor.",
-    ],
-    highlights: [
-      { value: "Íntimo", label: "Ambiente" },
-      { value: "Colorido", label: "Decoración" },
-      { value: "Sorpresa", label: "Momento" },
-      { value: "Familiar", label: "Celebración" },
-    ],
+    text: "El primer gran secreto de tu bebé merece celebrarse en grande. En El Encanto creamos el ambiente perfecto para ese momento mágico e irrepetible, lleno de emoción, sorpresa y amor, rodeado de las personas más importantes de tu familia.",
   },
   gallery: {
     category: "revelacion",

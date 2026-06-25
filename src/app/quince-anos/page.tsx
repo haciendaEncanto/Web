@@ -24,21 +24,10 @@ const config: EventPageConfig = {
     title: "Quince años llenos de magia",
     subtitle:
       "Un espacio único donde cada momento se convierte en un recuerdo que atesorarás toda la vida.",
-    ctaLabel: "Cuéntanos tu celebración",
+    ctaLabel: "Cuéntanos tu quinceañera",
   },
   experiencia: {
-    supertitle: "La experiencia",
-    title: "Una celebración que merece todo",
-    paragraphs: [
-      "Los quince años son un momento único e irrepetible. En Hacienda El Encanto creamos el escenario perfecto para que la protagonista brille y cada detalle cuente su historia.",
-      "Desde la decoración hasta la atención a sus invitados, nuestro equipo se dedica a que vivas este día con la magia que siempre soñaste.",
-    ],
-    highlights: [
-      { value: "Mágico", label: "Ambiente" },
-      { value: "Especial", label: "Decoración" },
-      { value: "Único", label: "Momento" },
-      { value: "Exclusivo", label: "Servicio" },
-    ],
+    text: "Tu quinceañera merece un lugar tan especial como este momento único. En El Encanto te acompañamos para que celebres tus quince años rodeada de quienes más amas, en un espacio lleno de magia, elegancia y recuerdos que durarán toda la vida.",
   },
   gallery: {
     category: "quince",
