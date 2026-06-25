@@ -52,3 +52,19 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif), Georgia, serif;
   letter-spacing: -0.03em;
 }
+
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes trebol-scale {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes line-expand {
+  0%   { transform: scaleX(0); }
+  75%  { transform: scaleX(1); }  /* llega al 100% en 600ms (75% de 800ms) */
+  100% { transform: scaleX(1); }  /* mantiene 200ms en 100% */
+}
