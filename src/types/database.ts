@@ -652,6 +652,7 @@ export type Database = {
           id: string
           item_type: string
           label: string
+          notes: string | null
           options: Json
           section_id: string
           sort_order: number
@@ -664,6 +665,7 @@ export type Database = {
           id?: string
           item_type?: string
           label: string
+          notes?: string | null
           options?: Json
           section_id: string
           sort_order?: number
@@ -676,6 +678,7 @@ export type Database = {
           id?: string
           item_type?: string
           label?: string
+          notes?: string | null
           options?: Json
           section_id?: string
           sort_order?: number
@@ -742,6 +745,7 @@ export type Database = {
           item_label: string
           item_sort: number
           item_type: string
+          notes: string | null
           options: Json
           section_name: string
           section_sort: number
@@ -754,6 +758,7 @@ export type Database = {
           item_label: string
           item_sort?: number
           item_type?: string
+          notes?: string | null
           options?: Json
           section_name: string
           section_sort?: number
@@ -766,6 +771,7 @@ export type Database = {
           item_label?: string
           item_sort?: number
           item_type?: string
+          notes?: string | null
           options?: Json
           section_name?: string
           section_sort?: number
