@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -645,6 +645,7 @@ export type Database = {
       service_order_items: {
         Row: {
           created_at: string
+          filled_by: string
           id: string
           item_type: string
           label: string
@@ -656,6 +657,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          filled_by?: string
           id?: string
           item_type?: string
           label: string
@@ -667,6 +669,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          filled_by?: string
           id?: string
           item_type?: string
           label?: string
@@ -731,6 +734,7 @@ export type Database = {
         Row: {
           created_at: string
           event_type: string
+          filled_by: string
           id: string
           item_label: string
           item_sort: number
@@ -742,6 +746,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_type: string
+          filled_by?: string
           id?: string
           item_label: string
           item_sort?: number
@@ -753,6 +758,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_type?: string
+          filled_by?: string
           id?: string
           item_label?: string
           item_sort?: number
