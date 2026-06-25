@@ -35,10 +35,20 @@ function getNavItems(role: string): NavItem[] {
     return [
       { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/portal/evento", label: "Mi Evento", icon: CalendarDays },
+      { href: "/portal/orden-servicio", label: "Mi Orden", icon: ClipboardList },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
       { href: "/portal/mensajes", label: "Mensajes", icon: MessageSquare },
       { href: "/portal/perfil", label: "Mi Perfil", icon: User },
+    ];
+  }
+  if (role === "wedding_planner") {
+    return [
+      { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
+      { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
+      { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
+      { href: "/portal/mensajes", label: "Mensajes", icon: MessageSquare },
+      { href: "/portal/clientes", label: "Clientes", icon: Users },
     ];
   }
   const base: NavItem[] = [

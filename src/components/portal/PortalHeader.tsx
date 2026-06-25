@@ -7,7 +7,9 @@ import type { PortalProfile } from "@/app/portal/layout";
 const PAGE_TITLES: Record<string, string> = {
   "/portal/dashboard": "Dashboard",
   "/portal/evento": "Mi Evento",
-  "/portal/planner": "Panel Planner",
+  "/portal/orden-servicio": "Mi Orden de Servicio",
+  "/portal/planner": "Órdenes de Servicio",
+  "/portal/planner/orden-servicio": "Orden de Servicio",
   "/portal/asesor-comercial": "Panel Comercial",
   "/portal/asesor-logistica": "Panel Logística",
   "/portal/staff": "Panel Staff",
@@ -30,7 +32,12 @@ export function PortalHeader({
   onMenuClick: () => void;
 }) {
   const pathname = usePathname();
-  const title = PAGE_TITLES[pathname] ?? "Portal";
+  const title =
+    PAGE_TITLES[pathname] ??
+    Object.entries(PAGE_TITLES)
+      .filter(([k]) => pathname.startsWith(k + "/"))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ??
+    "Portal";
 
   const initials = (profile.full_name ?? profile.email)
     .split(" ")
