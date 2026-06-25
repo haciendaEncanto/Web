@@ -66,19 +66,32 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     <>
       <NavBar />
       <main className="pt-[72px]">
+        {/* 1. Hero */}
         <EventHero {...config.hero} videoUrl={heroVideo?.url ?? null} />
-        <Vista360 tourUrl={tourContent?.content ?? null} />
+
+        {/* 2. Experiencia — párrafo emocional centrado */}
         <EventDescripcion config={config.experiencia} />
+
+        {/* 3. Vista 360° */}
+        <Vista360 tourUrl={tourContent?.content ?? null} />
+
+        {/* 4. Galería */}
         <SliderGaleria
           images={allImages}
           supertitle={config.gallery.supertitle}
           title={config.gallery.title}
         />
+
+        {/* 5. Paquetes */}
         <EventPaquetes packages={packages} config={config.paquetes} />
+
+        {/* 6. Testimonios */}
         <EventTestimonios
           testimonials={testimonials ?? []}
           title={config.testimonios.title}
         />
+
+        {/* 7. Formulario de contacto */}
         <EventContacto config={config.contacto} />
       </main>
       <Footer />

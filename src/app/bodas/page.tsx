@@ -27,18 +27,7 @@ const config: EventPageConfig = {
     ctaLabel: "Cuéntanos tu boda",
   },
   experiencia: {
-    supertitle: "La experiencia",
-    title: "Una boda que se siente en el alma",
-    paragraphs: [
-      "En Hacienda El Encanto entendemos que tu boda es única. Cada detalle, desde la iluminación hasta la disposición de las mesas, se diseña para reflejar la historia de amor que quieren contar.",
-      "Nuestros espacios combinan la elegancia rústica de una hacienda histórica con la calidez y el servicio personalizado que merece el día más importante de sus vidas.",
-    ],
-    highlights: [
-      { value: "Íntimo", label: "Ambiente" },
-      { value: "Elegante", label: "Estilo" },
-      { value: "Natural", label: "Entorno" },
-      { value: "Personal", label: "Atención" },
-    ],
+    text: "En Hacienda El Encanto, tu boda es mucho más que un evento — es el inicio de una historia de amor que merece el escenario perfecto. Rodeados de naturaleza, elegancia y un equipo dedicado a cada detalle, hacemos realidad el día que siempre soñaste.",
   },
   gallery: {
     category: "boda",

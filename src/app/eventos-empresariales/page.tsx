@@ -27,18 +27,7 @@ const config: EventPageConfig = {
     ctaLabel: "Cuéntanos tu evento",
   },
   experiencia: {
-    supertitle: "La experiencia",
-    title: "El espacio que tu empresa merece",
-    paragraphs: [
-      "Hacienda El Encanto ofrece un ambiente único para salir de la rutina corporativa. Nuestros espacios combinan la tranquilidad de la naturaleza con la infraestructura necesaria para eventos profesionales de alto nivel.",
-      "Ideal para lanzamientos de producto, reuniones de directivos, team building y celebraciones de fin de año que dejan huella en cada participante.",
-    ],
-    highlights: [
-      { value: "Profesional", label: "Ambiente" },
-      { value: "Exclusivo", label: "Espacio" },
-      { value: "Natural", label: "Entorno" },
-      { value: "Flexible", label: "Configuración" },
-    ],
+    text: "Hacienda El Encanto ofrece el escenario ideal para tus eventos corporativos. Con capacidad para más de 150 personas, infraestructura completa de sonido y proyección, y un entorno natural que inspira, transformamos cada reunión en una experiencia memorable.",
   },
   gallery: {
     category: "empresarial",
