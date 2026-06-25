@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Pencil, ClipboardList, Users } from "lucide-react";
+import { Pencil, ClipboardList, Users, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CancelEventButton } from "@/components/portal/CancelEventButton";
 
@@ -205,6 +205,13 @@ export default async function ClientesPage() {
                             className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
                           >
                             <ClipboardList size={15} />
+                          </Link>
+                          <Link
+                            href={`/portal/planner/clientes/${b.client_id}/actividades`}
+                            title="Agenda"
+                            className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                          >
+                            <CalendarDays size={15} />
                           </Link>
                           <Link
                             href={`/portal/planner/clientes/${b.client_id}/editar`}

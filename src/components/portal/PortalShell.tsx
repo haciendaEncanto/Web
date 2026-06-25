@@ -17,9 +17,11 @@ const WARNING_MS = 60 * 1000;
 export function PortalShell({
   profile,
   children,
+  unreadCount = 0,
 }: {
   profile: PortalProfile;
   children: React.ReactNode;
+  unreadCount?: number;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
@@ -60,6 +62,7 @@ export function PortalShell({
         <PortalHeader
           profile={profile}
           onMenuClick={() => setSidebarOpen(true)}
+          unreadCount={unreadCount}
         />
         <main className="flex-1 p-6 md:p-8 max-w-[1200px] w-full mx-auto">
           {children}

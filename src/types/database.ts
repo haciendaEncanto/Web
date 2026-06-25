@@ -227,6 +227,57 @@ export type Database = {
           },
         ]
       }
+      client_activities: {
+        Row: {
+          activity_date: string
+          activity_time: string | null
+          booking_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          title: string
+        }
+        Insert: {
+          activity_date: string
+          activity_time?: string | null
+          booking_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          title: string
+        }
+        Update: {
+          activity_date?: string
+          activity_time?: string | null
+          booking_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_activities_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string

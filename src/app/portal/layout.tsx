@@ -35,7 +35,18 @@ export default async function PortalLayout({
 
   if (!profile) redirect("/login");
 
+  const { count: unreadCount } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("is_read", false);
+
   return (
-    <PortalShell profile={profile as PortalProfile}>{children}</PortalShell>
+    <PortalShell
+      profile={profile as PortalProfile}
+      unreadCount={unreadCount ?? 0}
+    >
+      {children}
+    </PortalShell>
   );
 }
