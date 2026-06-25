@@ -12,19 +12,15 @@ const schema = z
     phone: z.string().min(7, "Ingresa un número de teléfono válido"),
     address: z.string().min(4, "Ingresa la dirección de residencia"),
     email: z.string().email("El correo electrónico no es válido"),
-    password: z
-      .string()
-      .min(8, "La contraseña debe tener mínimo 8 caracteres"),
-    event_type: z.enum(["boda", "quince", "empresarial", "revelacion"] as const, {
-      message: "Selecciona el tipo de evento",
-    }),
+    password: z.string().min(8, "La contraseña debe tener mínimo 8 caracteres"),
+    event_type: z.enum(
+      ["boda", "quince", "empresarial", "revelacion"] as const,
+      { message: "Selecciona el tipo de evento" }
+    ),
     event_date: z.string().min(1, "La fecha del evento es requerida"),
     event_start_time: z.string().min(1, "La hora de inicio es requerida"),
     event_end_time: z.string().min(1, "La hora de fin es requerida"),
-    guest_count: z.coerce
-      .number()
-      .int()
-      .min(1, "Mínimo 1 invitado"),
+    guest_count: z.coerce.number().int().min(1, "Mínimo 1 invitado"),
   })
   .refine(
     (d) => {
@@ -32,7 +28,10 @@ const schema = z
       today.setHours(0, 0, 0, 0);
       return new Date(d.event_date + "T00:00:00") >= today;
     },
-    { message: "La fecha del evento no puede ser en el pasado", path: ["event_date"] }
+    {
+      message: "La fecha del evento no puede ser en el pasado",
+      path: ["event_date"],
+    }
   );
 
 // ─── Tipos ────────────────────────────────────────────────────────────
@@ -42,13 +41,35 @@ export type CreateClientState =
   | { success: true; bookingId: string }
   | null;
 
-// ─── Action ───────────────────────────────────────────────────────────
+// ─── Helpers de solapamiento de horario ──────────────────────────────
+
+function toMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function normEnd(start: string, end: string): number {
+  const s = toMin(start);
+  const e = toMin(end);
+  // Si end < start el evento cruza la medianoche → sumar 24h
+  return e >= s ? e : e + 1440;
+}
+
+function overlaps(s1: string, e1: string, s2: string, e2: string): boolean {
+  const start1 = toMin(s1);
+  const end1 = normEnd(s1, e1);
+  const start2 = toMin(s2);
+  const end2 = normEnd(s2, e2);
+  return start1 < end2 && start2 < end1;
+}
+
+// ─── Action principal ─────────────────────────────────────────────────
 
 export async function createClientAction(
   _prev: CreateClientState,
   formData: FormData
 ): Promise<CreateClientState> {
-  // 0 — Verificar que el llamador es planner o admin
+  // 0 — Verificar que el llamador es planner o admin (SSR client con sesión)
   const supabase = await createClient();
   const {
     data: { user: caller },
@@ -69,7 +90,7 @@ export async function createClientAction(
   }
 
   // 1 — Validar datos del formulario
-  const raw = {
+  const parsed = schema.safeParse({
     full_name: formData.get("full_name"),
     phone: formData.get("phone"),
     address: formData.get("address"),
@@ -80,22 +101,53 @@ export async function createClientAction(
     event_start_time: formData.get("event_start_time"),
     event_end_time: formData.get("event_end_time"),
     guest_count: formData.get("guest_count"),
-  };
+  });
 
-  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return { error: first.message, field: first.path[0] as string };
   }
 
   const d = parsed.data;
+
+  // A partir de aquí usamos el admin client (bypasa RLS) para todas las
+  // operaciones de base de datos. La auth SSR solo se usó para verificar
+  // el rol del llamador.
   const admin = createAdminClient();
+
+  // 2 — Verificar conflicto de horario
+  const { data: sameDay } = await admin
+    .from("bookings")
+    .select("id, event_start_time, event_end_time")
+    .eq("event_date", d.event_date)
+    .neq("status", "cancelled");
+
+  if (sameDay && sameDay.length > 0) {
+    for (const b of sameDay) {
+      if (
+        b.event_start_time &&
+        b.event_end_time &&
+        overlaps(
+          d.event_start_time,
+          d.event_end_time,
+          b.event_start_time,
+          b.event_end_time
+        )
+      ) {
+        return {
+          error:
+            "Ya existe un evento en ese horario. Por favor elige otro horario disponible.",
+          field: "event_start_time",
+        };
+      }
+    }
+  }
 
   let createdUserId: string | null = null;
   let createdBookingId: string | null = null;
 
   try {
-    // 2 — Crear usuario en Supabase Auth
+    // 3 — Crear usuario en Supabase Auth
     const { data: authData, error: authError } =
       await admin.auth.admin.createUser({
         email: d.email,
@@ -106,7 +158,11 @@ export async function createClientAction(
 
     if (authError) {
       const msg = authError.message.toLowerCase();
-      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+      if (
+        msg.includes("already") ||
+        msg.includes("registered") ||
+        msg.includes("exists")
+      ) {
         return { error: "Este correo ya está registrado", field: "email" };
       }
       return { error: `Error al crear usuario: ${authError.message}` };
@@ -114,8 +170,7 @@ export async function createClientAction(
 
     createdUserId = authData.user.id;
 
-    // 3 — Actualizar perfil (el trigger handle_new_user ya lo creó con email + full_name)
-    //     Usamos admin client porque la policy de profiles update solo permite is_admin()
+    // 4 — Actualizar perfil (trigger handle_new_user ya lo creó con email + full_name)
     const { error: profileError } = await admin
       .from("profiles")
       .update({ phone: d.phone, address: d.address })
@@ -125,24 +180,25 @@ export async function createClientAction(
       throw new Error(`Error actualizando perfil: ${profileError.message}`);
     }
 
-    // 4 — Obtener el espacio principal (único espacio del local)
-    const { data: space } = await supabase
+    // 5 — Obtener espacio principal
+    const { data: space } = await admin
       .from("spaces")
       .select("id")
       .eq("slug", "salon-principal")
       .maybeSingle();
 
-    const spaceId = space?.id;
-    if (!spaceId) {
-      throw new Error("No se encontró el espacio 'salon-principal' en la base de datos");
+    if (!space?.id) {
+      throw new Error(
+        "No se encontró el espacio 'salon-principal' en la base de datos"
+      );
     }
 
-    // 4b — Crear reserva (usando el SSR client del planner para respetar contexto de sesión)
-    const { data: booking, error: bookingError } = await supabase
+    // 6 — Crear reserva
+    const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
         client_id: createdUserId,
-        space_id: spaceId,
+        space_id: space.id,
         event_type: d.event_type,
         event_date: d.event_date,
         event_start_time: d.event_start_time,
@@ -160,11 +216,11 @@ export async function createClientAction(
 
     createdBookingId = booking.id;
 
-    // 5 — Inicializar orden de servicio
-    const { error: orderError } = await supabase.rpc(
-      "initialize_service_order",
-      { p_booking_id: createdBookingId }
-    );
+    // 7 — Inicializar orden de servicio
+    //     initialize_service_order acepta service_role (auth.uid() NULL)
+    const { error: orderError } = await admin.rpc("initialize_service_order", {
+      p_booking_id: createdBookingId,
+    });
 
     if (orderError) {
       throw new Error(`Error inicializando orden: ${orderError.message}`);
