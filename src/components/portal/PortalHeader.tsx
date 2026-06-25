@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/portal/orden-servicio": "Mi Orden de Servicio",
   "/portal/planner": "Órdenes de Servicio",
   "/portal/planner/orden-servicio": "Orden de Servicio",
+  "/portal/planner/nuevo-cliente": "Nuevo Cliente",
   "/portal/asesor-comercial": "Panel Comercial",
   "/portal/asesor-logistica": "Panel Logística",
   "/portal/staff": "Panel Staff",

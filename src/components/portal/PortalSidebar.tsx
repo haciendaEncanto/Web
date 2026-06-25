@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   X,
+  UserPlus,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import type { PortalProfile } from "@/app/portal/layout";
@@ -44,11 +45,8 @@ function getNavItems(role: string): NavItem[] {
   }
   if (role === "wedding_planner") {
     return [
-      { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
-      { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
-      { href: "/portal/mensajes", label: "Mensajes", icon: MessageSquare },
-      { href: "/portal/clientes", label: "Clientes", icon: Users },
+      { href: "/portal/planner/nuevo-cliente", label: "Nuevo cliente", icon: UserPlus },
     ];
   }
   const base: NavItem[] = [
@@ -77,7 +75,7 @@ export function PortalSidebar({
   const pathname = usePathname();
   const navItems = getNavItems(profile.role);
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => pathname === href;
 
   const initials = (profile.full_name ?? profile.email)
     .split(" ")

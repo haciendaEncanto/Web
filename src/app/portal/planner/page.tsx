@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ClipboardList, Calendar, Users } from "lucide-react";
+import { ClipboardList, Calendar, Users, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
@@ -55,12 +55,23 @@ export default async function PlannerPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
-          Panel <span className="text-dorado">Wedding Planner</span>
-        </h2>
-        <p className="text-gris text-[0.88rem] mt-1">
-          Órdenes de servicio — eventos confirmados y pendientes
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
+              Panel <span className="text-dorado">Wedding Planner</span>
+            </h2>
+            <p className="text-gris text-[0.88rem] mt-1">
+              Órdenes de servicio — eventos confirmados y pendientes
+            </p>
+          </div>
+          <Link
+            href="/portal/planner/nuevo-cliente"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco text-[0.8rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors shrink-0 mt-1"
+          >
+            <UserPlus size={14} />
+            Nuevo cliente
+          </Link>
+        </div>
       </div>
 
       {rows.length === 0 ? (
