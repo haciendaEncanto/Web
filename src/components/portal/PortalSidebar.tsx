@@ -59,7 +59,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/usuarios", label: "Usuarios", icon: Shield },
       { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
       { href: "/editor/galeria", label: "Galería", icon: Image },
-      { href: "/editor/videos", label: "Videos Hero", icon: Video },
+      { href: "/editor/videos", label: "Videos", icon: Video },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
@@ -69,7 +69,7 @@ function getNavItems(role: string): NavItem[] {
   if (role === "editor") {
     return [
       { href: "/editor/galeria", label: "Galería", icon: Image },
-      { href: "/editor/videos", label: "Videos Hero", icon: Video },
+      { href: "/editor/videos", label: "Videos", icon: Video },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
