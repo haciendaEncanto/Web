@@ -15,6 +15,15 @@ async function verifyEditor() {
   return { error: null };
 }
 
+function revalidateAll() {
+  revalidatePath("/editor/galeria");
+  revalidatePath("/");
+  revalidatePath("/bodas");
+  revalidatePath("/quince-anos");
+  revalidatePath("/eventos-empresariales");
+  revalidatePath("/revelacion-de-genero");
+}
+
 export async function insertGaleriaImage(data: {
   url: string; title: string; category: string; sort_order?: number;
 }): Promise<{ error?: string }> {
@@ -29,7 +38,7 @@ export async function insertGaleriaImage(data: {
     is_published: true,
   });
   if (error) return { error: error.message };
-  revalidatePath("/editor/galeria");
+  revalidateAll();
   return {};
 }
 
@@ -42,20 +51,29 @@ export async function updateGaleriaImage(
   const admin = createAdminClient();
   const { error } = await admin.from("gallery_images").update(data).eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/editor/galeria");
+  revalidateAll();
   return {};
 }
 
-export async function deleteGaleriaImage(id: string, storagePath?: string): Promise<{ error?: string }> {
+export async function deleteGaleriaImage(id: string, url: string): Promise<{ error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
   const admin = createAdminClient();
-  if (storagePath) {
-    await admin.storage.from("gallery").remove([storagePath]);
+  // Extraer path de Storage desde la URL pública
+  try {
+    const parsed = new URL(url);
+    const marker = "/object/public/gallery/";
+    const idx = parsed.pathname.indexOf(marker);
+    if (idx !== -1) {
+      const storagePath = parsed.pathname.slice(idx + marker.length);
+      await admin.storage.from("gallery").remove([storagePath]);
+    }
+  } catch {
+    // Si la URL no es parseable, solo borramos el registro
   }
   const { error } = await admin.from("gallery_images").delete().eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/editor/galeria");
+  revalidateAll();
   return {};
 }
 
@@ -70,6 +88,6 @@ export async function reorderGaleriaImages(
       admin.from("gallery_images").update({ sort_order: item.sort_order }).eq("id", item.id)
     )
   );
-  revalidatePath("/editor/galeria");
+  revalidateAll();
   return {};
 }

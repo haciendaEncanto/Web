@@ -132,7 +132,7 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
   function handleDelete(img: GaleriaImage) {
     setDeleting(img.id);
     startTransition(async () => {
-      await deleteGaleriaImage(img.id);
+      await deleteGaleriaImage(img.id, img.url);
       setImages(prev => prev.filter(i => i.id !== img.id));
       setDeleting(null);
     });
