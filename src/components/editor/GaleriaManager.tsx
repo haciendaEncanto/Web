@@ -2,18 +2,42 @@
 
 import { useState, useTransition, useRef } from "react";
 import {
-  Upload, Trash2, Eye, EyeOff, Loader2,
-  ArrowUp, ArrowDown, X, ImageIcon, CheckCircle2,
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Upload, Trash2, EyeOff, Eye, Loader2, GripVertical,
+  ArrowUp, ArrowDown, X, ImageIcon, CheckCircle2, AlertCircle, List,
 } from "lucide-react";
 import {
-  uploadGaleriaImage, updateGaleriaImage, deleteGaleriaImage, reorderGaleriaImages,
+  uploadGaleriaImage,
+  updateGaleriaImage,
+  deleteGaleriaImage,
+  reorderGaleriaImages,
   type UploadedImage,
 } from "@/app/actions/editor/galeria";
+
+// ─── Types & constants ────────────────────────────────────────────────────────
 
 type GaleriaImage = {
   id: string; url: string; title: string | null;
   category: string | null; sort_order: number; is_published: boolean;
 };
+
+const MAX_PUBLISHED = 8;
 
 const CATS = [
   { value: "boda",        label: "Bodas" },
@@ -28,7 +52,7 @@ const inputCls =
   "w-full border border-negro/10 bg-crema/20 px-3 py-2.5 text-[0.83rem] text-negro " +
   "rounded-lg focus:outline-none focus:border-dorado/70 transition-colors";
 
-// ─── Barra de progreso ────────────────────────────────────────────────────────
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
 
 function ProgressBar({ pct }: { pct: number }) {
   return (
@@ -41,7 +65,7 @@ function ProgressBar({ pct }: { pct: number }) {
   );
 }
 
-// ─── Modal de upload ──────────────────────────────────────────────────────────
+// ─── Upload Modal ─────────────────────────────────────────────────────────────
 
 function UploadModal({
   onUploaded, onClose,
@@ -49,14 +73,14 @@ function UploadModal({
   onUploaded: (img: UploadedImage) => void;
   onClose: () => void;
 }) {
-  const [file, setFile]         = useState<File | null>(null);
-  const [preview, setPreview]   = useState<string | null>(null);
-  const [category, setCategory] = useState("general");
-  const [title, setTitle]       = useState("");
-  const [progress, setProgress] = useState(0);
+  const [file, setFile]           = useState<File | null>(null);
+  const [preview, setPreview]     = useState<string | null>(null);
+  const [category, setCategory]   = useState("general");
+  const [title, setTitle]         = useState("");
+  const [progress, setProgress]   = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [done, setDone]         = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [done, setDone]           = useState(false);
+  const [error, setError]         = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,7 +102,6 @@ function UploadModal({
     setProgress(0);
     setError(null);
 
-    // Progreso simulado: avanza hasta 85 % durante el envío
     let sim = 0;
     const interval = setInterval(() => {
       sim = Math.min(sim + Math.random() * 10, 85);
@@ -92,7 +115,6 @@ function UploadModal({
       fd.append("title", title.trim());
 
       const result = await uploadGaleriaImage(fd);
-
       clearInterval(interval);
 
       if (result.error) {
@@ -104,9 +126,7 @@ function UploadModal({
 
       setProgress(100);
       setDone(true);
-      setTimeout(() => {
-        onUploaded(result.image!);
-      }, 500);
+      setTimeout(() => { onUploaded(result.image!); }, 500);
     } catch (err) {
       clearInterval(interval);
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -120,7 +140,12 @@ function UploadModal({
       <div className="absolute inset-0 bg-negro/40 backdrop-blur-sm" onClick={!uploading ? onClose : undefined} />
       <div className="relative bg-blanco rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-serif text-[1.1rem] text-negro">Subir imagen</h3>
+          <div>
+            <h3 className="font-serif text-[1.1rem] text-negro">Subir imagen</h3>
+            <p className="text-[0.72rem] text-gris mt-0.5">
+              Se guardará en <span className="font-medium text-negro/60">Archivadas</span> — publica cuando quieras
+            </p>
+          </div>
           {!uploading && (
             <button onClick={onClose} className="p-1 text-gris hover:text-negro transition-colors">
               <X size={18} />
@@ -129,7 +154,6 @@ function UploadModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Dropzone */}
           <div
             onClick={() => !uploading && fileRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-5 text-center transition-colors
@@ -139,7 +163,7 @@ function UploadModal({
             {done ? (
               <div className="flex flex-col items-center gap-2 text-verde-bosque py-2">
                 <CheckCircle2 size={28} />
-                <p className="text-[0.83rem] font-medium">¡Subida correctamente!</p>
+                <p className="text-[0.83rem] font-medium">¡Guardada en Archivadas!</p>
               </div>
             ) : preview ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -158,7 +182,6 @@ function UploadModal({
             className="hidden" onChange={pickFile}
           />
 
-          {/* Barra de progreso */}
           {uploading && (
             <div className="space-y-1.5">
               <ProgressBar pct={progress} />
@@ -166,33 +189,18 @@ function UploadModal({
             </div>
           )}
 
-          {/* Categoría */}
           <div>
-            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
-              Categoría *
-            </label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              disabled={uploading}
-              className={inputCls}
-            >
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">Categoría *</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}
+              disabled={uploading} className={inputCls}>
               {CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
 
-          {/* Título opcional */}
           <div>
-            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
-              Título (opcional)
-            </label>
-            <input
-              type="text" value={title}
-              onChange={e => setTitle(e.target.value)}
-              disabled={uploading}
-              placeholder="Descripción de la foto…"
-              className={inputCls}
-            />
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">Título (opcional)</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              disabled={uploading} placeholder="Descripción de la foto…" className={inputCls} />
           </div>
 
           {error && (
@@ -203,22 +211,17 @@ function UploadModal({
 
           <div className="flex justify-end gap-2 pt-1">
             {!uploading && !done && (
-              <button
-                type="button" onClick={onClose}
-                className="px-4 py-2 text-[0.8rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5"
-              >
+              <button type="button" onClick={onClose}
+                className="px-4 py-2 text-[0.8rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5">
                 Cancelar
               </button>
             )}
-            <button
-              type="submit" disabled={uploading || done || !file}
+            <button type="submit" disabled={uploading || done || !file}
               className="inline-flex items-center gap-1.5 px-5 py-2 bg-dorado text-blanco
-                text-[0.8rem] font-medium rounded-lg hover:bg-dorado/90 disabled:opacity-40 transition-colors"
-            >
+                text-[0.8rem] font-medium rounded-lg hover:bg-dorado/90 disabled:opacity-40 transition-colors">
               {uploading
                 ? <><Loader2 size={13} className="animate-spin" /> Subiendo…</>
-                : <><Upload size={13} /> Subir</>
-              }
+                : <><Upload size={13} /> Subir</>}
             </button>
           </div>
         </form>
@@ -227,77 +230,445 @@ function UploadModal({
   );
 }
 
-// ─── Manager principal ────────────────────────────────────────────────────────
+// ─── Sortable Photo Card (published · desktop dnd) ────────────────────────────
+
+function SortablePhotoCard({ image, onArchive, isPending }: {
+  image: GaleriaImage;
+  onArchive: () => void;
+  isPending: boolean;
+}) {
+  const {
+    attributes, listeners, setNodeRef,
+    transform, transition, isDragging,
+  } = useSortable({ id: image.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity:  isDragging ? 0.45 : 1,
+    zIndex:   isDragging ? 20 : "auto",
+    position: "relative",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group aspect-[4/3] rounded-xl overflow-hidden ring-1 ring-negro/10 bg-negro/5"
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="absolute top-1.5 left-1.5 z-10 p-1 rounded bg-negro/55 text-blanco
+          opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
+        tabIndex={-1}
+        title="Arrastrar para reordenar"
+      >
+        <GripVertical size={12} />
+      </button>
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image.url}
+        alt={image.title ?? ""}
+        className="w-full h-full object-cover pointer-events-none select-none"
+        loading="lazy"
+        draggable={false}
+      />
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-negro/0 group-hover:bg-negro/35 transition-colors pointer-events-none" />
+
+      {/* Desactivar */}
+      <button
+        onClick={onArchive}
+        disabled={isPending}
+        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-lg bg-negro/60 text-blanco
+          opacity-0 group-hover:opacity-100 hover:bg-negro/80 disabled:opacity-30 transition-all"
+        title="Desactivar"
+      >
+        <EyeOff size={12} />
+      </button>
+
+      {/* Badge publicada */}
+      <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded
+        bg-verde-bosque/80 text-blanco text-[0.58rem] uppercase tracking-wider pointer-events-none">
+        <span className="w-1.5 h-1.5 rounded-full bg-blanco/70 shrink-0" />
+        Publicada
+      </div>
+
+      {/* Badge categoría */}
+      {image.category && (
+        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded
+          bg-negro/45 text-blanco text-[0.58rem] uppercase tracking-wider pointer-events-none">
+          {CAT_LABEL[image.category] ?? image.category}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mobile Reorder Item ──────────────────────────────────────────────────────
+
+function MobileReorderItem({ image, isFirst, isLast, onMoveUp, onMoveDown, onArchive, isPending }: {
+  image: GaleriaImage;
+  isFirst: boolean; isLast: boolean;
+  onMoveUp: () => void; onMoveDown: () => void;
+  onArchive: () => void; isPending: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 bg-blanco rounded-xl border border-negro/[0.07]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={image.url} alt="" className="w-16 h-11 object-cover rounded-lg shrink-0" loading="lazy" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[0.8rem] font-medium text-negro truncate">{image.title ?? "Sin título"}</p>
+        <p className="text-[0.7rem] text-gris">{CAT_LABEL[image.category ?? ""] ?? image.category ?? ""}</p>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <button onClick={onMoveUp} disabled={isFirst || isPending}
+          className="p-1.5 rounded-lg bg-negro/5 hover:bg-negro/10 disabled:opacity-25 transition-colors">
+          <ArrowUp size={13} />
+        </button>
+        <button onClick={onMoveDown} disabled={isLast || isPending}
+          className="p-1.5 rounded-lg bg-negro/5 hover:bg-negro/10 disabled:opacity-25 transition-colors">
+          <ArrowDown size={13} />
+        </button>
+        <button onClick={onArchive} disabled={isPending}
+          className="p-1.5 rounded-lg bg-negro/5 hover:bg-rojo/10 text-gris hover:text-rojo disabled:opacity-25 transition-colors"
+          title="Desactivar">
+          <EyeOff size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Published Section ────────────────────────────────────────────────────────
+
+function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPending }: {
+  items: GaleriaImage[];
+  allPublishedCount: number;
+  onArchive: (id: string) => void;
+  onReorder: (reordered: GaleriaImage[]) => void;
+  isPending: boolean;
+}) {
+  const [mobileReorder, setMobileReorder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = items.findIndex(i => i.id === active.id);
+    const newIdx = items.findIndex(i => i.id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    onReorder(arrayMove(items, oldIdx, newIdx));
+  }
+
+  function handleMobileMove(idx: number, dir: -1 | 1) {
+    const next = idx + dir;
+    if (next < 0 || next >= items.length) return;
+    onReorder(arrayMove(items, idx, next));
+  }
+
+  const atLimit = allPublishedCount >= MAX_PUBLISHED;
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="text-[0.92rem] font-semibold text-negro tracking-[-0.01em]">
+            Publicadas en el sitio
+            <span className="ml-2 text-[0.75rem] font-normal text-gris font-sans">
+              {allPublishedCount} / {MAX_PUBLISHED}
+            </span>
+          </h3>
+          {atLimit && (
+            <p className="flex items-center gap-1 text-[0.74rem] text-dorado mt-0.5">
+              <AlertCircle size={12} className="shrink-0" />
+              Límite de {MAX_PUBLISHED} fotos alcanzado. Desactiva una para publicar otra.
+            </p>
+          )}
+        </div>
+        {items.length > 1 && (
+          <button
+            onClick={() => setMobileReorder(v => !v)}
+            className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.75rem]
+              border border-negro/15 rounded-lg text-gris hover:bg-negro/5 transition-colors"
+          >
+            <List size={13} />
+            {mobileReorder ? "Cuadrícula" : "Reordenar"}
+          </button>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <div className="bg-negro/[0.03] rounded-xl p-8 text-center border border-dashed border-negro/10">
+          <ImageIcon size={24} className="text-negro/10 mx-auto mb-2" />
+          <p className="text-gris text-[0.82rem]">Sin fotos publicadas en esta categoría.</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile list (reorder mode) */}
+          {mobileReorder && (
+            <div className="space-y-2 md:hidden">
+              {items.map((img, idx) => (
+                <MobileReorderItem
+                  key={img.id}
+                  image={img}
+                  isFirst={idx === 0}
+                  isLast={idx === items.length - 1}
+                  onMoveUp={() => handleMobileMove(idx, -1)}
+                  onMoveDown={() => handleMobileMove(idx, 1)}
+                  onArchive={() => onArchive(img.id)}
+                  isPending={isPending}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* DnD grid — hidden on mobile when list mode is active */}
+          <div className={mobileReorder ? "hidden md:block" : ""}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {items.map(img => (
+                    <SortablePhotoCard
+                      key={img.id}
+                      image={img}
+                      onArchive={() => onArchive(img.id)}
+                      isPending={isPending}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+            {items.length > 1 && (
+              <p className="text-[0.7rem] text-gris/50 mt-2 text-center md:text-left hidden md:block">
+                Arrastra las fotos para cambiar el orden en el slider
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Archived Photo Card ──────────────────────────────────────────────────────
+
+function ArchivedPhotoCard({ image, canPublish, onPublish, onDelete, isPending }: {
+  image: GaleriaImage;
+  canPublish: boolean;
+  onPublish: () => void;
+  onDelete: () => void;
+  isPending: boolean;
+}) {
+  const [confirmDel, setConfirmDel] = useState(false);
+
+  return (
+    <div className="group relative aspect-[4/3] rounded-xl overflow-hidden ring-1 ring-negro/10 bg-negro/5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image.url}
+        alt={image.title ?? ""}
+        className="w-full h-full object-cover grayscale pointer-events-none select-none"
+        loading="lazy"
+      />
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-negro/0 group-hover:bg-negro/55 transition-colors" />
+
+      {/* Actions on hover */}
+      <div className="absolute inset-0 flex flex-col items-stretch justify-center gap-2 px-3
+        opacity-0 group-hover:opacity-100 transition-opacity">
+        {confirmDel ? (
+          <div className="bg-negro/75 backdrop-blur-sm rounded-xl p-3 text-center space-y-2">
+            <p className="text-blanco text-[0.72rem] font-medium">¿Eliminar definitivamente?</p>
+            <div className="flex gap-2 justify-center">
+              <button onClick={onDelete} disabled={isPending}
+                className="px-3 py-1 bg-rojo text-blanco text-[0.72rem] rounded-lg
+                  hover:bg-rojo/80 disabled:opacity-40 transition-colors inline-flex items-center gap-1">
+                {isPending ? <Loader2 size={11} className="animate-spin" /> : null}
+                Eliminar
+              </button>
+              <button onClick={() => setConfirmDel(false)} disabled={isPending}
+                className="px-3 py-1 bg-blanco/20 text-blanco text-[0.72rem] rounded-lg hover:bg-blanco/30 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={canPublish ? onPublish : undefined}
+              disabled={!canPublish || isPending}
+              title={!canPublish ? "Desactiva una foto publicada primero" : "Publicar esta foto"}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
+                bg-blanco text-negro text-[0.75rem] font-medium
+                hover:bg-dorado hover:text-blanco
+                disabled:opacity-40 disabled:cursor-not-allowed
+                transition-colors"
+            >
+              <Eye size={13} /> Publicar
+            </button>
+            <button
+              onClick={() => setConfirmDel(true)}
+              disabled={isPending}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
+                bg-blanco/15 text-blanco text-[0.75rem] font-medium
+                hover:bg-rojo/80 disabled:opacity-40 transition-colors"
+            >
+              <Trash2 size={13} /> Eliminar
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Badge archivada */}
+      <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded
+        bg-negro/45 text-blanco/70 text-[0.58rem] uppercase tracking-wider pointer-events-none">
+        Archivada
+      </div>
+
+      {/* Badge categoría */}
+      {image.category && (
+        <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded
+          bg-negro/40 text-blanco text-[0.58rem] uppercase tracking-wider pointer-events-none">
+          {CAT_LABEL[image.category] ?? image.category}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Archived Section ─────────────────────────────────────────────────────────
+
+function ArchivedSection({ items, canPublish, onPublish, onDelete, isPending }: {
+  items: GaleriaImage[];
+  canPublish: boolean;
+  onPublish: (id: string) => void;
+  onDelete: (id: string) => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-[0.92rem] font-semibold text-negro tracking-[-0.01em]">
+        Archivadas
+        <span className="ml-2 text-[0.75rem] font-normal text-gris font-sans">{items.length}</span>
+      </h3>
+
+      {items.length === 0 ? (
+        <div className="bg-negro/[0.03] rounded-xl p-8 text-center border border-dashed border-negro/10">
+          <p className="text-gris text-[0.82rem]">Sin fotos archivadas en esta categoría.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {items.map(img => (
+            <ArchivedPhotoCard
+              key={img.id}
+              image={img}
+              canPublish={canPublish}
+              onPublish={() => onPublish(img.id)}
+              onDelete={() => onDelete(img.id)}
+              isPending={isPending}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Manager ─────────────────────────────────────────────────────────────
 
 export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) {
-  const [images, setImages]     = useState(initial);
+  const [images, setImages]       = useState(initial);
+  const [filter, setFilter]       = useState("all");
   const [showUpload, setShowUpload] = useState(false);
-  const [filter, setFilter]     = useState("all");
-  const [deleting, setDeleting] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filtered = filter === "all" ? images : images.filter(i => i.category === filter);
-  const sorted   = [...filtered].sort((a, b) => a.sort_order - b.sort_order);
+  // All published sorted by sort_order (global — for limit check and section)
+  const allPublished = [...images.filter(i => i.is_published)].sort((a, b) => a.sort_order - b.sort_order);
+  const allArchived  = images.filter(i => !i.is_published);
+
+  // Filtered view for display
+  const filteredPublished = filter === "all" ? allPublished : allPublished.filter(i => i.category === filter);
+  const filteredArchived  = filter === "all" ? allArchived  : allArchived.filter(i => i.category === filter);
+
+  const atLimit = allPublished.length >= MAX_PUBLISHED;
 
   function handleUploaded(img: UploadedImage) {
-    setImages(prev => [img, ...prev]);
+    // Uploads always go to archived (is_published: false in the action)
+    setImages(prev => [{ ...img, is_published: false }, ...prev]);
     setShowUpload(false);
   }
 
-  function handleTogglePublished(img: GaleriaImage) {
+  function handleArchive(id: string) {
     startTransition(async () => {
-      await updateGaleriaImage(img.id, { is_published: !img.is_published });
-      setImages(prev =>
-        prev.map(i => i.id === img.id ? { ...i, is_published: !i.is_published } : i),
-      );
+      await updateGaleriaImage(id, { is_published: false });
+      setImages(prev => prev.map(i => i.id === id ? { ...i, is_published: false } : i));
     });
   }
 
-  function handleDelete(img: GaleriaImage) {
-    setDeleting(img.id);
+  function handlePublish(id: string) {
+    if (atLimit) return;
     startTransition(async () => {
-      await deleteGaleriaImage(img.id, img.url);
-      setImages(prev => prev.filter(i => i.id !== img.id));
-      setDeleting(null);
+      await updateGaleriaImage(id, { is_published: true });
+      setImages(prev => prev.map(i => i.id === id ? { ...i, is_published: true } : i));
     });
   }
 
-  function handleMove(id: string, dir: -1 | 1) {
-    const inView = [...filtered].sort((a, b) => a.sort_order - b.sort_order);
-    const idx    = inView.findIndex(i => i.id === id);
-    const other  = inView[idx + dir];
-    if (!other) return;
-    const updates = [
-      { id: inView[idx].id, sort_order: other.sort_order },
-      { id: other.id,       sort_order: inView[idx].sort_order },
-    ];
+  function handleDelete(id: string) {
+    const img = images.find(i => i.id === id);
+    if (!img) return;
+    startTransition(async () => {
+      await deleteGaleriaImage(id, img.url);
+      setImages(prev => prev.filter(i => i.id !== id));
+    });
+  }
+
+  // Reorder: assign new sort_orders only to the reordered items (visible set).
+  // Non-visible items keep their sort_orders — correct for category-filtered sliders.
+  function handleReorder(reordered: GaleriaImage[]) {
+    const updates = reordered.map((item, idx) => ({ id: item.id, sort_order: idx * 10 }));
+    const updatedMap = new Map(updates.map(u => [u.id, u.sort_order]));
+    setImages(prev =>
+      prev.map(i => {
+        const next = updatedMap.get(i.id);
+        return next !== undefined ? { ...i, sort_order: next } : i;
+      }),
+    );
     startTransition(async () => {
       await reorderGaleriaImages(updates);
-      setImages(prev => prev.map(i => {
-        const upd = updates.find(u => u.id === i.id);
-        return upd ? { ...i, sort_order: upd.sort_order } : i;
-      }));
     });
   }
 
   return (
     <>
       {showUpload && (
-        <UploadModal
-          onUploaded={handleUploaded}
-          onClose={() => setShowUpload(false)}
-        />
+        <UploadModal onUploaded={handleUploaded} onClose={() => setShowUpload(false)} />
       )}
 
-      <div className="space-y-6">
-        {/* Cabecera */}
+      <div className="space-y-8">
+        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
               <span className="text-dorado">Galería</span>
             </h2>
             <p className="text-gris text-[0.88rem] mt-1">
-              {images.length} imagen{images.length !== 1 ? "es" : ""}
+              {images.length} imagen{images.length !== 1 ? "es" : ""} ·{" "}
+              {allPublished.length} publicadas · {allArchived.length} archivadas
             </p>
           </div>
           <button
@@ -309,7 +680,7 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
           </button>
         </div>
 
-        {/* Filtros */}
+        {/* Category filter tabs */}
         <div className="flex flex-wrap gap-2">
           {[{ value: "all", label: "Todas" }, ...CATS].map(c => (
             <button
@@ -326,82 +697,28 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
           ))}
         </div>
 
-        {/* Grid */}
-        {sorted.length === 0 ? (
-          <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-12 text-center">
-            <ImageIcon size={32} className="text-negro/10 mx-auto mb-3" />
-            <p className="text-gris text-[0.85rem]">
-              {filter === "all"
-                ? "Sin imágenes. Sube la primera."
-                : "Sin imágenes en esta categoría."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {sorted.map((img, idx) => (
-              <div
-                key={img.id}
-                className={`group relative bg-negro/5 rounded-xl overflow-hidden aspect-[4/3]
-                  ${!img.is_published ? "opacity-50" : ""}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={img.title ?? ""}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+        {/* Published section */}
+        <div className="space-y-3">
+          <PublishedSection
+            items={filteredPublished}
+            allPublishedCount={allPublished.length}
+            onArchive={handleArchive}
+            onReorder={handleReorder}
+            isPending={isPending}
+          />
+        </div>
 
-                {/* Overlay de acciones */}
-                <div className="absolute inset-0 bg-negro/0 group-hover:bg-negro/55 transition-colors
-                  flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
-                  <button
-                    onClick={() => handleMove(img.id, -1)}
-                    disabled={idx === 0 || isPending}
-                    className="p-1.5 bg-blanco/90 rounded-lg hover:bg-blanco disabled:opacity-30"
-                    title="Mover antes"
-                  >
-                    <ArrowUp size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleMove(img.id, 1)}
-                    disabled={idx === sorted.length - 1 || isPending}
-                    className="p-1.5 bg-blanco/90 rounded-lg hover:bg-blanco disabled:opacity-30"
-                    title="Mover después"
-                  >
-                    <ArrowDown size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleTogglePublished(img)}
-                    disabled={isPending}
-                    className="p-1.5 bg-blanco/90 rounded-lg hover:bg-blanco"
-                    title={img.is_published ? "Ocultar" : "Publicar"}
-                  >
-                    {img.is_published ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(img)}
-                    disabled={isPending}
-                    className="p-1.5 bg-rojo/90 rounded-lg hover:bg-rojo"
-                    title="Eliminar"
-                  >
-                    {deleting === img.id
-                      ? <Loader2 size={13} className="animate-spin text-blanco" />
-                      : <Trash2 size={13} className="text-blanco" />}
-                  </button>
-                </div>
+        {/* Divider */}
+        <div className="border-t border-negro/[0.07]" />
 
-                {/* Badge de categoría */}
-                {img.category && (
-                  <span className="absolute top-2 left-2 text-[0.6rem] px-1.5 py-0.5 rounded
-                    bg-negro/60 text-blanco uppercase tracking-wider pointer-events-none">
-                    {CAT_LABEL[img.category] ?? img.category}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Archived section */}
+        <ArchivedSection
+          items={filteredArchived}
+          canPublish={!atLimit}
+          onPublish={handlePublish}
+          onDelete={handleDelete}
+          isPending={isPending}
+        />
       </div>
     </>
   );

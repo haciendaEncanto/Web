@@ -80,7 +80,7 @@ export async function uploadGaleriaImage(
       title:        title.trim() || null,
       category,
       sort_order:   0,
-      is_published: true,
+      is_published: false,
     })
     .select("id, url, title, category, sort_order, is_published")
     .single();
