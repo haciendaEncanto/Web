@@ -126,7 +126,7 @@ export function VideosManager({ videos }: { videos: HeroVideo[] }) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
-              <span className="text-dorado">Videos</span> Hero
+              <span className="text-dorado">Videos</span>
             </h2>
             <p className="text-gris text-[0.88rem] mt-1">{videos.length} video{videos.length !== 1 ? "s" : ""}</p>
           </div>
