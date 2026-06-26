@@ -176,11 +176,8 @@ function UploadModal({
               </>
             )}
           </div>
-          <input
-            ref={fileRef} type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden" onChange={pickFile}
-          />
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
+            className="hidden" onChange={pickFile} />
 
           {uploading && (
             <div className="space-y-1.5">
@@ -232,8 +229,10 @@ function UploadModal({
 
 // ─── Sortable Photo Card (published · desktop dnd) ────────────────────────────
 
-function SortablePhotoCard({ image, onArchive, isPending }: {
+function SortablePhotoCard({ image, categoryCountLabel, onArchive, isPending }: {
   image: GaleriaImage;
+  /** Shown when viewing "Todas" — e.g. "Bodas 3/8" */
+  categoryCountLabel: string | null;
   onArchive: () => void;
   isPending: boolean;
 }) {
@@ -251,60 +250,49 @@ function SortablePhotoCard({ image, onArchive, isPending }: {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group aspect-[4/3] rounded-xl overflow-hidden ring-1 ring-negro/10 bg-negro/5"
-    >
+    <div ref={setNodeRef} style={style}
+      className="group aspect-[4/3] rounded-xl overflow-hidden ring-1 ring-negro/10 bg-negro/5">
       {/* Drag handle */}
-      <button
-        {...attributes}
-        {...listeners}
+      <button {...attributes} {...listeners} tabIndex={-1}
         className="absolute top-1.5 left-1.5 z-10 p-1 rounded bg-negro/55 text-blanco
           opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
-        tabIndex={-1}
-        title="Arrastrar para reordenar"
-      >
+        title="Arrastrar para reordenar">
         <GripVertical size={12} />
       </button>
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={image.url}
-        alt={image.title ?? ""}
+      <img src={image.url} alt={image.title ?? ""}
         className="w-full h-full object-cover pointer-events-none select-none"
-        loading="lazy"
-        draggable={false}
-      />
+        loading="lazy" draggable={false} />
 
-      {/* Hover overlay */}
       <div className="absolute inset-0 bg-negro/0 group-hover:bg-negro/35 transition-colors pointer-events-none" />
 
       {/* Desactivar */}
-      <button
-        onClick={onArchive}
-        disabled={isPending}
+      <button onClick={onArchive} disabled={isPending}
         className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-lg bg-negro/60 text-blanco
           opacity-0 group-hover:opacity-100 hover:bg-negro/80 disabled:opacity-30 transition-all"
-        title="Desactivar"
-      >
+        title="Desactivar">
         <EyeOff size={12} />
       </button>
 
-      {/* Badge publicada */}
-      <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded
-        bg-verde-bosque/80 text-blanco text-[0.58rem] uppercase tracking-wider pointer-events-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-blanco/70 shrink-0" />
-        Publicada
-      </div>
-
-      {/* Badge categoría */}
-      {image.category && (
-        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded
-          bg-negro/45 text-blanco text-[0.58rem] uppercase tracking-wider pointer-events-none">
-          {CAT_LABEL[image.category] ?? image.category}
+      {/* Bottom badges */}
+      <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-end justify-between gap-1 pointer-events-none">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded
+          bg-verde-bosque/80 text-blanco text-[0.58rem] uppercase tracking-wider shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-blanco/70 shrink-0" />
+          Publicada
         </div>
-      )}
+        {/* Category / count badge */}
+        {categoryCountLabel ? (
+          <div className="px-1.5 py-0.5 rounded bg-negro/55 text-blanco text-[0.58rem] font-medium tracking-wide truncate">
+            {categoryCountLabel}
+          </div>
+        ) : image.category ? (
+          <div className="px-1.5 py-0.5 rounded bg-negro/45 text-blanco text-[0.58rem] uppercase tracking-wider truncate">
+            {CAT_LABEL[image.category] ?? image.category}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -346,9 +334,17 @@ function MobileReorderItem({ image, isFirst, isLast, onMoveUp, onMoveDown, onArc
 
 // ─── Published Section ────────────────────────────────────────────────────────
 
-function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPending }: {
+function PublishedSection({
+  items, filterCategory, filterCount, filterAtLimit,
+  publishedCountByCategory, onArchive, onReorder, isPending,
+}: {
   items: GaleriaImage[];
-  allPublishedCount: number;
+  /** null = "Todas" */
+  filterCategory: string | null;
+  /** Published count for the active category (or total if "Todas") */
+  filterCount: number;
+  filterAtLimit: boolean;
+  publishedCountByCategory: Record<string, number>;
   onArchive: (id: string) => void;
   onReorder: (reordered: GaleriaImage[]) => void;
   isPending: boolean;
@@ -375,7 +371,7 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
     onReorder(arrayMove(items, idx, next));
   }
 
-  const atLimit = allPublishedCount >= MAX_PUBLISHED;
+  const catLabel = filterCategory ? (CAT_LABEL[filterCategory] ?? filterCategory) : null;
 
   return (
     <div className="space-y-3">
@@ -384,14 +380,20 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
         <div>
           <h3 className="text-[0.92rem] font-semibold text-negro tracking-[-0.01em]">
             Publicadas en el sitio
-            <span className="ml-2 text-[0.75rem] font-normal text-gris font-sans">
-              {allPublishedCount} / {MAX_PUBLISHED}
-            </span>
+            {filterCategory ? (
+              <span className="ml-2 text-[0.75rem] font-normal text-gris font-sans">
+                {catLabel} · {filterCount}/{MAX_PUBLISHED}
+              </span>
+            ) : (
+              <span className="ml-2 text-[0.75rem] font-normal text-gris font-sans">
+                {filterCount} total
+              </span>
+            )}
           </h3>
-          {atLimit && (
+          {filterAtLimit && catLabel && (
             <p className="flex items-center gap-1 text-[0.74rem] text-dorado mt-0.5">
               <AlertCircle size={12} className="shrink-0" />
-              Límite de {MAX_PUBLISHED} fotos alcanzado. Desactiva una para publicar otra.
+              Límite de {MAX_PUBLISHED} fotos alcanzado para {catLabel}. Desactiva una para publicar otra.
             </p>
           )}
         </div>
@@ -399,8 +401,7 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
           <button
             onClick={() => setMobileReorder(v => !v)}
             className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.75rem]
-              border border-negro/15 rounded-lg text-gris hover:bg-negro/5 transition-colors"
-          >
+              border border-negro/15 rounded-lg text-gris hover:bg-negro/5 transition-colors">
             <List size={13} />
             {mobileReorder ? "Cuadrícula" : "Reordenar"}
           </button>
@@ -410,7 +411,11 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
       {items.length === 0 ? (
         <div className="bg-negro/[0.03] rounded-xl p-8 text-center border border-dashed border-negro/10">
           <ImageIcon size={24} className="text-negro/10 mx-auto mb-2" />
-          <p className="text-gris text-[0.82rem]">Sin fotos publicadas en esta categoría.</p>
+          <p className="text-gris text-[0.82rem]">
+            {filterCategory
+              ? `Sin fotos publicadas en ${catLabel}.`
+              : "Sin fotos publicadas."}
+          </p>
         </div>
       ) : (
         <>
@@ -419,10 +424,8 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
             <div className="space-y-2 md:hidden">
               {items.map((img, idx) => (
                 <MobileReorderItem
-                  key={img.id}
-                  image={img}
-                  isFirst={idx === 0}
-                  isLast={idx === items.length - 1}
+                  key={img.id} image={img}
+                  isFirst={idx === 0} isLast={idx === items.length - 1}
                   onMoveUp={() => handleMobileMove(idx, -1)}
                   onMoveDown={() => handleMobileMove(idx, 1)}
                   onArchive={() => onArchive(img.id)}
@@ -432,28 +435,33 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
             </div>
           )}
 
-          {/* DnD grid — hidden on mobile when list mode is active */}
+          {/* DnD grid */}
           <div className={mobileReorder ? "hidden md:block" : ""}>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {items.map(img => (
-                    <SortablePhotoCard
-                      key={img.id}
-                      image={img}
-                      onArchive={() => onArchive(img.id)}
-                      isPending={isPending}
-                    />
-                  ))}
+                  {items.map(img => {
+                    // Badge "Bodas 3/8" solo cuando se ven todas las categorías
+                    const cat    = img.category ?? "general";
+                    const count  = publishedCountByCategory[cat] ?? 0;
+                    const atCatLimit = count >= MAX_PUBLISHED;
+                    const countLabel = filterCategory === null
+                      ? `${CAT_LABEL[cat] ?? cat} ${count}/${MAX_PUBLISHED}${atCatLimit ? " ⚠" : ""}`
+                      : null;
+                    return (
+                      <SortablePhotoCard
+                        key={img.id} image={img}
+                        categoryCountLabel={countLabel}
+                        onArchive={() => onArchive(img.id)}
+                        isPending={isPending}
+                      />
+                    );
+                  })}
                 </div>
               </SortableContext>
             </DndContext>
             {items.length > 1 && (
-              <p className="text-[0.7rem] text-gris/50 mt-2 text-center md:text-left hidden md:block">
+              <p className="hidden md:block text-[0.7rem] text-gris/50 mt-2">
                 Arrastra las fotos para cambiar el orden en el slider
               </p>
             )}
@@ -466,26 +474,28 @@ function PublishedSection({ items, allPublishedCount, onArchive, onReorder, isPe
 
 // ─── Archived Photo Card ──────────────────────────────────────────────────────
 
-function ArchivedPhotoCard({ image, canPublish, onPublish, onDelete, isPending }: {
+function ArchivedPhotoCard({ image, canPublish, blockedByCategory, onPublish, onDelete, isPending }: {
   image: GaleriaImage;
   canPublish: boolean;
+  /** Category name that is at limit — shown in disabled tooltip */
+  blockedByCategory: string | null;
   onPublish: () => void;
   onDelete: () => void;
   isPending: boolean;
 }) {
   const [confirmDel, setConfirmDel] = useState(false);
 
+  const publishTitle = canPublish
+    ? "Publicar esta foto"
+    : `${blockedByCategory ?? "Esta categoría"} ya tiene ${MAX_PUBLISHED} fotos — desactiva una primero`;
+
   return (
     <div className="group relative aspect-[4/3] rounded-xl overflow-hidden ring-1 ring-negro/10 bg-negro/5">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={image.url}
-        alt={image.title ?? ""}
+      <img src={image.url} alt={image.title ?? ""}
         className="w-full h-full object-cover grayscale pointer-events-none select-none"
-        loading="lazy"
-      />
+        loading="lazy" />
 
-      {/* Overlay */}
       <div className="absolute inset-0 bg-negro/0 group-hover:bg-negro/55 transition-colors" />
 
       {/* Actions on hover */}
@@ -498,7 +508,7 @@ function ArchivedPhotoCard({ image, canPublish, onPublish, onDelete, isPending }
               <button onClick={onDelete} disabled={isPending}
                 className="px-3 py-1 bg-rojo text-blanco text-[0.72rem] rounded-lg
                   hover:bg-rojo/80 disabled:opacity-40 transition-colors inline-flex items-center gap-1">
-                {isPending ? <Loader2 size={11} className="animate-spin" /> : null}
+                {isPending && <Loader2 size={11} className="animate-spin" />}
                 Eliminar
               </button>
               <button onClick={() => setConfirmDel(false)} disabled={isPending}
@@ -512,22 +522,18 @@ function ArchivedPhotoCard({ image, canPublish, onPublish, onDelete, isPending }
             <button
               onClick={canPublish ? onPublish : undefined}
               disabled={!canPublish || isPending}
-              title={!canPublish ? "Desactiva una foto publicada primero" : "Publicar esta foto"}
+              title={publishTitle}
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                 bg-blanco text-negro text-[0.75rem] font-medium
                 hover:bg-dorado hover:text-blanco
-                disabled:opacity-40 disabled:cursor-not-allowed
-                transition-colors"
-            >
+                disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <Eye size={13} /> Publicar
             </button>
             <button
-              onClick={() => setConfirmDel(true)}
-              disabled={isPending}
+              onClick={() => setConfirmDel(true)} disabled={isPending}
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                 bg-blanco/15 text-blanco text-[0.75rem] font-medium
-                hover:bg-rojo/80 disabled:opacity-40 transition-colors"
-            >
+                hover:bg-rojo/80 disabled:opacity-40 transition-colors">
               <Trash2 size={13} /> Eliminar
             </button>
           </>
@@ -553,9 +559,9 @@ function ArchivedPhotoCard({ image, canPublish, onPublish, onDelete, isPending }
 
 // ─── Archived Section ─────────────────────────────────────────────────────────
 
-function ArchivedSection({ items, canPublish, onPublish, onDelete, isPending }: {
+function ArchivedSection({ items, publishedCountByCategory, onPublish, onDelete, isPending }: {
   items: GaleriaImage[];
-  canPublish: boolean;
+  publishedCountByCategory: Record<string, number>;
   onPublish: (id: string) => void;
   onDelete: (id: string) => void;
   isPending: boolean;
@@ -569,20 +575,26 @@ function ArchivedSection({ items, canPublish, onPublish, onDelete, isPending }: 
 
       {items.length === 0 ? (
         <div className="bg-negro/[0.03] rounded-xl p-8 text-center border border-dashed border-negro/10">
-          <p className="text-gris text-[0.82rem]">Sin fotos archivadas en esta categoría.</p>
+          <p className="text-gris text-[0.82rem]">Sin fotos archivadas.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {items.map(img => (
-            <ArchivedPhotoCard
-              key={img.id}
-              image={img}
-              canPublish={canPublish}
-              onPublish={() => onPublish(img.id)}
-              onDelete={() => onDelete(img.id)}
-              isPending={isPending}
-            />
-          ))}
+          {items.map(img => {
+            const cat       = img.category ?? "general";
+            const catCount  = publishedCountByCategory[cat] ?? 0;
+            const canPublish = catCount < MAX_PUBLISHED;
+            const blockedBy  = !canPublish ? (CAT_LABEL[cat] ?? cat) : null;
+            return (
+              <ArchivedPhotoCard
+                key={img.id} image={img}
+                canPublish={canPublish}
+                blockedByCategory={blockedBy}
+                onPublish={() => onPublish(img.id)}
+                onDelete={() => onDelete(img.id)}
+                isPending={isPending}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -592,23 +604,37 @@ function ArchivedSection({ items, canPublish, onPublish, onDelete, isPending }: 
 // ─── Main Manager ─────────────────────────────────────────────────────────────
 
 export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) {
-  const [images, setImages]       = useState(initial);
-  const [filter, setFilter]       = useState("all");
+  const [images, setImages]         = useState(initial);
+  const [filter, setFilter]         = useState("all");
   const [showUpload, setShowUpload] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // All published sorted by sort_order (global — for limit check and section)
+  // Count published per category (all categories, ignores UI filter)
+  const publishedCountByCategory = images
+    .filter(i => i.is_published)
+    .reduce<Record<string, number>>((acc, img) => {
+      const cat = img.category ?? "general";
+      acc[cat] = (acc[cat] ?? 0) + 1;
+      return acc;
+    }, {});
+
+  const totalPublished = images.filter(i => i.is_published).length;
+
+  // Sorted published list (global)
   const allPublished = [...images.filter(i => i.is_published)].sort((a, b) => a.sort_order - b.sort_order);
   const allArchived  = images.filter(i => !i.is_published);
 
-  // Filtered view for display
+  // Filtered for display
   const filteredPublished = filter === "all" ? allPublished : allPublished.filter(i => i.category === filter);
   const filteredArchived  = filter === "all" ? allArchived  : allArchived.filter(i => i.category === filter);
 
-  const atLimit = allPublished.length >= MAX_PUBLISHED;
+  // Limit info for the active filter category
+  const filterCount    = filter === "all"
+    ? totalPublished
+    : (publishedCountByCategory[filter] ?? 0);
+  const filterAtLimit  = filter !== "all" && filterCount >= MAX_PUBLISHED;
 
   function handleUploaded(img: UploadedImage) {
-    // Uploads always go to archived (is_published: false in the action)
     setImages(prev => [{ ...img, is_published: false }, ...prev]);
     setShowUpload(false);
   }
@@ -621,7 +647,10 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
   }
 
   function handlePublish(id: string) {
-    if (atLimit) return;
+    const img = images.find(i => i.id === id);
+    if (!img) return;
+    const cat = img.category ?? "general";
+    if ((publishedCountByCategory[cat] ?? 0) >= MAX_PUBLISHED) return; // guard per-category
     startTransition(async () => {
       await updateGaleriaImage(id, { is_published: true });
       setImages(prev => prev.map(i => i.id === id ? { ...i, is_published: true } : i));
@@ -637,10 +666,8 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
     });
   }
 
-  // Reorder: assign new sort_orders only to the reordered items (visible set).
-  // Non-visible items keep their sort_orders — correct for category-filtered sliders.
   function handleReorder(reordered: GaleriaImage[]) {
-    const updates = reordered.map((item, idx) => ({ id: item.id, sort_order: idx * 10 }));
+    const updates    = reordered.map((item, idx) => ({ id: item.id, sort_order: idx * 10 }));
     const updatedMap = new Map(updates.map(u => [u.id, u.sort_order]));
     setImages(prev =>
       prev.map(i => {
@@ -648,9 +675,7 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
         return next !== undefined ? { ...i, sort_order: next } : i;
       }),
     );
-    startTransition(async () => {
-      await reorderGaleriaImages(updates);
-    });
+    startTransition(async () => { await reorderGaleriaImages(updates); });
   }
 
   return (
@@ -668,53 +693,49 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
             </h2>
             <p className="text-gris text-[0.88rem] mt-1">
               {images.length} imagen{images.length !== 1 ? "es" : ""} ·{" "}
-              {allPublished.length} publicadas · {allArchived.length} archivadas
+              {totalPublished} publicadas · {allArchived.length} archivadas
             </p>
           </div>
-          <button
-            onClick={() => setShowUpload(true)}
+          <button onClick={() => setShowUpload(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco
-              text-[0.8rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors"
-          >
+              text-[0.8rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors">
             <Upload size={15} /> Subir imagen
           </button>
         </div>
 
-        {/* Category filter tabs */}
+        {/* Category filter */}
         <div className="flex flex-wrap gap-2">
           {[{ value: "all", label: "Todas" }, ...CATS].map(c => (
-            <button
-              key={c.value}
-              onClick={() => setFilter(c.value)}
+            <button key={c.value} onClick={() => setFilter(c.value)}
               className={`px-3 py-1.5 rounded-lg text-[0.78rem] font-medium transition-colors border ${
                 filter === c.value
                   ? "bg-dorado text-blanco border-dorado"
                   : "bg-blanco text-gris border-negro/10 hover:border-dorado/30"
-              }`}
-            >
+              }`}>
               {c.label}
             </button>
           ))}
         </div>
 
-        {/* Published section */}
-        <div className="space-y-3">
-          <PublishedSection
-            items={filteredPublished}
-            allPublishedCount={allPublished.length}
-            onArchive={handleArchive}
-            onReorder={handleReorder}
-            isPending={isPending}
-          />
-        </div>
+        {/* Published */}
+        <PublishedSection
+          items={filteredPublished}
+          filterCategory={filter === "all" ? null : filter}
+          filterCount={filterCount}
+          filterAtLimit={filterAtLimit}
+          publishedCountByCategory={publishedCountByCategory}
+          onArchive={handleArchive}
+          onReorder={handleReorder}
+          isPending={isPending}
+        />
 
         {/* Divider */}
         <div className="border-t border-negro/[0.07]" />
 
-        {/* Archived section */}
+        {/* Archived */}
         <ArchivedSection
           items={filteredArchived}
-          canPublish={!atLimit}
+          publishedCountByCategory={publishedCountByCategory}
           onPublish={handlePublish}
           onDelete={handleDelete}
           isPending={isPending}
