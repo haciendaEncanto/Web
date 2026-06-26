@@ -2,8 +2,7 @@
 
 import { useState, useRef, useTransition } from "react";
 import { Upload, Trash2, ToggleLeft, ToggleRight, Loader2, Film, CheckCircle2 } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
-import { insertVideo, activateVideo, deactivateVideo, deleteVideo } from "@/app/actions/editor/videos";
+import { uploadVideo, activateVideo, deactivateVideo, deleteVideo, type UploadedVideo } from "@/app/actions/editor/videos";
 
 type HeroVideo = {
   id: string; url: string; title: string | null;
@@ -19,7 +18,6 @@ const EVENT_TYPES = [
 ];
 
 const EVENT_LABEL: Record<string, string> = Object.fromEntries(EVENT_TYPES.map(e => [e.value, e.label]));
-const EVENT_FOLDER: Record<string, string> = Object.fromEntries(EVENT_TYPES.map(e => [e.value, e.folder]));
 
 const MAX_MB = 50;
 const inputCls = "w-full border border-negro/10 bg-crema/20 px-3 py-2.5 text-[0.83rem] text-negro rounded-lg focus:outline-none focus:border-dorado/70 transition-colors";
@@ -39,7 +37,7 @@ function ProgressBar({ pct }: { pct: number }) {
 
 // ─── Formulario de upload ─────────────────────────────────────────────────────
 
-function UploadForm({ onDone }: { onDone: (video: HeroVideo) => void }) {
+function UploadForm({ onDone }: { onDone: (video: UploadedVideo) => void }) {
   const [file, setFile]             = useState<File | null>(null);
   const [eventType, setEventType]   = useState("");
   const [title, setTitle]           = useState("");
@@ -76,44 +74,26 @@ function UploadForm({ onDone }: { onDone: (video: HeroVideo) => void }) {
     }, 400);
 
     try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      const ext    = file.name.split(".").pop() ?? "mp4";
-      const folder = EVENT_FOLDER[eventType] ?? "home";
-      const path   = `${folder}/${Date.now()}.${ext}`;
+      const fd = new FormData();
+      fd.append("file",       file);
+      fd.append("event_type", eventType);
+      fd.append("title",      title.trim());
+      fd.append("is_active",  String(activar));
 
-      const { error: upErr } = await supabase.storage.from("videos").upload(path, file, {
-        contentType: file.type || "video/mp4",
-        upsert: false,
-      });
-      if (upErr) throw upErr;
-
-      const { data: { publicUrl } } = supabase.storage.from("videos").getPublicUrl(path);
-
-      const { error: insErr } = await insertVideo({
-        url: publicUrl,
-        title: title.trim() || undefined,
-        event_type: eventType || null,
-        is_active: activar,
-      });
-      if (insErr) throw new Error(insErr);
+      const result = await uploadVideo(fd);
 
       clearInterval(interval);
+
+      if (result.error) {
+        setError(result.error);
+        setUploading(false);
+        setProgress(0);
+        return;
+      }
+
       setProgress(100);
       setDone(true);
-
-      // Notificar al padre con el objeto provisional; la página se revalidará sola.
-      setTimeout(() => {
-        onDone({
-          id: crypto.randomUUID(),
-          url: publicUrl,
-          title: title.trim() || null,
-          event_type: eventType || null,
-          is_active: activar,
-        });
-      }, 600);
+      setTimeout(() => { onDone(result.video!); }, 600);
     } catch (err) {
       clearInterval(interval);
       setError(err instanceof Error ? err.message : "Error al subir el video");
@@ -342,7 +322,7 @@ export function VideosManager({ videos: initial }: { videos: HeroVideo[] }) {
   const [showForm, setShowForm]   = useState(false);
   const [isPending, startTrans]   = useTransition();
 
-  function handleUploaded(video: HeroVideo) {
+  function handleUploaded(video: UploadedVideo) {
     setVideos(prev => {
       // Si se activa, desactivar otros de la misma página en el estado local
       const updated = video.is_active
