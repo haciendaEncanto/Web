@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface HeroVideo {
   url: string;
@@ -15,19 +15,9 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
   const ref1 = useRef<HTMLVideoElement>(null);
   const ref2 = useRef<HTMLVideoElement>(null);
   const currentRef = useRef(0);
-  const [showVideo, setShowVideo] = useState(false);
-
-  // El video solo se carga en tablet/desktop — en mobile se usa una imagen estática
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setShowVideo(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setShowVideo(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   useEffect(() => {
-    if (!showVideo || videos.length < 2 || !ref1.current || !ref2.current) return;
+    if (videos.length < 2 || !ref1.current || !ref2.current) return;
     const vids = [ref1.current, ref2.current];
 
     function switchVideo() {
@@ -41,7 +31,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
 
     vids.forEach((v) => v.addEventListener("ended", switchVideo));
     return () => vids.forEach((v) => v.removeEventListener("ended", switchVideo));
-  }, [videos, showVideo]);
+  }, [videos]);
 
   const staticImage = videos[0]?.thumbnail_url ?? POSTER;
 
@@ -49,7 +39,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
     <section className="relative w-screen overflow-hidden">
       {/* Bloque de video / imagen */}
       <div className="relative w-full h-[calc(100dvh-72px)] md:h-[calc(100vh-72px)] overflow-hidden flex flex-col justify-between">
-        {showVideo && videos.length >= 1 ? (
+        {videos.length >= 1 ? (
           <>
             <video
               ref={ref1}
