@@ -23,6 +23,7 @@
 | **Ajustes editor/galería/videos** | Upload galería y videos movido completamente al servidor: `FormData` → Server Action → `createAdminClient()` (service_role) → Storage. Elimina `createBrowserClient` del cliente. `next.config.ts`: `bodySizeLimit: "55mb"`. `GaleriaManager` rediseñado: dos secciones (Publicadas/Archivadas), drag & drop con `@dnd-kit/sortable`, límite 8 fotos por categoría independiente, modo mobile con flechas arriba/abajo, badge `{Categoría} N/8` en vista "Todas", fotos archivadas en escala de grises con confirmación inline al eliminar. Upload va a Archivadas por defecto. | ✅ |
 | **Ajustes hero (Home + eventos)** | Rediseño de `HeroSection.tsx` y `EventHero.tsx`: overlay reducido de 55% a gradiente suave (30% arriba / ~5% centro / 45% abajo), video a color real. Label superior centrado (tagline dorado + línea decorativa 120×0.6px). H1 reposicionado con `absolute bottom-[8%]` sobre el video (antes centrado). Subtítulo y botones CTA movidos fuera del video, sobre fondo crema, con línea dorada divisoria. El `<video>` se reproduce en todos los tamaños de pantalla (`autoPlay muted loop playsInline`, sin gating por mobile) — `playsInline` es clave para reproducción inline en iOS Safari. Botones apilados (`flex-col` full width) en mobile, en fila en desktop. Altura del bloque de video ajustada a `h-[calc(100dvh-72px)] md:h-[calc(100vh-72px)]` para compensar el `pt-[72px]` del NavBar fijo y que el título no quede fuera del viewport real. | ✅ |
 | **Migración uploads a signed URL** | Fix del error "An unexpected response was received from the server" al subir videos en producción (Vercel Hobby limita a 4.5MB el body de toda Server Action, sin importar `bodySizeLimit`). Videos y galería del editor migrados a upload directo a Supabase Storage vía signed URL — el archivo nunca pasa por Vercel. Nueva infraestructura reutilizable en `src/lib/uploads/`. Se retiró `bodySizeLimit: "55mb"` de `next.config.ts` (ya no hace falta). Documentos/pagos/Excel de invitados: kinds de configuración listos, módulos aún no construidos. | ✅ |
+| **Admin usuarios/clientes + segmentación + galería** | `/admin/usuarios` separado en "Equipo" (CRUD, roles staff) y "Clientes" (solo lectura, rol `client`) — `client` ya no es un rol seleccionable desde el admin, se gestiona solo vía onboarding del planner. Nueva segmentación Activos/Cumplidos/Cancelados (tabs) en `/admin/usuarios` (sección Clientes) y `/portal/planner/clientes`, componente compartido `ClientesTable.tsx`. Nueva función SQL `sync_completed_bookings()` (+ cron diario vía pg_cron) marca `bookings.status = 'completed'` cuando `event_date` ya pasó; se invoca también de forma oportunista desde `fetchClientBookingRows()` cada vez que se listan clientes. `GaleriaManager`: el modal de upload preselecciona la categoría del filtro activo en vez de "General". | ✅ |
 
 ### Decisiones de arquitectura
 
@@ -70,6 +71,9 @@
 - **createClientAction** (onboarding planner) — patrón: 1) verificar rol con SSR client, 2) Zod validate, 3) overlap check con admin client, 4) createUser → update profile → get space → insert booking → rpc initialize_service_order, todo con admin client. Rollback: borra booking y usuario en orden inverso si lanza.
 - **Módulo actividades** — `calendar_events` tabla. Vista cliente `/portal/actividades`: timeline, próximas con borde dorado, pasadas tachadas. Vista planner `/portal/planner/clientes/[clientId]/actividades`: CRUD inline (`ActividadesPlanner.tsx`). Server Actions en `src/app/actions/actividades.ts`.
 - **Soft delete / editar cliente (planner)** — El planner puede marcar clientes como inactivos (soft delete) y editar datos básicos. Vista `/portal/planner/clientes` lista todos los clientes con acceso a sus acciones.
+- **Segmentación de clientes (Activos/Cumplidos/Cancelados)** — `getClientSegment(status, isActive)` en `src/lib/clientes.ts`: `cancelados` si `status === "cancelled"` o `!isActive` (máxima precedencia), si no `cumplidos` si `status === "completed"`, si no `activos`. `ClientesTable.tsx` (`src/components/clientes/`) es el componente compartido con tabs (default "Activos") usado en `/portal/planner/clientes` (interactivo) y en la sección "Clientes" de `/admin/usuarios` (prop `readOnly`, sin columna de acciones).
+- **sync_completed_bookings()** — función SQL `security definer` (migración `20260625000008`) que marca `status = 'completed'` en bookings con `event_date < current_date` y status `pending`/`confirmed`. Programada diariamente vía `pg_cron` (migración `20260625000009`, en archivo separado a propósito: si la extensión no está disponible, esa migración falla sola sin tumbar la función). `fetchClientBookingRows()` la invoca vía RPC de forma oportunista antes de cada query, así la segmentación queda correcta aunque el cron no haya corrido aún.
+- **Admin usuarios vs clientes** — `/admin/usuarios` hace dos fetches: perfiles con `role != 'client'` para `UsuariosManager` (Equipo, CRUD) y `fetchClientBookingRows(admin)` para `ClientesTable readOnly` (Clientes). `"client"` ya no aparece en `ROLE_OPTIONS`/`ROLE_LABEL` de `UsuariosManager.tsx` ni en los `z.enum([...])` de `src/app/actions/admin/usuarios.ts` — los clientes solo se crean vía onboarding del planner (`crear-cliente.ts`).
 
 ### Pendiente — próximas sesiones
 
@@ -133,7 +137,7 @@ src/
       planner/page.tsx                            ← Panel planner: lista de bookings con enlace a orden
       planner/nuevo-cliente/page.tsx              ← Formulario onboarding cliente (guard: solo planner/admin)
       planner/orden-servicio/[bookingId]/page.tsx ← Orden editable para planner
-      planner/clientes/page.tsx                   ← Lista de clientes del planner (soft delete, editar)
+      planner/clientes/page.tsx                   ← Fetch (fetchClientBookingRows) + ClientesTable (tabs Activos/Cumplidos/Cancelados)
       planner/clientes/[clientId]/actividades/page.tsx ← Vista planner: CRUD actividades del cliente
       asesor-comercial/page.tsx
       asesor-logistica/page.tsx
@@ -141,7 +145,7 @@ src/
     admin/
       layout.tsx                                  ← Solo admin, usa PortalShell
       dashboard/page.tsx                          ← KPIs + próximos eventos + contactos recientes
-      usuarios/page.tsx                           ← Tabla de usuarios + crear/editar modales
+      usuarios/page.tsx                           ← UsuariosManager (Equipo, role != client) + ClientesTable readOnly (sección Clientes)
     editor/
       layout.tsx                                  ← Admin y editor, usa PortalShell
       page.tsx                                    ← redirect("/editor/galeria")
@@ -165,7 +169,9 @@ src/
       planner/
         ActividadesPlanner.tsx                    ← CRUD inline actividades: form agregar, editar, confirmar borrar
     admin/
-      UsuariosManager.tsx                         ← Tabla + CrearModal + EditarModal + toggleUsuarioActivo
+      UsuariosManager.tsx                         ← Equipo (staff): tabla + CrearModal + EditarModal + toggleUsuarioActivo, sin rol "client"
+    clientes/
+      ClientesTable.tsx                           ← Compartido admin/planner: tabs Activos/Cumplidos/Cancelados, prop readOnly
     editor/
       GaleriaManager.tsx                          ← Dos secciones (Publicadas/Archivadas), @dnd-kit/sortable, límite 8/categoría, upload directo a Storage (signed URL)
       VideosManager.tsx                           ← Lista agrupada por página, upload directo a Storage (signed URL), toggle activo, 1 activo por página
@@ -186,6 +192,7 @@ src/
     config.ts                                     ← UPLOAD_KINDS (bucket, límites, mime types, path builders) — sin secretos
     server.ts                                     ← createSignedUpload, publicUrlFor, removeUploadedFile (usa createAdminClient)
     client.ts                                     ← uploadFileToSignedUrl (browser client, sube directo a Supabase Storage)
+  lib/clientes.ts                                 ← getClientSegment, ClientBookingRow, fetchClientBookingRows (rpc sync_completed_bookings + query bookings+profiles)
   proxy.ts                                        ← Middleware Next.js 16 (protege /portal, /admin, /editor)
   types/
     database.ts                                   ← Tipos generados Supabase
@@ -222,4 +229,6 @@ supabase/migrations/
   20260625000005_editor_rls.sql                   ← is_editor(), RLS gallery/videos/testimonials/packages/site_content + Storage
   20260625000006_seed_admin_user.sql              ← admin@haciendaencanto.com / Admin2026! / role=admin
   20260625000007_seed_editor_user.sql             ← editor@haciendaencanto.com / Editor2026! / role=editor
+  20260625000008_sync_completed_bookings_function.sql ← función security definer, marca bookings vencidos como completed
+  20260625000009_schedule_sync_completed_bookings_cron.sql ← pg_cron diario (migración separada por si la extensión falla)
 ```

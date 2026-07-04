@@ -22,7 +22,7 @@ const crearSchema = z.object({
   password: z.string().min(8, "Contraseña mínimo 8 caracteres"),
   role: z.enum([
     "admin", "wedding_planner", "asesor_comercial",
-    "asesor_logistica", "staff", "editor", "gerente", "client",
+    "asesor_logistica", "staff", "editor", "gerente",
   ]),
   phone: z.string().optional(),
 });
@@ -75,7 +75,7 @@ const editarSchema = z.object({
   email: z.string().email("Email inválido"),
   role: z.enum([
     "admin", "wedding_planner", "asesor_comercial",
-    "asesor_logistica", "staff", "editor", "gerente", "client",
+    "asesor_logistica", "staff", "editor", "gerente",
   ]),
   phone: z.string().optional(),
   is_active: z.boolean(),

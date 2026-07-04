@@ -70,14 +70,15 @@ function ProgressBar({ pct }: { pct: number }) {
 // ─── Upload Modal ─────────────────────────────────────────────────────────────
 
 function UploadModal({
-  onUploaded, onClose,
+  onUploaded, onClose, defaultCategory,
 }: {
   onUploaded: (img: UploadedImage) => void;
   onClose: () => void;
+  defaultCategory: string;
 }) {
   const [file, setFile]           = useState<File | null>(null);
   const [preview, setPreview]     = useState<string | null>(null);
-  const [category, setCategory]   = useState("general");
+  const [category, setCategory]   = useState(defaultCategory);
   const [title, setTitle]         = useState("");
   const [progress, setProgress]   = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -706,7 +707,11 @@ export function GaleriaManager({ images: initial }: { images: GaleriaImage[] }) 
   return (
     <>
       {showUpload && (
-        <UploadModal onUploaded={handleUploaded} onClose={() => setShowUpload(false)} />
+        <UploadModal
+          onUploaded={handleUploaded}
+          onClose={() => setShowUpload(false)}
+          defaultCategory={filter === "all" ? "general" : filter}
+        />
       )}
 
       <div className="space-y-8">

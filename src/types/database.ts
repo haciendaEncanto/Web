@@ -1055,6 +1055,7 @@ export type Database = {
       is_editor: { Args: never; Returns: boolean }
       is_planner_or_admin: { Args: never; Returns: boolean }
       is_staff_or_admin: { Args: never; Returns: boolean }
+      sync_completed_bookings: { Args: never; Returns: undefined }
     }
     Enums: {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
