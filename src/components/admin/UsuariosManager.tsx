@@ -19,18 +19,17 @@ type Usuario = {
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrador", wedding_planner: "Wedding Planner",
   asesor_comercial: "Asesor Comercial", asesor_logistica: "Asesor Logística",
-  staff: "Staff", editor: "Editor", gerente: "Gerente", client: "Cliente",
+  staff: "Staff", editor: "Editor", gerente: "Gerente",
 };
 const ROLE_OPTIONS = [
   "admin", "wedding_planner", "asesor_comercial", "asesor_logistica",
-  "staff", "editor", "gerente", "client",
+  "staff", "editor", "gerente",
 ];
 const ROLE_COLOR: Record<string, string> = {
   admin: "bg-rojo/10 text-rojo border-rojo/20",
   editor: "bg-dorado/10 text-dorado border-dorado/20",
   wedding_planner: "bg-purple-50 text-purple-700 border-purple-200",
   gerente: "bg-blue-50 text-blue-700 border-blue-200",
-  client: "bg-negro/5 text-negro/60 border-negro/15",
 };
 
 function Badge({ role }: { role: string }) {
@@ -192,7 +191,7 @@ export function UsuariosManager({ usuarios }: { usuarios: Usuario[] }) {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
-            <span className="text-dorado">Usuarios</span> del sistema
+            <span className="text-dorado">Equipo</span> / usuarios del sistema
           </h2>
           <p className="text-gris text-[0.88rem] mt-1">{usuarios.length} usuario{usuarios.length !== 1 ? "s" : ""}</p>
         </div>
