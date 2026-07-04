@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
+import { heroVideoPath } from "@/lib/uploads/config";
 
 async function verifyEditor() {
   const supabase = await createClient();
@@ -35,72 +37,62 @@ async function deactivatePage(
   }
 }
 
-// ─── Upload completo en servidor ──────────────────────────────────────────────
-
-const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
-const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-
-const VIDEO_FOLDER: Record<string, string> = {
-  "":            "home",
-  "boda":        "boda",
-  "quince":      "quince",
-  "empresarial": "empresarial",
-  "revelacion":  "revelacion",
-};
+// ─── Upload directo a Supabase Storage (signed URL) ───────────────────────────
 
 export type UploadedVideo = {
   id: string; url: string; title: string | null;
   event_type: string | null; is_active: boolean;
 };
 
-export async function uploadVideo(
-  formData: FormData,
-): Promise<{ video?: UploadedVideo; error?: string }> {
+export async function requestVideoUpload(meta: {
+  fileName: string;
+  contentType: string;
+  size: number;
+  eventType: string;
+}): Promise<{ signedUrl?: string; token?: string; path?: string; error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
 
-  const file      = formData.get("file") as File | null;
-  const eventType = (formData.get("event_type") as string) ?? "";
-  const title     = (formData.get("title") as string) ?? "";
-  const isActive  = formData.get("is_active") === "true";
+  const path = heroVideoPath(meta.eventType, meta.fileName);
+  const { upload, error } = await createSignedUpload("hero-video", {
+    contentType: meta.contentType,
+    size: meta.size,
+    path,
+  });
+  if (error || !upload) return { error };
 
-  if (!file || file.size === 0) return { error: "No se recibió ningún archivo" };
-  if (!ALLOWED_VIDEO_TYPES.includes(file.type))
-    return { error: "Formato no permitido. Usa MP4, WebM o MOV." };
-  if (file.size > MAX_VIDEO_BYTES)
-    return { error: `El archivo supera 50 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)` };
+  return { signedUrl: upload.signedUrl, token: upload.token, path: upload.path };
+}
 
-  const admin  = createAdminClient();
-  const folder = VIDEO_FOLDER[eventType] ?? "home";
-  const ext    = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
-  const path   = `${folder}/${Date.now()}.${ext}`;
+export async function confirmVideoUpload(meta: {
+  path: string;
+  eventType: string;
+  title: string;
+  isActive: boolean;
+}): Promise<{ video?: UploadedVideo; error?: string }> {
+  const { error: authErr } = await verifyEditor();
+  if (authErr) return { error: authErr };
 
-  if (isActive) {
-    await deactivatePage(admin, eventType || null);
+  const admin = createAdminClient();
+
+  if (meta.isActive) {
+    await deactivatePage(admin, meta.eventType || null);
   }
-
-  const { error: upErr } = await admin.storage
-    .from("videos")
-    .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
-
-  if (upErr) return { error: `Error de Storage: ${upErr.message}` };
-
-  const { data: { publicUrl } } = admin.storage.from("videos").getPublicUrl(path);
 
   const { data: vid, error: insErr } = await admin
     .from("hero_videos")
     .insert({
-      url:        publicUrl,
-      title:      title.trim() || null,
-      event_type: eventType || null,
-      is_active:  isActive,
+      url:        publicUrlFor("hero-video", meta.path),
+      title:      meta.title.trim() || null,
+      event_type: meta.eventType || null,
+      is_active:  meta.isActive,
       sort_order: 0,
     })
     .select("id, url, title, event_type, is_active")
     .single();
 
   if (insErr) {
-    await admin.storage.from("videos").remove([path]);
+    await removeUploadedFile("hero-video", meta.path);
     return { error: `Error al guardar: ${insErr.message}` };
   }
 

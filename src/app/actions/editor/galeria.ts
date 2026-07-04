@@ -3,17 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-
-const FOLDER: Record<string, string> = {
-  boda:        "bodas",
-  quince:      "quince",
-  empresarial: "empresarial",
-  revelacion:  "revelacion",
-  general:     "general",
-};
+import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
+import { galleryImagePath } from "@/lib/uploads/config";
 
 async function verifyEditor() {
   const supabase = await createClient();
@@ -35,50 +26,49 @@ function revalidateAll() {
   revalidatePath("/revelacion-de-genero");
 }
 
-// ─── Upload completo en servidor (reemplaza el upload client-side) ────────────
+// ─── Upload directo a Supabase Storage (signed URL) ───────────────────────────
 
 export type UploadedImage = {
   id: string; url: string; title: string | null;
   category: string | null; sort_order: number; is_published: boolean;
 };
 
-export async function uploadGaleriaImage(
-  formData: FormData,
-): Promise<{ image?: UploadedImage; error?: string }> {
+export async function requestGaleriaUpload(meta: {
+  fileName: string;
+  contentType: string;
+  size: number;
+  category: string;
+}): Promise<{ signedUrl?: string; token?: string; path?: string; error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
 
-  const file     = formData.get("file") as File | null;
-  const category = (formData.get("category") as string) || "general";
-  const title    = (formData.get("title") as string) || "";
+  const path = galleryImagePath(meta.category, meta.fileName);
+  const { upload, error } = await createSignedUpload("gallery-image", {
+    contentType: meta.contentType,
+    size: meta.size,
+    path,
+  });
+  if (error || !upload) return { error };
 
-  if (!file || file.size === 0) return { error: "No se recibió ningún archivo" };
-  if (!ALLOWED_TYPES.includes(file.type))
-    return { error: "Formato no permitido. Usa JPG, PNG o WebP." };
-  if (file.size > MAX_BYTES)
-    return { error: `El archivo supera el límite de 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)` };
+  return { signedUrl: upload.signedUrl, token: upload.token, path: upload.path };
+}
 
-  const admin  = createAdminClient();
-  const folder = FOLDER[category] ?? "general";
-  const safe   = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
-  const path   = `${folder}/${Date.now()}_${safe}`;
+export async function confirmGaleriaUpload(meta: {
+  path: string;
+  category: string;
+  title: string;
+}): Promise<{ image?: UploadedImage; error?: string }> {
+  const { error: authErr } = await verifyEditor();
+  if (authErr) return { error: authErr };
 
-  // 1. Subir al bucket gallery usando admin client (bypasa RLS)
-  const { error: upErr } = await admin.storage
-    .from("gallery")
-    .upload(path, file, { contentType: file.type, upsert: false });
+  const admin = createAdminClient();
 
-  if (upErr) return { error: `Error de Storage: ${upErr.message}` };
-
-  const { data: { publicUrl } } = admin.storage.from("gallery").getPublicUrl(path);
-
-  // 2. Insertar registro en gallery_images
   const { data: img, error: insErr } = await admin
     .from("gallery_images")
     .insert({
-      url:          publicUrl,
-      title:        title.trim() || null,
-      category,
+      url:          publicUrlFor("gallery-image", meta.path),
+      title:        meta.title.trim() || null,
+      category:     meta.category,
       sort_order:   0,
       is_published: false,
     })
@@ -86,8 +76,7 @@ export async function uploadGaleriaImage(
     .single();
 
   if (insErr) {
-    // Limpiar el archivo subido si falla el insert
-    await admin.storage.from("gallery").remove([path]);
+    await removeUploadedFile("gallery-image", meta.path);
     return { error: `Error al guardar: ${insErr.message}` };
   }
 

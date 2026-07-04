@@ -23,12 +23,14 @@ import {
   ArrowUp, ArrowDown, X, ImageIcon, CheckCircle2, AlertCircle, List,
 } from "lucide-react";
 import {
-  uploadGaleriaImage,
+  requestGaleriaUpload,
+  confirmGaleriaUpload,
   updateGaleriaImage,
   deleteGaleriaImage,
   reorderGaleriaImages,
   type UploadedImage,
 } from "@/app/actions/editor/galeria";
+import { uploadFileToSignedUrl } from "@/lib/uploads/client";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -109,12 +111,35 @@ function UploadModal({
     }, 350);
 
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("category", category);
-      fd.append("title", title.trim());
+      const req = await requestGaleriaUpload({
+        fileName:    file.name,
+        contentType: file.type,
+        size:        file.size,
+        category,
+      });
 
-      const result = await uploadGaleriaImage(fd);
+      if (req.error || !req.signedUrl || !req.token || !req.path) {
+        clearInterval(interval);
+        setError(req.error ?? "No se pudo iniciar la subida");
+        setUploading(false);
+        setProgress(0);
+        return;
+      }
+
+      const upErr = await uploadFileToSignedUrl("gallery", req.path, req.token, file);
+      if (upErr.error) {
+        clearInterval(interval);
+        setError(upErr.error);
+        setUploading(false);
+        setProgress(0);
+        return;
+      }
+
+      const result = await confirmGaleriaUpload({
+        path: req.path,
+        category,
+        title: title.trim(),
+      });
       clearInterval(interval);
 
       if (result.error) {
