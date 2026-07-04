@@ -91,7 +91,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
         {/* Label superior centrado */}
         <div className="relative z-10 flex flex-col items-center pt-10 md:pt-12 px-6">
           <p
-            className="font-sans text-[11px] tracking-[4px] uppercase text-dorado"
+            className="w-full text-center font-sans text-[11px] tracking-[4px] uppercase text-dorado"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.75)" }}
           >
             Casa de Eventos &middot; Cota &middot; Cundinamarca
