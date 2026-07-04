@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 interface EventHeroProps {
   image: string;
@@ -20,22 +17,11 @@ export function EventHero({
   ctaLabel,
   videoUrl,
 }: EventHeroProps) {
-  const [showVideo, setShowVideo] = useState(false);
-
-  // El video solo se carga en tablet/desktop — en mobile se usa la imagen estática
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setShowVideo(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setShowVideo(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
   return (
     <section className="relative w-screen overflow-hidden">
       {/* Bloque de video / imagen */}
       <div className="relative w-full h-[calc(100dvh-72px)] md:h-[calc(100vh-72px)] overflow-hidden flex flex-col justify-between">
-        {showVideo && videoUrl ? (
+        {videoUrl ? (
           <video
             autoPlay
             muted
