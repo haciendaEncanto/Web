@@ -31,7 +31,13 @@ export function PortalShell({
     setShowWarning(false);
     setLoggingOut(true);
     await new Promise<void>((r) => setTimeout(r, 1000));
-    await logout();
+    try {
+      await logout();
+    } finally {
+      // Fallback: garantiza la redirección aunque el redirect() de la
+      // Server Action no se procese (llamada fuera de un form action).
+      window.location.href = "/";
+    }
   }, []);
 
   useInactivityTimer({

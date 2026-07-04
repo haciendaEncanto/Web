@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { login } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
@@ -64,6 +65,15 @@ export default function LoginPage() {
           className="w-full bg-rojo text-blanco py-3 font-serif tracking-wider text-sm hover:bg-rojo-pro mt-2"
         />
       </form>
+
+      <div className="text-center mt-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs text-dorado hover:text-dorado/70 transition-colors"
+        >
+          <span aria-hidden>←</span> Regresar al inicio
+        </Link>
+      </div>
     </div>
   );
 }

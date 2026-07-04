@@ -116,7 +116,11 @@ export function PortalSidebar({
   const handleLogout = async () => {
     setLoggingOut(true);
     await new Promise<void>((r) => setTimeout(r, 1000));
-    await logout();
+    try {
+      await logout();
+    } finally {
+      window.location.href = "/";
+    }
   };
 
   const isActive = (href: string) => pathname === href;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 const INTERVAL_MS = 3500;
 
@@ -70,16 +71,16 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
       )}
 
       <div className="relative h-[420px] md:h-[580px] overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element — multiple <img> con opacity es el patrón correcto para crossfade CSS */}
         {items.map((img, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             key={img.url}
             src={img.url}
             alt={img.title ?? "Hacienda El Encanto"}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1000ms]"
+            fill
+            sizes="100vw"
+            priority={i === 0}
+            className="object-cover transition-opacity duration-[1000ms]"
             style={{ opacity: i === current ? 1 : 0 }}
-            loading={i === 0 ? "eager" : "lazy"}
           />
         ))}
 
