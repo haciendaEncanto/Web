@@ -10,6 +10,39 @@ const inputCls = (error: boolean) =>
     error ? "border-rojo" : "border-negro/10"
   } bg-crema/20 px-3 py-2.5 text-[0.85rem] text-negro rounded-lg focus:outline-none focus:border-dorado/70 transition-colors placeholder:text-gris/35`;
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
+      <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30">
+        <h3 className="font-serif text-[1rem] text-negro tracking-[-0.01em]">{title}</h3>
+      </div>
+      <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  error,
+  span,
+  children,
+}: {
+  label: string;
+  error?: string;
+  span?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={span ? "sm:col-span-2" : ""}>
+      <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-[0.74rem] text-rojo mt-1">{error}</p>}
+    </div>
+  );
+}
+
 interface Props {
   clientId: string;
   bookingId: string;
@@ -24,9 +57,10 @@ interface Props {
     event_end_time: string;
     guest_count: number;
   };
+  redirectTo?: string;
 }
 
-export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
+export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/portal/planner/clientes" }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<EditClientState>(null);
@@ -44,8 +78,8 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
   const [endTime, setEndTime] = useState(defaults.event_end_time);
   const [guestCount, setGuestCount] = useState(String(defaults.guest_count));
 
-  const fieldError = (f: string) =>
-    state && "field" in state && state.field === f;
+  const fieldError = (f: string): string | undefined =>
+    state && "error" in state && state.field === f ? state.error : undefined;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,47 +98,16 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
       const res = await editarCliente(clientId, bookingId, fd);
       setState(res);
       if (res && "success" in res) {
-        setTimeout(() => router.push("/portal/planner/clientes"), 1200);
+        setTimeout(() => router.push(redirectTo), 1200);
       }
     });
   }
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-      <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30">
-        <h3 className="font-serif text-[1rem] text-negro tracking-[-0.01em]">{title}</h3>
-      </div>
-      <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
-    </div>
-  );
-
-  const Field = ({
-    label,
-    field,
-    span,
-    children,
-  }: {
-    label: string;
-    field: string;
-    span?: boolean;
-    children: React.ReactNode;
-  }) => (
-    <div className={span ? "sm:col-span-2" : ""}>
-      <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-        {label}
-      </label>
-      {children}
-      {fieldError(field) && state && "error" in state && (
-        <p className="text-[0.74rem] text-rojo mt-1">{state.error}</p>
-      )}
-    </div>
-  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Datos del cliente */}
       <Section title="Datos del cliente">
-        <Field label="Nombre completo" field="full_name" span>
+        <Field label="Nombre completo" error={fieldError("full_name")} span>
           <input
             type="text"
             value={fullName}
@@ -112,7 +115,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("full_name"))}
           />
         </Field>
-        <Field label="Teléfono" field="phone">
+        <Field label="Teléfono" error={fieldError("phone")}>
           <input
             type="tel"
             value={phone}
@@ -120,7 +123,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("phone"))}
           />
         </Field>
-        <Field label="Correo electrónico" field="email">
+        <Field label="Correo electrónico" error={fieldError("email")}>
           <input
             type="email"
             value={email}
@@ -128,7 +131,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("email"))}
           />
         </Field>
-        <Field label="Dirección" field="address" span>
+        <Field label="Dirección" error={fieldError("address")} span>
           <input
             type="text"
             value={address}
@@ -140,7 +143,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
 
       {/* Datos del evento */}
       <Section title="Datos del evento">
-        <Field label="Tipo de evento" field="event_type">
+        <Field label="Tipo de evento" error={fieldError("event_type")}>
           <select
             value={eventType}
             onChange={(e) => setEventType(e.target.value)}
@@ -152,7 +155,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             <option value="revelacion">Revelación de Género</option>
           </select>
         </Field>
-        <Field label="Fecha del evento" field="event_date">
+        <Field label="Fecha del evento" error={fieldError("event_date")}>
           <input
             type="date"
             value={eventDate}
@@ -160,7 +163,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("event_date"))}
           />
         </Field>
-        <Field label="Hora de inicio" field="event_start_time">
+        <Field label="Hora de inicio" error={fieldError("event_start_time")}>
           <input
             type="time"
             value={startTime}
@@ -168,7 +171,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("event_start_time"))}
           />
         </Field>
-        <Field label="Hora de fin" field="event_end_time">
+        <Field label="Hora de fin" error={fieldError("event_end_time")}>
           <input
             type="time"
             value={endTime}
@@ -176,7 +179,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
             className={inputCls(!!fieldError("event_end_time"))}
           />
         </Field>
-        <Field label="Cantidad de invitados" field="guest_count">
+        <Field label="Cantidad de invitados" error={fieldError("guest_count")}>
           <input
             type="number"
             min={1}
@@ -198,7 +201,7 @@ export function ClienteEditForm({ clientId, bookingId, defaults }: Props) {
       <div className="bg-blanco rounded-2xl border border-negro/[0.07] px-6 py-4 flex items-center justify-between gap-4">
         <button
           type="button"
-          onClick={() => router.push("/portal/planner/clientes")}
+          onClick={() => router.push(redirectTo)}
           disabled={isPending}
           className="px-4 py-2.5 text-[0.82rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5 transition-colors disabled:opacity-50"
         >

@@ -123,5 +123,7 @@ export async function editarCliente(
   revalidatePath("/portal/planner/clientes");
   revalidatePath(`/portal/planner/clientes/${clientId}/editar`);
   revalidatePath("/portal/planner");
+  revalidatePath("/admin/clientes");
+  revalidatePath(`/admin/clientes/${clientId}`);
   return { success: true };
 }

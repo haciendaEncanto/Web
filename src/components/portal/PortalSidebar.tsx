@@ -57,7 +57,8 @@ function getNavItems(role: string): NavItem[] {
     return [
       { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/usuarios", label: "Usuarios", icon: Shield },
-      { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
+      { href: "/admin/clientes", label: "Clientes", icon: Users },
+      { href: "/admin/eventos", label: "Eventos", icon: CalendarDays },
       { href: "/editor/galeria", label: "Galería", icon: Image },
       { href: "/editor/videos", label: "Videos", icon: Video },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
