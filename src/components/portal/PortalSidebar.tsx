@@ -18,6 +18,7 @@ import {
   X,
   UserPlus,
   Image,
+  Images,
   Video,
   Star,
   Package,
@@ -58,9 +59,9 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/usuarios", label: "Usuarios", icon: Shield },
       { href: "/admin/clientes", label: "Clientes", icon: Users },
-      { href: "/admin/eventos", label: "Eventos", icon: CalendarDays },
       { href: "/editor/galeria", label: "Galería", icon: Image },
       { href: "/editor/videos", label: "Videos", icon: Video },
+      { href: "/editor/imagenes-sitio", label: "Imágenes del sitio", icon: Images },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
@@ -71,6 +72,7 @@ function getNavItems(role: string): NavItem[] {
     return [
       { href: "/editor/galeria", label: "Galería", icon: Image },
       { href: "/editor/videos", label: "Videos", icon: Video },
+      { href: "/editor/imagenes-sitio", label: "Imágenes del sitio", icon: Images },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
@@ -114,7 +116,11 @@ export function PortalSidebar({
   const handleLogout = async () => {
     setLoggingOut(true);
     await new Promise<void>((r) => setTimeout(r, 1000));
-    await logout();
+    try {
+      await logout();
+    } finally {
+      window.location.href = "/";
+    }
   };
 
   const isActive = (href: string) => pathname === href;

@@ -1,7 +1,7 @@
 // Config compartida cliente/servidor para uploads directos a Supabase Storage
 // vía signed URL. No contiene secretos — seguro de importar desde componentes cliente.
 
-export type UploadKind = "hero-video" | "gallery-image";
+export type UploadKind = "hero-video" | "gallery-image" | "site-image";
 
 export const HERO_VIDEO_FOLDER: Record<string, string> = {
   "": "home",
@@ -36,6 +36,11 @@ export const UPLOAD_KINDS: Record<UploadKind, UploadKindConfig> = {
     maxBytes: 5 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
   },
+  "site-image": {
+    bucket: "gallery",
+    maxBytes: 5 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
   // Futuro — módulos aún no construidos (ver "Pendiente" en CLAUDE.md):
   //   "document":        bucket "documents", 10MB, application/pdf
   //   "payment-receipt": bucket "documents", 10MB, application/pdf
@@ -55,3 +60,21 @@ export function galleryImagePath(category: string, fileName: string): string {
   const safe = fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
   return `${folder}/${Date.now()}_${safe}`;
 }
+
+export function siteImagePath(key: string, fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  return `sitio/${key}_${Date.now()}.${ext}`;
+}
+
+export const SITE_IMAGE_KEYS = [
+  "img_card_boda",
+  "img_card_quince",
+  "img_card_empresarial",
+  "img_card_revelacion",
+  "img_nosotros",
+  "img_servicio_catering",
+  "img_servicio_fotografia",
+  "img_servicio_decoracion",
+] as const;
+
+export type SiteImageKey = (typeof SITE_IMAGE_KEYS)[number];

@@ -12,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/usuarios": "Usuarios del sistema",
   "/editor/galeria": "Galería",
   "/editor/videos": "Videos",
+  "/editor/imagenes-sitio": "Imágenes del sitio",
   "/editor/testimonios": "Testimonios",
   "/editor/paquetes": "Paquetes",
   "/editor/contenido": "Textos del sitio",
