@@ -85,12 +85,9 @@ function CrearModal({ onClose }: { onClose: () => void }) {
             {state?.field === "password" && <p className="text-[0.72rem] text-rojo mt-1">{state.error}</p>}
           </div>
           <div>
-            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">Teléfono</label>
-            <input name="phone" type="tel" className={inputCls} />
-          </div>
-          <div>
             <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">Rol *</label>
-            <select name="role" defaultValue="client" required className={inputCls}>
+            <select name="role" defaultValue="" required className={inputCls}>
+              <option value="" disabled>Seleccionar rol…</option>
               {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
           </div>

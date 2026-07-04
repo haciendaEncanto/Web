@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, ClipboardList, Users, CalendarDays } from "lucide-react";
+import { Pencil, ClipboardList, Users, CalendarDays, Eye } from "lucide-react";
 import { CancelEventButton } from "@/components/portal/CancelEventButton";
 import { getClientSegment, type ClientBookingRow, type ClientSegment } from "@/lib/clientes";
 
@@ -81,9 +81,11 @@ function EstadoBadge({ segment }: { segment: ClientSegment }) {
 export function ClientesTable({
   rows,
   readOnly = false,
+  basePath = "planner",
 }: {
   rows: ClientBookingRow[];
   readOnly?: boolean;
+  basePath?: "planner" | "admin";
 }) {
   const [tab, setTab] = useState<ClientSegment>("activos");
 
@@ -174,26 +176,38 @@ export function ClientesTable({
                       {!readOnly && (
                         <td className="px-4 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            <Link
-                              href={`/portal/planner/orden-servicio/${b.id}`}
-                              title="Ver orden"
-                              className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
-                            >
-                              <ClipboardList size={15} />
-                            </Link>
+                            {basePath === "admin" ? (
+                              <Link
+                                href={`/admin/clientes/${b.client_id}`}
+                                title="Ver cliente"
+                                className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                              >
+                                <Eye size={15} />
+                              </Link>
+                            ) : (
+                              <>
+                                <Link
+                                  href={`/portal/planner/orden-servicio/${b.id}`}
+                                  title="Ver orden"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <ClipboardList size={15} />
+                                </Link>
+                                <Link
+                                  href={`/portal/planner/clientes/${b.client_id}/editar`}
+                                  title="Editar cliente"
+                                  className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors"
+                                >
+                                  <Pencil size={15} />
+                                </Link>
+                              </>
+                            )}
                             <Link
                               href={`/portal/planner/clientes/${b.client_id}/actividades`}
                               title="Agenda"
                               className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
                             >
                               <CalendarDays size={15} />
-                            </Link>
-                            <Link
-                              href={`/portal/planner/clientes/${b.client_id}/editar`}
-                              title="Editar cliente"
-                              className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors"
-                            >
-                              <Pencil size={15} />
                             </Link>
                             {b.segment !== "cancelados" && (
                               <CancelEventButton clientId={b.client_id} bookingId={b.id} clientName={name} />
