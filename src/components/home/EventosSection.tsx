@@ -1,34 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const eventos = [
-  {
-    title: "Bodas",
-    desc: "El escenario perfecto para tu historia de amor",
-    href: "/bodas",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
-  },
-  {
-    title: "Quince Años",
-    desc: "Un momento único merece un lugar inolvidable",
-    href: "/quince-anos",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A2373.jpg",
-  },
-  {
-    title: "Empresariales",
-    desc: "Infraestructura y elegancia para tu empresa",
-    href: "/empresariales",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
-  },
-  {
-    title: "Revelación de Género",
-    desc: "El primer gran evento de tu bebé",
-    href: "/revelacion",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
-  },
-];
+const FALLBACK_IMG: Record<string, string> = {
+  boda:         "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+  quince:       "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A2373.jpg",
+  empresarial:  "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
+  revelacion:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
+};
 
-export function EventosSection() {
+const eventos = [
+  { key: "boda",        title: "Bodas",                  desc: "El escenario perfecto para tu historia de amor", href: "/bodas" },
+  { key: "quince",       title: "Quince Años",            desc: "Un momento único merece un lugar inolvidable",    href: "/quince-anos" },
+  { key: "empresarial",  title: "Empresariales",          desc: "Infraestructura y elegancia para tu empresa",     href: "/empresariales" },
+  { key: "revelacion",   title: "Revelación de Género",   desc: "El primer gran evento de tu bebé",                href: "/revelacion" },
+] as const;
+
+export interface EventosSectionImages {
+  boda: string | null;
+  quince: string | null;
+  empresarial: string | null;
+  revelacion: string | null;
+}
+
+export function EventosSection({ images }: { images?: EventosSectionImages }) {
   return (
     <section id="eventos" className="py-24 bg-crema">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -53,7 +47,7 @@ export function EventosSection() {
               className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
               <Image
-                src={e.img}
+                src={images?.[e.key] ?? FALLBACK_IMG[e.key]}
                 alt={e.title}
                 fill
                 className="object-cover transition-transform duration-[600ms] group-hover:scale-105"

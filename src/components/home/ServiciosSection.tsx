@@ -1,24 +1,24 @@
 import Image from "next/image";
 
-const servicios = [
-  {
-    title: "Catering",
-    desc: "Banquetes personalizados con sabores inolvidables. Menús gourmet que harán de tu evento una experiencia culinaria única para ti y tus invitados.",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
-  },
-  {
-    title: "Fotografía y Video",
-    desc: "Capturamos cada momento especial. Recuerdos eternos en cada foto y video, historias visuales que contarán tu celebración para siempre.",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A0101.jpg",
-  },
-  {
-    title: "Decoración",
-    desc: "Transformamos tu sueño en una realidad mágica. Ambientes únicos, elegantes y personalizados que harán de tu día algo verdaderamente inolvidable.",
-    img: "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
-  },
-];
+const FALLBACK_IMG: Record<string, string> = {
+  catering:     "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
+  fotografia:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A0101.jpg",
+  decoracion:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
+};
 
-export function ServiciosSection() {
+const servicios = [
+  { key: "catering",   title: "Catering",            desc: "Banquetes personalizados con sabores inolvidables. Menús gourmet que harán de tu evento una experiencia culinaria única para ti y tus invitados." },
+  { key: "fotografia", title: "Fotografía y Video",   desc: "Capturamos cada momento especial. Recuerdos eternos en cada foto y video, historias visuales que contarán tu celebración para siempre." },
+  { key: "decoracion", title: "Decoración",           desc: "Transformamos tu sueño en una realidad mágica. Ambientes únicos, elegantes y personalizados que harán de tu día algo verdaderamente inolvidable." },
+] as const;
+
+export interface ServiciosSectionImages {
+  catering: string | null;
+  fotografia: string | null;
+  decoracion: string | null;
+}
+
+export function ServiciosSection({ images }: { images?: ServiciosSectionImages }) {
   return (
     <section className="py-24 bg-crema">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -43,7 +43,7 @@ export function ServiciosSection() {
             >
               <div className="relative h-60">
                 <Image
-                  src={s.img}
+                  src={images?.[s.key] ?? FALLBACK_IMG[s.key]}
                   alt={s.title}
                   fill
                   className="object-cover"

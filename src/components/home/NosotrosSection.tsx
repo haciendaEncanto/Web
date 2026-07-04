@@ -1,12 +1,14 @@
 import Image from "next/image";
 
+const FALLBACK_IMG = "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2957.jpg";
+
 const stats = [
   { value: "+300", label: "Eventos realizados" },
   { value: "+150", label: "Invitados" },
   { value: "100%", label: "Acompañamiento" },
 ];
 
-export function NosotrosSection() {
+export function NosotrosSection({ image }: { image?: string | null }) {
   return (
     <section className="py-24 bg-blanco">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -14,7 +16,7 @@ export function NosotrosSection() {
           {/* Imagen */}
           <div className="relative rounded-2xl overflow-hidden h-[300px] md:h-[500px]">
             <Image
-              src="https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2957.jpg"
+              src={image ?? FALLBACK_IMG}
               alt="Hacienda El Encanto"
               fill
               className="object-cover"

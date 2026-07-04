@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { CalendarDays, Mail, MessageSquare, Clock } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KpiCard } from "@/components/admin/KpiCard";
+import { EventosManager } from "@/components/admin/EventosManager";
+import { fetchAllBookingsWithClient } from "@/lib/eventos";
 
 const EVENT_LABEL: Record<string, string> = {
   boda: "Boda",
@@ -33,27 +34,16 @@ export default async function AdminDashboardPage() {
 
   const admin = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
-  const firstOfMonth = new Date();
-  firstOfMonth.setDate(1);
-  const monthStart = firstOfMonth.toISOString().split("T")[0];
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    .toISOString().split("T")[0];
 
   const [
-    { count: totalActivos },
-    { count: eventosEsteMes },
-    { count: contactosNuevos },
-    { count: sinLeer },
     { data: proximosEventos },
     { data: contactosRecientes },
+    allBookingRows,
   ] = await Promise.all([
-    admin.from("bookings").select("*", { count: "exact", head: true })
-      .neq("status", "cancelled").gte("event_date", today),
-    admin.from("bookings").select("*", { count: "exact", head: true })
-      .neq("status", "cancelled").gte("event_date", monthStart),
-    admin.from("contact_messages").select("*", { count: "exact", head: true })
-      .gte("created_at", sevenDaysAgo),
-    admin.from("contact_messages").select("*", { count: "exact", head: true })
-      .eq("status", "unread"),
     admin.from("bookings")
       .select("id, event_type, event_date, event_start_time, profiles(full_name, email)")
       .neq("status", "cancelled")
@@ -64,6 +54,7 @@ export default async function AdminDashboardPage() {
       .select("id, name, email, subject, status, created_at")
       .order("created_at", { ascending: false })
       .limit(5),
+    fetchAllBookingsWithClient(admin),
   ]);
 
   type ProximoEvento = {
@@ -72,6 +63,15 @@ export default async function AdminDashboardPage() {
     event_date: string | null;
     event_start_time: string | null;
     profiles: { full_name: string | null; email: string } | null;
+  };
+
+  const counts = {
+    activos: allBookingRows.filter((r) => r.status === "pending" || r.status === "confirmed").length,
+    esteMes: allBookingRows.filter(
+      (r) => r.status !== "cancelled" && r.event_date && r.event_date >= monthStart && r.event_date < nextMonthStart,
+    ).length,
+    realizados: allBookingRows.filter((r) => r.status === "completed").length,
+    cancelados: allBookingRows.filter((r) => r.status === "cancelled").length,
   };
 
   return (
@@ -86,23 +86,21 @@ export default async function AdminDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Eventos activos" value={totalActivos ?? 0} icon={CalendarDays}
-          sub="desde hoy en adelante" />
-        <KpiCard label="Eventos este mes" value={eventosEsteMes ?? 0} icon={Clock}
+        <KpiCard label="Eventos activos" value={counts.activos} icon={CalendarDays}
+          sub="en proceso" />
+        <KpiCard label="Este mes" value={counts.esteMes} icon={Clock}
           sub="mes en curso" />
-        <KpiCard label="Contactos nuevos" value={contactosNuevos ?? 0} icon={Mail}
-          sub="últimos 7 días" />
-        <KpiCard label="Sin leer" value={sinLeer ?? 0} icon={MessageSquare}
-          sub="formulario contacto" />
+        <KpiCard label="Realizados" value={counts.realizados} icon={CheckCircle2}
+          sub="histórico" />
+        <KpiCard label="Cancelados" value={counts.cancelados} icon={XCircle}
+          sub="histórico" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Próximos eventos */}
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-          <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30">
             <h3 className="font-serif text-[1.05rem] text-negro tracking-[-0.01em]">Próximos eventos</h3>
-            <Link href="/admin/eventos"
-              className="text-[0.75rem] text-dorado hover:underline">Ver todos</Link>
           </div>
           <div className="divide-y divide-negro/[0.04]">
             {!proximosEventos?.length ? (
@@ -156,6 +154,14 @@ export default async function AdminDashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Eventos — tabs de estado + rango de fechas */}
+      <div>
+        <h3 className="font-serif text-[1.4rem] text-negro tracking-[-0.02em] mb-4">
+          Todos los <span className="text-dorado">eventos</span>
+        </h3>
+        <EventosManager rows={allBookingRows} />
       </div>
     </div>
   );
