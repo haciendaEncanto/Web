@@ -6,7 +6,9 @@ export type UploadKind =
   | "gallery-image"
   | "site-image"
   | "avatar"
-  | "testimonial-photo";
+  | "testimonial-photo"
+  | "document"
+  | "payment-receipt";
 
 export const HERO_VIDEO_FOLDER: Record<string, string> = {
   "": "home",
@@ -56,12 +58,20 @@ export const UPLOAD_KINDS: Record<UploadKind, UploadKindConfig> = {
     maxBytes: 5 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
   },
-  // Futuro — módulos aún no construidos (ver "Pendiente" en CLAUDE.md):
-  //   "document":        bucket "documents", 10MB, application/pdf
-  //   "payment-receipt": bucket "documents", 10MB, application/pdf
-  //   "guest-excel":     bucket "documents", 5MB — requiere migración para
-  //                      agregar el mime type de Excel a allowed_mime_types
-  //                      del bucket "documents" antes de poder usarse.
+  document: {
+    bucket: "documents",
+    maxBytes: 10 * 1024 * 1024,
+    allowedMimeTypes: ["application/pdf"],
+  },
+  "payment-receipt": {
+    bucket: "documents",
+    maxBytes: 10 * 1024 * 1024,
+    allowedMimeTypes: ["application/pdf"],
+  },
+  // Futuro — módulo aún no construido (ver "Pendiente" en CLAUDE.md):
+  //   "guest-excel": bucket "documents", 5MB — requiere migración para
+  //                  agregar el mime type de Excel a allowed_mime_types
+  //                  del bucket "documents" antes de poder usarse.
 };
 
 export function heroVideoPath(eventType: string, fileName: string): string {
@@ -89,6 +99,18 @@ export function avatarPath(userId: string, fileName: string): string {
 export function testimonialPhotoPath(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
   return `avatars/${Date.now()}.${ext}`;
+}
+
+function safeFileName(fileName: string): string {
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
+}
+
+export function documentPath(bookingId: string, fileName: string): string {
+  return `${bookingId}/contratos/${Date.now()}_${safeFileName(fileName)}`;
+}
+
+export function paymentReceiptPath(bookingId: string, fileName: string): string {
+  return `${bookingId}/comprobantes/${Date.now()}_${safeFileName(fileName)}`;
 }
 
 export const SITE_IMAGE_KEYS = [

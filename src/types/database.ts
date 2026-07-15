@@ -608,6 +608,7 @@ export type Database = {
         Row: {
           amount: number
           booking_id: string
+          concept: string | null
           created_at: string
           id: string
           notes: string | null
@@ -616,11 +617,13 @@ export type Database = {
           receipt_url: string | null
           recorded_by: string | null
           reference_number: string | null
+          status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
         }
         Insert: {
           amount: number
           booking_id: string
+          concept?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -629,11 +632,13 @@ export type Database = {
           receipt_url?: string | null
           recorded_by?: string | null
           reference_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
         Update: {
           amount?: number
           booking_id?: string
+          concept?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -642,6 +647,7 @@ export type Database = {
           receipt_url?: string | null
           recorded_by?: string | null
           reference_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
         Relationships: [
@@ -1064,7 +1070,13 @@ export type Database = {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       contact_status: "unread" | "read" | "replied"
       document_type: "contrato"
-      payment_method_type: "transferencia" | "efectivo" | "cheque" | "otro"
+      payment_method_type:
+        | "transferencia"
+        | "efectivo"
+        | "cheque"
+        | "otro"
+        | "tarjeta"
+      payment_status: "pending" | "confirmed"
       playlist_section:
         | "entrada_novio"
         | "entrada_novia"
@@ -1222,7 +1234,14 @@ export const Constants = {
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
       contact_status: ["unread", "read", "replied"],
       document_type: ["contrato"],
-      payment_method_type: ["transferencia", "efectivo", "cheque", "otro"],
+      payment_method_type: [
+        "transferencia",
+        "efectivo",
+        "cheque",
+        "otro",
+        "tarjeta",
+      ],
+      payment_status: ["pending", "confirmed"],
       playlist_section: [
         "entrada_novio",
         "entrada_novia",

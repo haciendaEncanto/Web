@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, ClipboardList, Users, CalendarDays, Eye } from "lucide-react";
+import { Pencil, ClipboardList, Users, CalendarDays, Eye, FileText, CreditCard } from "lucide-react";
 import { CancelEventButton } from "@/components/portal/CancelEventButton";
 import { getClientSegment, type ClientBookingRow, type ClientSegment } from "@/lib/clientes";
 
@@ -177,13 +177,22 @@ export function ClientesTable({
                         <td className="px-4 py-4">
                           <div className="flex items-center justify-end gap-1">
                             {basePath === "admin" ? (
-                              <Link
-                                href={`/admin/clientes/${b.client_id}`}
-                                title="Ver cliente"
-                                className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
-                              >
-                                <Eye size={15} />
-                              </Link>
+                              <>
+                                <Link
+                                  href={`/admin/clientes/${b.client_id}`}
+                                  title="Ver cliente"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <Eye size={15} />
+                                </Link>
+                                <Link
+                                  href={`/admin/clientes/${b.client_id}/pagos`}
+                                  title="Pagos"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <CreditCard size={15} />
+                                </Link>
+                              </>
                             ) : (
                               <>
                                 <Link
@@ -199,6 +208,20 @@ export function ClientesTable({
                                   className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors"
                                 >
                                   <Pencil size={15} />
+                                </Link>
+                                <Link
+                                  href={`/portal/planner/clientes/${b.client_id}/documentos`}
+                                  title="Documentos"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <FileText size={15} />
+                                </Link>
+                                <Link
+                                  href={`/portal/planner/clientes/${b.client_id}/pagos`}
+                                  title="Pagos"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <CreditCard size={15} />
                                 </Link>
                               </>
                             )}

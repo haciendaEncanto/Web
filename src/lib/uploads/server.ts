@@ -61,3 +61,33 @@ export async function removeUploadedFile(kind: UploadKind, path: string): Promis
   const admin = createAdminClient();
   await admin.storage.from(UPLOAD_KINDS[kind].bucket).remove([path]);
 }
+
+const DOWNLOAD_EXPIRES_SECONDS = 60 * 60; // 1 hora
+
+export async function createSignedDownload(
+  kind: UploadKind,
+  path: string,
+): Promise<{ url?: string; error?: string }> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage
+    .from(UPLOAD_KINDS[kind].bucket)
+    .createSignedUrl(path, DOWNLOAD_EXPIRES_SECONDS);
+
+  if (error || !data) {
+    return { error: `Error de Storage: ${error?.message ?? "no se pudo generar la URL"}` };
+  }
+  return { url: data.signedUrl };
+}
+
+export async function getStoredFileSize(kind: UploadKind, path: string): Promise<number | null> {
+  const admin = createAdminClient();
+  const slash = path.lastIndexOf("/");
+  const folder = slash === -1 ? "" : path.slice(0, slash);
+  const fileName = slash === -1 ? path : path.slice(slash + 1);
+
+  const { data } = await admin.storage
+    .from(UPLOAD_KINDS[kind].bucket)
+    .list(folder, { search: fileName });
+
+  return data?.find((f) => f.name === fileName)?.metadata?.size ?? null;
+}
