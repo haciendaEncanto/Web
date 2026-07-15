@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
+import { PageTransitionLink } from "@/components/ui/PageTransitionLink";
+import { usePageTransition } from "@/components/ui/PageTransitionProvider";
 
 const links = [
-  { href: "/bodas", label: "Bodas" },
-  { href: "/quince-anos", label: "Quince Años" },
+  { href: "/bodas", label: "Nuestra Boda" },
+  { href: "/quince-anos", label: "Mis XV" },
   { href: "/eventos-empresariales", label: "Eventos Empresariales" },
   { href: "/revelacion-de-genero", label: "Revelación de Género" },
 ];
@@ -16,8 +17,8 @@ const links = [
 export function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
+  const startTransition = usePageTransition();
 
   useEffect(() => {
     const supabase = createClient();
@@ -37,39 +38,37 @@ export function NavBar() {
   const handleMiEvento = (e: React.MouseEvent) => {
     e.preventDefault();
     close();
-    setShowOverlay(true);
-    setTimeout(() => router.push(miEventoHref), 1000);
+    startTransition();
+    router.push(miEventoHref);
   };
 
   return (
     <>
-      <TransitionOverlay visible={showOverlay} />
-
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-crema/95 backdrop-blur-md border-b border-black/[0.04]">
         {/* Barra principal */}
         <div className="max-w-[1200px] mx-auto px-6 md:px-8 flex items-center justify-between h-[72px]">
-          <Link href="/" onClick={close}>
+          <PageTransitionLink href="/" onClick={close}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-principal-fondo-claro.svg"
               alt="Hacienda El Encanto"
               style={{ height: "42px", width: "auto" }}
             />
-          </Link>
+          </PageTransitionLink>
 
           {/* Desktop */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-rojo font-medium text-sm">
+            <PageTransitionLink href="/" className="text-rojo font-medium text-sm">
               Inicio
-            </Link>
+            </PageTransitionLink>
             {links.map((l) => (
-              <Link
+              <PageTransitionLink
                 key={l.href}
                 href={l.href}
                 className="text-gris text-sm hover:text-rojo transition-colors duration-300 tracking-[0.3px]"
               >
                 {l.label}
-              </Link>
+              </PageTransitionLink>
             ))}
             <Link
               href={miEventoHref}
@@ -119,22 +118,22 @@ export function NavBar() {
           }`}
         >
           <div className="px-6 py-2 flex flex-col">
-            <Link
+            <PageTransitionLink
               href="/"
               onClick={close}
               className="text-rojo font-medium text-[0.95rem] py-3 border-b border-black/[0.05]"
             >
               Inicio
-            </Link>
+            </PageTransitionLink>
             {links.map((l) => (
-              <Link
+              <PageTransitionLink
                 key={l.href}
                 href={l.href}
                 onClick={close}
                 className="text-negro text-[0.95rem] py-3 border-b border-black/[0.05] hover:text-rojo transition-colors duration-300"
               >
                 {l.label}
-              </Link>
+              </PageTransitionLink>
             ))}
             <Link
               href={miEventoHref}

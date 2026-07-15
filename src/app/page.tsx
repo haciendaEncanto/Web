@@ -20,7 +20,7 @@ export default async function HomePage() {
     await Promise.all([
       supabase
         .from("testimonials")
-        .select("client_name, event_type, rating, content")
+        .select("client_name, event_type, rating, content, photo_url")
         .eq("is_published", true)
         .order("sort_order"),
       supabase

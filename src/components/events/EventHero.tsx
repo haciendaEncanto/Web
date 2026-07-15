@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
 
 interface EventHeroProps {
   image: string;
@@ -9,6 +10,9 @@ interface EventHeroProps {
   videoUrl?: string | null;
 }
 
+const BLACK_POSTER =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
+
 export function EventHero({
   image,
   tagline,
@@ -17,6 +21,8 @@ export function EventHero({
   ctaLabel,
   videoUrl,
 }: EventHeroProps) {
+  const hasImage = Boolean(image) && image !== "/placeholder-evento.svg";
+
   return (
     <section className="relative w-screen overflow-hidden">
       {/* Bloque de video / imagen */}
@@ -27,16 +33,18 @@ export function EventHero({
             muted
             loop
             playsInline
-            poster={image}
+            poster={hasImage ? image : BLACK_POSTER}
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source src={videoUrl} type="video/mp4" />
           </video>
-        ) : (
+        ) : hasImage ? (
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url('${image}')` }}
           />
+        ) : (
+          <HeroLogoFallback />
         )}
 
         {/* Overlay — degradado suave, más oscuro arriba y abajo, casi transparente al centro */}

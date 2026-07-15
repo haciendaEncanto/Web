@@ -1,10 +1,5 @@
 import Image from "next/image";
-
-const FALLBACK_IMG: Record<string, string> = {
-  catering:     "/placeholder-evento.svg",
-  fotografia:   "/placeholder-evento.svg",
-  decoracion:   "/placeholder-evento.svg",
-};
+import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
 
 const servicios = [
   { key: "catering",   title: "Catering",            desc: "Banquetes personalizados con sabores inolvidables. Menús gourmet que harán de tu evento una experiencia culinaria única para ti y tus invitados." },
@@ -42,13 +37,17 @@ export function ServiciosSection({ images }: { images?: ServiciosSectionImages }
               className="bg-blanco rounded-2xl overflow-hidden transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="relative h-60">
-                <Image
-                  src={images?.[s.key] ?? FALLBACK_IMG[s.key]}
-                  alt={s.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+                {images?.[s.key] ? (
+                  <Image
+                    src={images[s.key] as string}
+                    alt={s.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                ) : (
+                  <HeroLogoFallback variant="light" />
+                )}
               </div>
               <div className="p-7">
                 <h3 className="font-serif text-[1.5rem] font-light text-negro mb-2 tracking-[-0.02em]">

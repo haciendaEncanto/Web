@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond } from "next/font/google";
+import { IntroOverlay } from "@/components/ui/IntroOverlay";
+import { PageTransitionProvider } from "@/components/ui/PageTransitionProvider";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -35,7 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${cormorant.variable} h-full antialiased overflow-x-hidden`}>
-      <body className="min-h-full flex flex-col overflow-x-hidden">{children}</body>
+      <body className="min-h-full flex flex-col overflow-x-hidden">
+        <IntroOverlay />
+        <PageTransitionProvider>{children}</PageTransitionProvider>
+      </body>
     </html>
   );
 }

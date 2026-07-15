@@ -5,17 +5,8 @@ interface Testimonio {
   event_type: string | null;
   rating: number | null;
   content: string;
+  photo_url: string | null;
 }
-
-// Avatares del mockup — se reemplazarán con campo avatar_url en la tabla cuando esté disponible
-const AVATARS: Record<string, string> = {
-  "Verónica":
-    "/placeholder-evento.svg",
-  "Carolina y Andrés":
-    "/placeholder-evento.svg",
-  "Ana y Carlos":
-    "/placeholder-evento.svg",
-};
 
 export function TestimoniosSection({ testimonials }: { testimonials: Testimonio[] }) {
   if (!testimonials.length) return null;
@@ -35,7 +26,6 @@ export function TestimoniosSection({ testimonials }: { testimonials: Testimonio[
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t) => {
-            const avatar = AVATARS[t.client_name];
             return (
               <div key={t.client_name} className="bg-blanco rounded-2xl p-10 relative">
                 {/* Comilla decorativa */}
@@ -50,15 +40,13 @@ export function TestimoniosSection({ testimonials }: { testimonials: Testimonio[
                   &ldquo;{t.content}&rdquo;
                 </p>
                 <div className="flex items-center gap-3">
-                  {avatar && (
-                    <Image
-                      src={avatar}
-                      alt={t.client_name}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover flex-shrink-0"
-                    />
-                  )}
+                  <Image
+                    src={t.photo_url ?? "/placeholder-avatar.svg"}
+                    alt={t.client_name}
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover flex-shrink-0"
+                  />
                   <div>
                     <div className="font-medium text-[0.9rem] text-negro">
                       {t.client_name}

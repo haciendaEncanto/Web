@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
 
 interface HeroVideo {
   url: string;
   thumbnail_url: string | null;
 }
 
-const POSTER =
-  "/placeholder-evento.svg";
+const BLACK_POSTER =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
 
 export function HeroSection({ videos }: { videos: HeroVideo[] }) {
   const ref1 = useRef<HTMLVideoElement>(null);
@@ -33,8 +34,6 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
     return () => vids.forEach((v) => v.removeEventListener("ended", switchVideo));
   }, [videos]);
 
-  const staticImage = videos[0]?.thumbnail_url ?? POSTER;
-
   return (
     <section className="relative w-screen overflow-hidden">
       {/* Bloque de video / imagen */}
@@ -47,7 +46,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
               muted
               loop
               playsInline
-              poster={videos[0].thumbnail_url ?? POSTER}
+              poster={videos[0].thumbnail_url ?? BLACK_POSTER}
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
               style={{ opacity: 1 }}
             >
@@ -60,7 +59,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
                 muted
                 loop
                 playsInline
-                poster={videos[1].thumbnail_url ?? undefined}
+                poster={videos[1].thumbnail_url ?? BLACK_POSTER}
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
                 style={{ opacity: 0 }}
               >
@@ -69,10 +68,7 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
             )}
           </>
         ) : (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('${staticImage}')` }}
-          />
+          <HeroLogoFallback />
         )}
 
         {/* Overlay — degradado suave, más oscuro arriba y abajo, casi transparente al centro */}

@@ -16,6 +16,7 @@ export interface EventTestimonio {
   event_type: string | null;
   rating: number | null;
   content: string;
+  photo_url: string | null;
 }
 
 export interface EventPageConfig {

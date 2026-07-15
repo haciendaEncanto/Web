@@ -1,7 +1,12 @@
 // Config compartida cliente/servidor para uploads directos a Supabase Storage
 // vía signed URL. No contiene secretos — seguro de importar desde componentes cliente.
 
-export type UploadKind = "hero-video" | "gallery-image" | "site-image";
+export type UploadKind =
+  | "hero-video"
+  | "gallery-image"
+  | "site-image"
+  | "avatar"
+  | "testimonial-photo";
 
 export const HERO_VIDEO_FOLDER: Record<string, string> = {
   "": "home",
@@ -41,6 +46,16 @@ export const UPLOAD_KINDS: Record<UploadKind, UploadKindConfig> = {
     maxBytes: 5 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
   },
+  avatar: {
+    bucket: "avatars",
+    maxBytes: 2 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  "testimonial-photo": {
+    bucket: "gallery",
+    maxBytes: 5 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
   // Futuro — módulos aún no construidos (ver "Pendiente" en CLAUDE.md):
   //   "document":        bucket "documents", 10MB, application/pdf
   //   "payment-receipt": bucket "documents", 10MB, application/pdf
@@ -64,6 +79,16 @@ export function galleryImagePath(category: string, fileName: string): string {
 export function siteImagePath(key: string, fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
   return `sitio/${key}_${Date.now()}.${ext}`;
+}
+
+export function avatarPath(userId: string, fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  return `${userId}/${Date.now()}.${ext}`;
+}
+
+export function testimonialPhotoPath(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  return `avatars/${Date.now()}.${ext}`;
 }
 
 export const SITE_IMAGE_KEYS = [

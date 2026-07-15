@@ -36,7 +36,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .order("sort_order"),
     supabase
       .from("testimonials")
-      .select("client_name, event_type, rating, content")
+      .select("client_name, event_type, rating, content, photo_url")
       .eq("is_published", true)
       .eq("event_type", config.testimonios.eventType)
       .order("sort_order"),

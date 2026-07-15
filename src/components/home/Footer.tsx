@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const eventLinks = [
-  { href: "/bodas", label: "Bodas" },
-  { href: "/quince-anos", label: "Quince Años" },
+  { href: "/bodas", label: "Nuestra Boda" },
+  { href: "/quince-anos", label: "Mis XV" },
   { href: "/eventos-empresariales", label: "Empresariales" },
   { href: "/revelacion-de-genero", label: "Revelación de Género" },
 ];

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition, useActionState } from "react";
-import { UserPlus, Pencil, ToggleLeft, ToggleRight, Loader2, X, Eye, EyeOff } from "lucide-react";
+import { useRef, useState, useTransition, useActionState } from "react";
+import { UserPlus, Pencil, ToggleLeft, ToggleRight, Loader2, X, Eye, EyeOff, Upload, User } from "lucide-react";
 import {
   crearUsuario, editarUsuario, toggleUsuarioActivo,
+  requestUsuarioAvatarUpload, confirmUsuarioAvatarUpload,
   type CrearUsuarioState, type EditarUsuarioState,
 } from "@/app/actions/admin/usuarios";
+import { uploadFileToSignedUrl } from "@/lib/uploads/client";
 
 type Usuario = {
   id: string;
@@ -14,7 +16,11 @@ type Usuario = {
   role: string;
   is_active: boolean;
   created_at: string;
+  avatar_url: string | null;
 };
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrador", wedding_planner: "Wedding Planner",
@@ -111,8 +117,42 @@ function CrearModal({ onClose }: { onClose: () => void }) {
 function EditarModal({ usuario, onClose }: { usuario: Usuario; onClose: () => void }) {
   const [state, action] = useActionState<EditarUsuarioState, FormData>(editarUsuario, null);
   const [isActive, setIsActive] = useState(usuario.is_active);
+  const [avatarUrl, setAvatarUrl] = useState(usuario.avatar_url);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
 
   if (state?.success) { onClose(); return null; }
+
+  async function handleAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > AVATAR_MAX_BYTES) { setAvatarError("La foto supera 2 MB"); return; }
+    if (!AVATAR_ALLOWED_MIME.includes(f.type)) { setAvatarError("Solo se aceptan JPG, PNG y WebP"); return; }
+
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const req = await requestUsuarioAvatarUpload({
+        userId: usuario.id, fileName: f.name, contentType: f.type, size: f.size,
+      });
+      if (req.error || !req.signedUrl || !req.token || !req.path) {
+        setAvatarError(req.error ?? "No se pudo iniciar la subida");
+        return;
+      }
+      const upErr = await uploadFileToSignedUrl("avatars", req.path, req.token, f);
+      if (upErr.error) { setAvatarError(upErr.error); return; }
+
+      const result = await confirmUsuarioAvatarUpload({ userId: usuario.id, path: req.path });
+      if (result.error) { setAvatarError(result.error); return; }
+      setAvatarUrl(result.url ?? null);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Error inesperado");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarRef.current) avatarRef.current.value = "";
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -122,6 +162,28 @@ function EditarModal({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
           <h3 className="font-serif text-[1.1rem] text-negro">Editar usuario</h3>
           <button onClick={onClose} className="text-gris hover:text-negro p-1"><X size={18} /></button>
         </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative w-14 h-14 rounded-full overflow-hidden ring-1 ring-negro/10 bg-dorado/10 flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={usuario.full_name ?? usuario.email} className="w-full h-full object-cover" />
+            ) : (
+              <User size={22} className="text-dorado/50" />
+            )}
+            {uploadingAvatar && (
+              <div className="absolute inset-0 bg-negro/55 flex items-center justify-center">
+                <Loader2 size={16} className="animate-spin text-blanco" />
+              </div>
+            )}
+          </div>
+          <input ref={avatarRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatar} />
+          <button type="button" onClick={() => avatarRef.current?.click()} disabled={uploadingAvatar}
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-negro/15 rounded-lg text-[0.78rem] text-negro hover:bg-negro/5 disabled:opacity-40 transition-colors">
+            <Upload size={13} /> {avatarUrl ? "Cambiar foto" : "Agregar foto"}
+          </button>
+        </div>
+        {avatarError && <p className="text-[0.72rem] text-rojo">{avatarError}</p>}
 
         {state?.error && !state.field && (
           <p className="text-[0.78rem] text-rojo bg-rojo/5 rounded-lg px-3 py-2">{state.error}</p>
@@ -215,8 +277,20 @@ export function UsuariosManager({ usuarios }: { usuarios: Usuario[] }) {
               {usuarios.map((u) => (
                 <tr key={u.id} className={`hover:bg-crema/20 transition-colors ${!u.is_active ? "opacity-50" : ""}`}>
                   <td className="px-5 py-3.5">
-                    <p className="text-[0.85rem] font-medium text-negro">{u.full_name ?? "—"}</p>
-                    <p className="text-[0.73rem] text-gris mt-0.5">{u.email}</p>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-negro/10 bg-dorado/10 flex items-center justify-center shrink-0">
+                        {u.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={u.avatar_url} alt={u.full_name ?? u.email} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={14} className="text-dorado/50" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[0.85rem] font-medium text-negro">{u.full_name ?? "—"}</p>
+                        <p className="text-[0.73rem] text-gris mt-0.5">{u.email}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3.5"><Badge role={u.role} /></td>
                   <td className="px-4 py-3.5">
