@@ -1,6 +1,44 @@
-import { Users } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { StaffEventsView, type EventoActivo } from "@/components/portal/StaffEventsView";
+import type { PlaylistSection } from "@/lib/playlist-templates";
 
-export default function StaffPanel() {
+export default async function StaffPanel() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("id, event_type, event_date, profiles(full_name, email)")
+    .in("status", ["pending", "confirmed"])
+    .order("event_date", { ascending: true });
+
+  const bookingIds = (bookings ?? []).map((b) => b.id);
+  const { data: playlistRows } = bookingIds.length
+    ? await supabase
+        .from("playlists")
+        .select("booking_id, section, song_url, no_aplica")
+        .in("booking_id", bookingIds)
+    : { data: [] };
+
+  const eventos: EventoActivo[] = (bookings ?? []).map((b) => {
+    const client = b.profiles as { full_name: string | null; email: string } | null;
+    return {
+      bookingId: b.id,
+      clientName: client?.full_name ?? client?.email ?? "Cliente",
+      eventType: b.event_type,
+      eventDate: b.event_date,
+      playlist: (playlistRows ?? [])
+        .filter((p) => p.booking_id === b.id)
+        .map((p) => ({
+          section: p.section as PlaylistSection,
+          song_url: p.song_url,
+          no_aplica: p.no_aplica,
+        })),
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -8,18 +46,10 @@ export default function StaffPanel() {
           Panel <span className="text-dorado">Staff</span>
         </h2>
         <p className="text-gris text-[0.88rem] mt-1">
-          Reservas y orden del día
+          Eventos activos y su playlist musical
         </p>
       </div>
-      <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-10 text-center">
-        <Users size={40} className="text-dorado/50 mx-auto mb-4" />
-        <p className="font-serif text-[1.3rem] text-negro mb-2">
-          Módulo en construcción
-        </p>
-        <p className="text-gris text-[0.87rem] max-w-[340px] mx-auto">
-          El panel de staff estará disponible próximamente.
-        </p>
-      </div>
+      <StaffEventsView eventos={eventos} />
     </div>
   );
 }

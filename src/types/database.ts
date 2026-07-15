@@ -1089,6 +1089,12 @@ export type Database = {
         | "playlist_rumba"
         | "entrada_zona_verde"
         | "acompanamiento_zona_verde"
+        | "vals_opcion_2"
+        | "vals_opcion_3"
+        | "acompanamiento_salon"
+        | "playlist_ceremonia"
+        | "observaciones"
+        | "centinela"
       service_order_status:
         | "pending"
         | "confirmed"
@@ -1254,6 +1260,12 @@ export const Constants = {
         "playlist_rumba",
         "entrada_zona_verde",
         "acompanamiento_zona_verde",
+        "vals_opcion_2",
+        "vals_opcion_3",
+        "acompanamiento_salon",
+        "playlist_ceremonia",
+        "observaciones",
+        "centinela",
       ],
       service_order_status: [
         "pending",
