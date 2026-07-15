@@ -1,4 +1,7 @@
-import { ExternalLink, Music2 } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Copy, Music2 } from "lucide-react";
 import {
   getPlaylistTemplate,
   CENTINELA_SECTION,
@@ -7,6 +10,35 @@ import {
 } from "@/lib/playlist-templates";
 
 type PlaylistRow = { section: PlaylistSection; song_url: string | null; no_aplica: boolean };
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API no disponible (contexto no seguro, permisos, etc.) — se ignora.
+    }
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2 shrink-0">
+      {copied && (
+        <span className="text-[0.72rem] text-green-600 font-medium">¡Copiado!</span>
+      )}
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="inline-flex items-center gap-1.5 text-[0.78rem] text-dorado font-medium hover:underline"
+      >
+        <Copy size={12} /> Copiar
+      </button>
+    </span>
+  );
+}
 
 export function PlaylistReadOnly({
   eventType,
@@ -46,20 +78,18 @@ export function PlaylistReadOnly({
         return (
           <div
             key={f.section}
-            className="flex items-center justify-between gap-4 px-6 py-3.5 border-b border-negro/[0.04] last:border-0"
+            className="px-6 py-3.5 border-b border-negro/[0.04] last:border-0"
           >
-            <span className="text-[0.82rem] text-gris">{f.label}</span>
-            {url ? (
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[0.78rem] text-dorado font-medium hover:underline shrink-0"
-              >
-                Abrir <ExternalLink size={12} />
-              </a>
-            ) : (
-              <span className="text-[0.78rem] text-negro/25">—</span>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-[0.82rem] text-gris">{f.label}</span>
+              {url ? (
+                <CopyButton value={url} />
+              ) : (
+                <span className="text-[0.78rem] text-negro/25 shrink-0">—</span>
+              )}
+            </div>
+            {url && (
+              <p className="text-[0.72rem] text-negro/50 mt-1 break-all">{url}</p>
             )}
           </div>
         );
