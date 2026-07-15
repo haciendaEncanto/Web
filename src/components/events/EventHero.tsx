@@ -89,7 +89,7 @@ export function EventHero({
             href="#galeria"
             className="w-full md:w-auto text-center px-9 py-[14px] rounded-lg text-[12px] font-medium tracking-[2px] uppercase transition-all duration-300 bg-transparent text-negro border-2 border-negro/25 hover:bg-negro/5"
           >
-            Ver galería
+            Ver fotos
           </Link>
         </div>
       </div>

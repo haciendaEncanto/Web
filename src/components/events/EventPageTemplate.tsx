@@ -76,11 +76,13 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
         <Vista360 tourUrl={tourContent?.content ?? null} />
 
         {/* 4. Galería */}
-        <SliderGaleria
-          images={allImages}
-          supertitle={config.gallery.supertitle}
-          title={config.gallery.title}
-        />
+        <div id="galeria">
+          <SliderGaleria
+            images={allImages}
+            supertitle={config.gallery.supertitle}
+            title={config.gallery.title}
+          />
+        </div>
 
         {/* 5. Paquetes */}
         <EventPaquetes packages={packages} config={config.paquetes} />
