@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Menu, Bell } from "lucide-react";
 import type { PortalProfile } from "@/app/portal/layout";
 
@@ -84,16 +85,21 @@ export function PortalHeader({
       </button>
 
       {/* Avatar */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-full bg-dorado/15 border border-dorado/30 flex items-center justify-center">
-          <span className="text-dorado text-[0.65rem] font-semibold tracking-wide">
-            {initials}
-          </span>
+      <Link href="/portal/perfil" className="flex items-center gap-2.5 group">
+        <div className="w-8 h-8 rounded-full bg-dorado/15 border border-dorado/30 flex items-center justify-center overflow-hidden shrink-0">
+          {profile.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={profile.avatar_url} alt={profile.full_name ?? profile.email} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-dorado text-[0.65rem] font-semibold tracking-wide">
+              {initials}
+            </span>
+          )}
         </div>
-        <span className="hidden sm:block text-[0.82rem] text-negro/70 font-medium">
+        <span className="hidden sm:block text-[0.82rem] text-negro/70 font-medium group-hover:text-negro transition-colors">
           {profile.full_name?.split(" ")[0] ?? "Usuario"}
         </span>
-      </div>
+      </Link>
     </header>
   );
 }

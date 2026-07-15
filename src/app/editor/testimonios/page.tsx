@@ -5,7 +5,7 @@ export default async function TestimoniosPage() {
   const admin = createAdminClient();
   const { data: testimonios } = await admin
     .from("testimonials")
-    .select("id, client_name, event_type, rating, content, is_published")
+    .select("id, client_name, event_type, rating, content, is_published, photo_url")
     .order("created_at", { ascending: false });
 
   return <TestimoniosManager testimonios={testimonios ?? []} />;

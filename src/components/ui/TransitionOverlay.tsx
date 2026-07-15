@@ -1,10 +1,30 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+
+function subscribe() {
+  return () => {};
+}
+function getClientSnapshot() {
+  return true;
+}
+function getServerSnapshot() {
+  return false;
+}
+
 export function TransitionOverlay({ visible }: { visible: boolean }) {
-  return (
+  // Portal a document.body: si este componente se renderiza dentro de un
+  // ancestro con backdrop-filter/filter/transform (p. ej. el <nav> con
+  // backdrop-blur-md), "fixed" queda contenido en ESE ancestro en vez del
+  // viewport — el overlay se ve como una franja diminuta en vez de cubrir
+  // toda la pantalla. El portal lo desprende de cualquier ancestro así.
+  const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+
+  const overlay = (
     <div
-      className={`fixed inset-0 z-[200] bg-[#F5F0E8] overflow-hidden flex items-center justify-center transition-opacity duration-150 ${
-        visible ? "opacity-100" : "opacity-0 pointer-events-none"
+      className={`fixed inset-0 z-[200] bg-[#F5F0E8] overflow-hidden flex items-center justify-center pointer-events-none transition-opacity duration-150 ${
+        visible ? "opacity-100" : "opacity-0"
       }`}
     >
       {visible && (
@@ -26,4 +46,7 @@ export function TransitionOverlay({ visible }: { visible: boolean }) {
       )}
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(overlay, document.body);
 }

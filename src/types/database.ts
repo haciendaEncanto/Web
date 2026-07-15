@@ -1013,6 +1013,7 @@ export type Database = {
           event_type: string | null
           id: string
           is_published: boolean
+          photo_url: string | null
           rating: number | null
           sort_order: number
           updated_at: string
@@ -1024,6 +1025,7 @@ export type Database = {
           event_type?: string | null
           id?: string
           is_published?: boolean
+          photo_url?: string | null
           rating?: number | null
           sort_order?: number
           updated_at?: string
@@ -1035,6 +1037,7 @@ export type Database = {
           event_type?: string | null
           id?: string
           is_published?: boolean
+          photo_url?: string | null
           rating?: number | null
           sort_order?: number
           updated_at?: string

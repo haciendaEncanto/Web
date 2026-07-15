@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
+import { avatarPath } from "@/lib/uploads/config";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -133,4 +135,47 @@ export async function toggleUsuarioActivo(
 
   revalidatePath("/admin/usuarios");
   return {};
+}
+
+export async function requestUsuarioAvatarUpload(meta: {
+  userId: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}): Promise<{ signedUrl?: string; token?: string; path?: string; error?: string }> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  const path = avatarPath(meta.userId, meta.fileName);
+  const { upload, error } = await createSignedUpload("avatar", {
+    contentType: meta.contentType,
+    size: meta.size,
+    path,
+  });
+  if (error || !upload) return { error };
+
+  return { signedUrl: upload.signedUrl, token: upload.token, path: upload.path };
+}
+
+export async function confirmUsuarioAvatarUpload(meta: {
+  userId: string;
+  path: string;
+}): Promise<{ url?: string; error?: string }> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  const admin = createAdminClient();
+  const url = publicUrlFor("avatar", meta.path);
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ avatar_url: url })
+    .eq("id", meta.userId);
+  if (error) {
+    await removeUploadedFile("avatar", meta.path);
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/usuarios");
+  return { url };
 }

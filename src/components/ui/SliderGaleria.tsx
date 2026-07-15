@@ -73,7 +73,7 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
       <div className="relative h-[420px] md:h-[580px] overflow-hidden">
         {items.map((img, i) => (
           <Image
-            key={img.url}
+            key={`${i}-${img.url}`}
             src={img.url}
             alt={img.title ?? "Hacienda El Encanto"}
             fill

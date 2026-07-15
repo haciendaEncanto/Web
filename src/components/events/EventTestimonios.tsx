@@ -1,15 +1,6 @@
 import Image from "next/image";
 import type { EventTestimonio } from "./types";
 
-const AVATARS: Record<string, string> = {
-  "Verónica":
-    "/placeholder-evento.svg",
-  "Carolina y Andrés":
-    "/placeholder-evento.svg",
-  "Ana y Carlos":
-    "/placeholder-evento.svg",
-};
-
 export function EventTestimonios({
   testimonials,
   title,
@@ -34,7 +25,6 @@ export function EventTestimonios({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t) => {
-            const avatar = AVATARS[t.client_name];
             return (
               <div key={t.client_name} className="bg-blanco rounded-2xl p-10 relative">
                 <span className="absolute top-[10px] left-5 font-serif text-[5rem] text-rojo/15 leading-none select-none pointer-events-none">
@@ -47,15 +37,13 @@ export function EventTestimonios({
                   &ldquo;{t.content}&rdquo;
                 </p>
                 <div className="flex items-center gap-3">
-                  {avatar && (
-                    <Image
-                      src={avatar}
-                      alt={t.client_name}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover flex-shrink-0"
-                    />
-                  )}
+                  <Image
+                    src={t.photo_url ?? "/placeholder-avatar.svg"}
+                    alt={t.client_name}
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover flex-shrink-0"
+                  />
                   <div>
                     <div className="font-medium text-[0.9rem] text-negro">
                       {t.client_name}

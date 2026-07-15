@@ -1,18 +1,12 @@
 import Image from "next/image";
-import Link from "next/link";
-
-const FALLBACK_IMG: Record<string, string> = {
-  boda:         "/placeholder-evento.svg",
-  quince:       "/placeholder-evento.svg",
-  empresarial:  "/placeholder-evento.svg",
-  revelacion:   "/placeholder-evento.svg",
-};
+import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
+import { PageTransitionLink } from "@/components/ui/PageTransitionLink";
 
 const eventos = [
-  { key: "boda",        title: "Bodas",                  desc: "El escenario perfecto para tu historia de amor", href: "/bodas" },
-  { key: "quince",       title: "Quince Años",            desc: "Un momento único merece un lugar inolvidable",    href: "/quince-anos" },
-  { key: "empresarial",  title: "Empresariales",          desc: "Infraestructura y elegancia para tu empresa",     href: "/empresariales" },
-  { key: "revelacion",   title: "Revelación de Género",   desc: "El primer gran evento de tu bebé",                href: "/revelacion" },
+  { key: "boda",        title: "Nuestra Boda",           desc: "El escenario perfecto para tu historia de amor", href: "/bodas" },
+  { key: "quince",       title: "Mis XV",                 desc: "Un momento único merece un lugar inolvidable",    href: "/quince-anos" },
+  { key: "empresarial",  title: "Empresariales",          desc: "Infraestructura y elegancia para tu empresa",     href: "/eventos-empresariales" },
+  { key: "revelacion",   title: "Revelación de Género",   desc: "El primer gran evento de tu bebé",                href: "/revelacion-de-genero" },
 ] as const;
 
 export interface EventosSectionImages {
@@ -41,18 +35,22 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {eventos.map((e) => (
-            <Link
+            <PageTransitionLink
               key={e.href}
               href={e.href}
               className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
-              <Image
-                src={images?.[e.key] ?? FALLBACK_IMG[e.key]}
-                alt={e.title}
-                fill
-                className="object-cover transition-transform duration-[600ms] group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 25vw"
-              />
+              {images?.[e.key] ? (
+                <Image
+                  src={images[e.key] as string}
+                  alt={e.title}
+                  fill
+                  className="object-cover transition-transform duration-[600ms] group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                />
+              ) : (
+                <HeroLogoFallback variant="light" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-negro/80 via-negro/10 to-transparent flex flex-col justify-end p-8">
                 <h3 className="font-serif text-[1.8rem] text-blanco font-light tracking-[-0.02em] mb-1">
                   {e.title}
@@ -62,7 +60,7 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
                   Conoce más →
                 </span>
               </div>
-            </Link>
+            </PageTransitionLink>
           ))}
         </div>
       </div>
