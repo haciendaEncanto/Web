@@ -1,9 +1,9 @@
 import Image from "next/image";
 
 const FALLBACK_IMG: Record<string, string> = {
-  catering:     "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
-  fotografia:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A0101.jpg",
-  decoracion:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
+  catering:     "/placeholder-evento.svg",
+  fotografia:   "/placeholder-evento.svg",
+  decoracion:   "/placeholder-evento.svg",
 };
 
 const servicios = [

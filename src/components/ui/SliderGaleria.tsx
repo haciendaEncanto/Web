@@ -7,23 +7,23 @@ const INTERVAL_MS = 3500;
 
 const PLACEHOLDERS = [
   {
-    url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+    url: "/placeholder-evento.svg",
     title: "Hacienda El Encanto",
   },
   {
-    url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+    url: "/placeholder-evento.svg",
     title: "Celebración",
   },
   {
-    url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+    url: "/placeholder-evento.svg",
     title: "Jardines",
   },
   {
-    url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+    url: "/placeholder-evento.svg",
     title: "Ceremonia",
   },
   {
-    url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+    url: "/placeholder-evento.svg",
     title: "Recepción",
   },
 ];

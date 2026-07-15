@@ -9,7 +9,7 @@ interface HeroVideo {
 }
 
 const POSTER =
-  "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg";
+  "/placeholder-evento.svg";
 
 export function HeroSection({ videos }: { videos: HeroVideo[] }) {
   const ref1 = useRef<HTMLVideoElement>(null);

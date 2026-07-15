@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1A5C30"/>
+      <stop offset="1" stop-color="#0F3D1F"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <g fill="none" stroke="#C9A84C" stroke-width="2" opacity="0.85">
+    <circle cx="600" cy="360" r="46"/>
+    <path d="M600 314c-25 0-46 21-46 46s21 46 46 46 46-21 46-46-21-46-46-46z" opacity="0"/>
+    <path d="M600 330a30 30 0 1 0 0.01 0z" opacity="0"/>
+    <path d="M566 360a34 34 0 1 1 68 0 34 34 0 1 1 -68 0z" opacity="0"/>
+    <path d="M600 326c19 0 34 15 34 34s-15 34-34 34-34-15-34-34 15-34 34-34z" opacity="0"/>
+  </g>
+  <g fill="#C9A84C">
+    <path d="M600 320a24 24 0 1 1 -0.01 0zM576 296a24 24 0 1 1 -0.01 0zM624 296a24 24 0 1 1 -0.01 0z" opacity="0"/>
+  </g>
+  <g fill="#C9A84C" opacity="0.9">
+    <circle cx="578" cy="336" r="22"/>
+    <circle cx="622" cy="336" r="22"/>
+    <circle cx="600" cy="374" r="22"/>
+  </g>
+  <rect x="596" y="374" width="8" height="34" fill="#C9A84C" opacity="0.9"/>
+  <line x1="480" y1="470" x2="720" y2="470" stroke="#C9A84C" stroke-width="1.5" opacity="0.8"/>
+  <text x="600" y="510" text-anchor="middle" font-family="Georgia, 'Cormorant Garamond', serif" font-size="30" letter-spacing="4" fill="#F5F0E8">HACIENDA EL ENCANTO</text>
+</svg>

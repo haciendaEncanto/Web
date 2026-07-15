@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const config: EventPageConfig = {
   hero: {
     image:
-      "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+      "/placeholder-evento.svg",
     videoEventType: "quince",
     tagline: "Quinceañeras · Hacienda El Encanto · Cota, Cundinamarca",
     title: "Quince años llenos de magia",
@@ -35,23 +35,23 @@ const config: EventPageConfig = {
     title: "Quinceañeras que brillan",
     fallback: [
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+        url: "/placeholder-evento.svg",
         title: "Celebración quince años",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+        url: "/placeholder-evento.svg",
         title: "Decoración especial",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+        url: "/placeholder-evento.svg",
         title: "Jardines El Encanto",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+        url: "/placeholder-evento.svg",
         title: "Salón principal",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+        url: "/placeholder-evento.svg",
         title: "El Encanto",
       },
     ],

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const config: EventPageConfig = {
   hero: {
     image:
-      "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+      "/placeholder-evento.svg",
     videoEventType: "empresarial",
     tagline: "Corporativo · Hacienda El Encanto · Cota, Cundinamarca",
     title: "Eventos empresariales que inspiran",
@@ -35,23 +35,23 @@ const config: EventPageConfig = {
     title: "El escenario perfecto",
     fallback: [
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+        url: "/placeholder-evento.svg",
         title: "Espacio corporativo",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+        url: "/placeholder-evento.svg",
         title: "Salón principal",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+        url: "/placeholder-evento.svg",
         title: "Jardines",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+        url: "/placeholder-evento.svg",
         title: "Áreas al aire libre",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+        url: "/placeholder-evento.svg",
         title: "Recepción",
       },
     ],

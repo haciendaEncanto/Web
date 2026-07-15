@@ -2,23 +2,23 @@ import Image from "next/image";
 
 const images = [
   {
-    src: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+    src: "/placeholder-evento.svg",
     alt: "Evento El Encanto",
   },
   {
-    src: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+    src: "/placeholder-evento.svg",
     alt: "Evento El Encanto",
   },
   {
-    src: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+    src: "/placeholder-evento.svg",
     alt: "Evento El Encanto",
   },
   {
-    src: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+    src: "/placeholder-evento.svg",
     alt: "Evento El Encanto",
   },
   {
-    src: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+    src: "/placeholder-evento.svg",
     alt: "Evento El Encanto",
   },
 ];
