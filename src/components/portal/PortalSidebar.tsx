@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import type { PortalProfile } from "@/app/portal/layout";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -50,7 +51,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/orden-servicio", label: "Mi Orden", icon: ClipboardList },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
-      { href: "/portal/mensajes", label: "Mensajes", icon: MessageSquare },
+      { href: "/portal/mensajes", label: "Mensajes", icon: WhatsAppIcon },
       { href: "/portal/perfil", label: "Mi Perfil", icon: User },
     ];
   }
