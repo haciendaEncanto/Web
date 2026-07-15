@@ -10,11 +10,11 @@ interface Testimonio {
 // Avatares del mockup — se reemplazarán con campo avatar_url en la tabla cuando esté disponible
 const AVATARS: Record<string, string> = {
   "Verónica":
-    "https://www.hacienda-encanto.com/wp-content/uploads/2024/07/pareja2_beso-150x150.jpeg",
+    "/placeholder-evento.svg",
   "Carolina y Andrés":
-    "https://www.hacienda-encanto.com/wp-content/uploads/2024/07/pareja_tarde-150x150.jpeg",
+    "/placeholder-evento.svg",
   "Ana y Carlos":
-    "https://www.hacienda-encanto.com/wp-content/uploads/2024/07/pareja_2-150x150.jpeg",
+    "/placeholder-evento.svg",
 };
 
 export function TestimoniosSection({ testimonials }: { testimonials: Testimonio[] }) {

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const config: EventPageConfig = {
   hero: {
     image:
-      "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+      "/placeholder-evento.svg",
     videoEventType: "boda",
     tagline: "Bodas · Hacienda El Encanto · Cota, Cundinamarca",
     title: "El día más especial de tu vida",
@@ -35,23 +35,23 @@ const config: EventPageConfig = {
     title: "Bodas que inspiran",
     fallback: [
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+        url: "/placeholder-evento.svg",
         title: "Celebración El Encanto",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+        url: "/placeholder-evento.svg",
         title: "Decoración",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+        url: "/placeholder-evento.svg",
         title: "Jardines",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+        url: "/placeholder-evento.svg",
         title: "Ceremonia",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+        url: "/placeholder-evento.svg",
         title: "Recepción",
       },
     ],

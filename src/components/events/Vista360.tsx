@@ -2,7 +2,7 @@ import Link from "next/link";
 import { RotateCw } from "lucide-react";
 
 const PLACEHOLDER_IMAGE =
-  "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg";
+  "/placeholder-evento.svg";
 
 interface Vista360Props {
   tourUrl: string | null;

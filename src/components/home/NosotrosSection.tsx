@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const FALLBACK_IMG = "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2957.jpg";
+const FALLBACK_IMG = "/placeholder-evento.svg";
 
 const stats = [
   { value: "+300", label: "Eventos realizados" },

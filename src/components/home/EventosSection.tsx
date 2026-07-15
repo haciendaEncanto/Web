@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 const FALLBACK_IMG: Record<string, string> = {
-  boda:         "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
-  quince:       "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/B2A2373.jpg",
-  empresarial:  "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_PistaBaile.jpeg",
-  revelacion:   "https://www.hacienda-encanto.com/wp-content/uploads/2024/11/Interior_Love.jpeg",
+  boda:         "/placeholder-evento.svg",
+  quince:       "/placeholder-evento.svg",
+  empresarial:  "/placeholder-evento.svg",
+  revelacion:   "/placeholder-evento.svg",
 };
 
 const eventos = [

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const config: EventPageConfig = {
   hero: {
     image:
-      "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+      "/placeholder-evento.svg",
     videoEventType: "revelacion",
     tagline: "Revelación de Género · Hacienda El Encanto · Cota, Cundinamarca",
     title: "El momento más esperado",
@@ -35,23 +35,23 @@ const config: EventPageConfig = {
     title: "Revelaciones que emocionan",
     fallback: [
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2931.jpg",
+        url: "/placeholder-evento.svg",
         title: "Revelación de género",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2948.jpg",
+        url: "/placeholder-evento.svg",
         title: "Decoración especial",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2953-scaled.jpg",
+        url: "/placeholder-evento.svg",
         title: "Jardines",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2924.jpg",
+        url: "/placeholder-evento.svg",
         title: "El Encanto",
       },
       {
-        url: "https://www.hacienda-encanto.com/wp-content/uploads/2024/12/DSC_2937.jpg",
+        url: "/placeholder-evento.svg",
         title: "Celebración",
       },
     ],
