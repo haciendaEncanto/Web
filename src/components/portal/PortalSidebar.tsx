@@ -23,6 +23,7 @@ import {
   Star,
   Package,
   Shield,
+  Music2,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -49,6 +50,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/evento", label: "Mi Evento", icon: CalendarDays },
       { href: "/portal/actividades", label: "Mi agenda", icon: BookOpen },
       { href: "/portal/orden-servicio", label: "Mi Orden", icon: ClipboardList },
+      { href: "/portal/playlist", label: "Mi Música", icon: Music2 },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
       { href: "/portal/mensajes", label: "Mensajes", icon: WhatsAppIcon },
