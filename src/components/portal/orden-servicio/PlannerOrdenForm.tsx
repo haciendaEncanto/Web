@@ -7,6 +7,8 @@ import {
   initServiceOrder,
   type OrdenState,
 } from "@/app/actions/orden-servicio";
+import { getOrdenMusicFieldMap, type PlaylistSection } from "@/lib/playlist-templates";
+import { CopyButton } from "@/components/ui/CopyButton";
 import type { Json } from "@/types/database";
 
 // ─── Tipos ────────────────────────────────────────────────────────────
@@ -157,6 +159,30 @@ function FormField({
   }
 }
 
+// ─── Campo de música — solo lectura, sincronizado con /portal/playlist ─
+
+function MusicField({ label, url }: { label: string; url: string | null }) {
+  return (
+    <div>
+      <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      <div className="w-full border border-dorado/20 bg-dorado/[0.04] px-3 py-2.5 rounded-lg flex items-center justify-between gap-3">
+        {url ? (
+          <>
+            <span className="text-[0.82rem] text-negro break-all">{url}</span>
+            <CopyButton value={url} />
+          </>
+        ) : (
+          <span className="text-[0.8rem] text-gris italic">
+            Pendiente — el cliente completará desde su portal
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Sección editable ─────────────────────────────────────────────────
 
 const COND_PARENT = "Actividades adicionales";
@@ -166,10 +192,14 @@ function EditableSection({
   section,
   values,
   onChange,
+  musicFieldMap,
+  playlistMap,
 }: {
   section: Section;
   values: Record<string, string>;
   onChange: (id: string, v: string) => void;
+  musicFieldMap: Record<string, PlaylistSection>;
+  playlistMap: Record<string, string | null>;
 }) {
   const items = [...section.service_order_items].sort(
     (a, b) => a.sort_order - b.sort_order
@@ -187,83 +217,45 @@ function EditableSection({
       <div className="px-6 py-5 space-y-4">
         {items
           .filter((i) => i.label !== COND_CHILD) // desc se renderiza inline
-          .map((item) => (
-            <div key={item.id}>
-              <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-                {item.label}
-              </label>
-              <FormField
-                item={item}
-                value={values[item.id] ?? ""}
-                onChange={(v) => onChange(item.id, v)}
-              />
-              {/* Campo condicional: aparece solo cuando Actividades adicionales = Sí */}
-              {item.label === COND_PARENT &&
-                values[parentItem?.id ?? ""] === "Sí" &&
-                descItem && (
-                  <div className="mt-3 border-l-2 border-dorado/30 pl-4">
-                    <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-                      {descItem.label}
-                    </label>
-                    <FormField
-                      item={descItem}
-                      value={values[descItem.id] ?? ""}
-                      onChange={(v) => onChange(descItem.id, v)}
-                    />
-                  </div>
-                )}
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Vista de músca — solo lectura para el planner ────────────────────
-
-function MusicaReadOnly({ section }: { section: Section }) {
-  const items = [...section.service_order_items].sort(
-    (a, b) => a.sort_order - b.sort_order
-  );
-  const centinela = items.find(
-    (i) => i.label === "Llevo acompañamiento musical propio"
-  );
-
-  return (
-    <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-      <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30 flex items-center justify-between">
-        <h3 className="font-serif text-[1.05rem] text-negro tracking-[-0.01em]">
-          {section.name}
-        </h3>
-        <span className="text-[0.65rem] tracking-[0.18em] text-gris uppercase font-medium bg-negro/5 px-2.5 py-1 rounded-full">
-          Lo llena el cliente
-        </span>
-      </div>
-      <div className="px-6 py-1">
-        {centinela?.value === "true" ? (
-          <p className="py-4 text-[0.83rem] text-gris">
-            El cliente indicó que lleva acompañamiento musical propio.
-          </p>
-        ) : (
-          items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-start justify-between gap-4 py-3 border-b border-negro/[0.04] last:border-0"
-            >
-              <span className="text-[0.8rem] text-gris shrink-0">
-                {item.label}
-              </span>
-              <span
-                className={[
-                  "text-[0.82rem] text-right max-w-[55%] break-all",
-                  item.value ? "text-negro font-medium" : "text-negro/25",
-                ].join(" ")}
-              >
-                {item.value || "—"}
-              </span>
-            </div>
-          ))
-        )}
+          .map((item) => {
+            const playlistSection = musicFieldMap[item.label];
+            if (playlistSection) {
+              return (
+                <MusicField
+                  key={item.id}
+                  label={item.label}
+                  url={playlistMap[playlistSection] ?? null}
+                />
+              );
+            }
+            return (
+              <div key={item.id}>
+                <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                  {item.label}
+                </label>
+                <FormField
+                  item={item}
+                  value={values[item.id] ?? ""}
+                  onChange={(v) => onChange(item.id, v)}
+                />
+                {/* Campo condicional: aparece solo cuando Actividades adicionales = Sí */}
+                {item.label === COND_PARENT &&
+                  values[parentItem?.id ?? ""] === "Sí" &&
+                  descItem && (
+                    <div className="mt-3 border-l-2 border-dorado/30 pl-4">
+                      <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                        {descItem.label}
+                      </label>
+                      <FormField
+                        item={descItem}
+                        value={values[descItem.id] ?? ""}
+                        onChange={(v) => onChange(descItem.id, v)}
+                      />
+                    </div>
+                  )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );
@@ -309,17 +301,24 @@ function InitButton({ bookingId }: { bookingId: string }) {
 
 // ─── Componente principal ─────────────────────────────────────────────
 
+type PlaylistRow = { section: PlaylistSection; song_url: string | null; no_aplica: boolean };
+
 export function PlannerOrdenForm({
   booking,
   sections,
+  playlist = [],
 }: {
   booking: Booking;
   sections: Section[];
+  playlist?: PlaylistRow[];
 }) {
   const plannerSections = sections.filter((s) =>
     s.service_order_items.some((i) => i.filled_by === "planner")
   );
-  const musicaSection = sections.find((s) => s.name === "Música y playlist");
+  const musicFieldMap = getOrdenMusicFieldMap(booking.event_type ?? "");
+  const playlistMap = Object.fromEntries(
+    playlist.map((p) => [p.section, p.no_aplica ? null : p.song_url])
+  ) as Record<string, string | null>;
 
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -442,13 +441,10 @@ export function PlannerOrdenForm({
           section={s}
           values={values}
           onChange={handleChange}
+          musicFieldMap={musicFieldMap}
+          playlistMap={playlistMap}
         />
       ))}
-
-      {/* Vista de música del cliente (solo bodas) */}
-      {booking.event_type === "boda" && musicaSection && (
-        <MusicaReadOnly section={musicaSection} />
-      )}
 
       {/* Barra de acciones */}
       <div className="bg-blanco rounded-2xl border border-negro/[0.07] px-6 py-4 flex items-center justify-between gap-4">

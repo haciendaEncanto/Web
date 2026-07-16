@@ -92,6 +92,26 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/planner/salon-mapas", label: "Mapas del salón", icon: Map },
     ];
   }
+  if (role === "staff") {
+    return [
+      { href: "/portal/staff", label: "Mis Eventos", icon: Music2 },
+    ];
+  }
+  if (role === "asesor_comercial") {
+    return [
+      { href: "/portal/asesor-comercial", label: "Eventos", icon: CalendarDays },
+    ];
+  }
+  if (role === "asesor_logistica") {
+    return [
+      { href: "/portal/asesor-logistica", label: "Eventos", icon: CalendarDays },
+    ];
+  }
+  if (role === "gerente") {
+    return [
+      { href: "/portal/gerente", label: "Eventos", icon: CalendarDays },
+    ];
+  }
   const base: NavItem[] = [
     { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
     { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },

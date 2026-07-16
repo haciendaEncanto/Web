@@ -58,6 +58,12 @@ export default async function PlannerOrdenPage({
     .order("sort_order")
     .order("sort_order", { referencedTable: "service_order_items" });
 
+  // Playlist del cliente (fuente de los campos musicales de solo lectura)
+  const { data: playlist } = await supabase
+    .from("playlists")
+    .select("section, song_url, no_aplica")
+    .eq("booking_id", bookingId);
+
   const eventTypeLabel: Record<string, string> = {
     boda: "Boda",
     quince: "Quinceañera",
@@ -105,6 +111,9 @@ export default async function PlannerOrdenPage({
           (sections ?? []) as Parameters<
             typeof PlannerOrdenForm
           >[0]["sections"]
+        }
+        playlist={
+          (playlist ?? []) as Parameters<typeof PlannerOrdenForm>[0]["playlist"]
         }
       />
     </div>

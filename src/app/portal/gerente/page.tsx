@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAllBookingsWithClient } from "@/lib/eventos";
 import { EventosManager } from "@/components/admin/EventosManager";
 
-export default async function AsesorLogisticaPanel() {
+export default async function GerentePanel() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,25 +16,20 @@ export default async function AsesorLogisticaPanel() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["admin", "asesor_logistica"].includes(profile.role)) {
+  if (!profile || !["admin", "gerente"].includes(profile.role)) {
     redirect("/portal");
   }
 
-  const rows = await fetchAllBookingsWithClient(supabase, {
-    restrictToUpcoming: profile.role !== "admin",
-  });
+  // Gerente ve todos los eventos sin restricción de fecha, igual que admin.
+  const rows = await fetchAllBookingsWithClient(supabase);
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
-          Panel <span className="text-dorado">Asesor Logística</span>
+          Panel <span className="text-dorado">Gerente</span>
         </h2>
-        <p className="text-gris text-[0.88rem] mt-1">
-          {profile.role === "admin"
-            ? "Todos los eventos"
-            : "Eventos de los próximos 15 días"}
-        </p>
+        <p className="text-gris text-[0.88rem] mt-1">Todos los eventos</p>
       </div>
       <EventosManager rows={rows} />
     </div>
