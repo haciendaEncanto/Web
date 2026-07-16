@@ -50,3 +50,27 @@ export const PLAYLIST_TEMPLATES: Record<string, PlaylistFieldConfig[]> = {
 export function getPlaylistTemplate(eventType: string): PlaylistFieldConfig[] {
   return PLAYLIST_TEMPLATES[eventType] ?? [];
 }
+
+// Ítems de música dentro de la orden de servicio (Ceremonia/Protocolo) que
+// en vez de ser texto libre del planner, muestran en solo lectura lo que
+// el cliente ya guardó en /portal/playlist — evita datos duplicados/
+// desincronizados entre la orden y la playlist real.
+export const ORDEN_MUSIC_FIELD_MAP: Record<string, Record<string, PlaylistSection>> = {
+  boda: {
+    "Canción ingreso al salón": "entrada_salon",
+    "Canción vals": "vals_pareja",
+    "Vals opción 2": "vals_opcion_2",
+    "Vals opción 3": "vals_opcion_3",
+  },
+  quince: {
+    "Canción ingreso zona verde": "entrada_zona_verde",
+    "Canción ingreso al salón": "entrada_salon",
+    "Canción vals": "vals_pareja",
+    "Vals opción 2": "vals_opcion_2",
+    "Vals opción 3": "vals_opcion_3",
+  },
+};
+
+export function getOrdenMusicFieldMap(eventType: string): Record<string, PlaylistSection> {
+  return ORDEN_MUSIC_FIELD_MAP[eventType] ?? {};
+}

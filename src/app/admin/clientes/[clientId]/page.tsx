@@ -53,6 +53,11 @@ export default async function AdminClienteDetailPage({ params }: Props) {
     .order("sort_order")
     .order("sort_order", { referencedTable: "service_order_items" });
 
+  const { data: playlist } = await supabase
+    .from("playlists")
+    .select("section, song_url, no_aplica")
+    .eq("booking_id", booking.id);
+
   const eventTypeLabel: Record<string, string> = {
     boda: "Boda",
     quince: "Quinceañera",
@@ -113,6 +118,9 @@ export default async function AdminClienteDetailPage({ params }: Props) {
           }}
           sections={
             (sections ?? []) as Parameters<typeof PlannerOrdenForm>[0]["sections"]
+          }
+          playlist={
+            (playlist ?? []) as Parameters<typeof PlannerOrdenForm>[0]["playlist"]
           }
         />
       </div>

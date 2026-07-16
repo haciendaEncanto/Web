@@ -92,6 +92,11 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/planner/salon-mapas", label: "Mapas del salón", icon: Map },
     ];
   }
+  if (role === "staff") {
+    return [
+      { href: "/portal/staff", label: "Mis Eventos", icon: Music2 },
+    ];
+  }
   const base: NavItem[] = [
     { href: "/portal/dashboard", label: "Panel", icon: LayoutDashboard },
     { href: "/portal/calendario", label: "Calendario", icon: CalendarDays },
