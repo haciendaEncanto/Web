@@ -33,7 +33,7 @@ export default async function AsesorLogisticaPanel() {
         <p className="text-gris text-[0.88rem] mt-1">
           {profile.role === "admin"
             ? "Todos los eventos"
-            : "Eventos de las próximas 2 semanas"}
+            : "Eventos de los próximos 15 días"}
         </p>
       </div>
       <EventosManager rows={rows} />

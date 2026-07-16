@@ -1,7 +1,8 @@
-// Ventana de visibilidad de eventos para todos los roles excepto admin:
-// solo eventos entre hoy y hoy + 14 días. El admin (en /admin) nunca pasa
-// restrictToUpcoming y ve todos los eventos sin límite de fecha.
-export const UPCOMING_EVENT_WINDOW_DAYS = 14;
+// Ventana de visibilidad de eventos para planner/staff/asesor comercial/
+// asesor logística: solo eventos entre hoy y hoy + 15 días. Admin y
+// gerente nunca pasan restrictToUpcoming y ven todos los eventos sin
+// límite de fecha.
+export const UPCOMING_EVENT_WINDOW_DAYS = 15;
 
 export function getUpcomingEventWindow(): { from: string; to: string } {
   const now = new Date();

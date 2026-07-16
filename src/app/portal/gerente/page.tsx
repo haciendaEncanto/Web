@@ -20,9 +20,8 @@ export default async function GerentePanel() {
     redirect("/portal");
   }
 
-  const rows = await fetchAllBookingsWithClient(supabase, {
-    restrictToUpcoming: profile.role !== "admin",
-  });
+  // Gerente ve todos los eventos sin restricción de fecha, igual que admin.
+  const rows = await fetchAllBookingsWithClient(supabase);
 
   return (
     <div className="space-y-6">
@@ -30,11 +29,7 @@ export default async function GerentePanel() {
         <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
           Panel <span className="text-dorado">Gerente</span>
         </h2>
-        <p className="text-gris text-[0.88rem] mt-1">
-          {profile.role === "admin"
-            ? "Todos los eventos"
-            : "Eventos de las próximas 2 semanas"}
-        </p>
+        <p className="text-gris text-[0.88rem] mt-1">Todos los eventos</p>
       </div>
       <EventosManager rows={rows} />
     </div>
