@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { getUpcomingEventWindow } from "@/lib/event-window";
 
 export type ClientSegment = "activos" | "cumplidos" | "cancelados";
 
@@ -25,6 +26,7 @@ export type ClientBookingRow = {
 
 export async function fetchClientBookingRows(
   client: SupabaseClient<Database>,
+  options?: { restrictToUpcoming?: boolean },
 ): Promise<ClientBookingRow[]> {
   try {
     await client.rpc("sync_completed_bookings");
@@ -32,7 +34,7 @@ export async function fetchClientBookingRows(
     // best-effort — el cron ya cubre esto de forma independiente
   }
 
-  const { data } = await client
+  let query = client
     .from("bookings")
     .select(
       `id, client_id, event_type, event_date, event_start_time, event_end_time,
@@ -40,8 +42,14 @@ export async function fetchClientBookingRows(
        profiles!inner (id, full_name, email, is_active, role),
        service_order_sections (id)`,
     )
-    .eq("profiles.role", "client")
-    .order("event_date", { ascending: true });
+    .eq("profiles.role", "client");
+
+  if (options?.restrictToUpcoming) {
+    const { from, to } = getUpcomingEventWindow();
+    query = query.gte("event_date", from).lte("event_date", to);
+  }
+
+  const { data } = await query.order("event_date", { ascending: true });
 
   return (data ?? []) as unknown as ClientBookingRow[];
 }

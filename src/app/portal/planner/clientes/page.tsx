@@ -21,7 +21,9 @@ export default async function ClientesPage() {
     redirect("/portal");
   }
 
-  const rows = await fetchClientBookingRows(supabase);
+  const rows = await fetchClientBookingRows(supabase, {
+    restrictToUpcoming: profile.role !== "admin",
+  });
 
   return (
     <div className="space-y-6">

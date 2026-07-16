@@ -2,17 +2,34 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StaffEventsView, type EventoActivo } from "@/components/portal/StaffEventsView";
 import type { PlaylistSection } from "@/lib/playlist-templates";
+import { getUpcomingEventWindow } from "@/lib/event-window";
 
 export default async function StaffPanel() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: bookings } = await supabase
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !["admin", "staff"].includes(profile.role)) {
+    redirect("/portal");
+  }
+
+  let bookingsQuery = supabase
     .from("bookings")
     .select("id, event_type, event_date, profiles(full_name, email)")
-    .in("status", ["pending", "confirmed"])
-    .order("event_date", { ascending: true });
+    .in("status", ["pending", "confirmed"]);
+
+  if (profile.role !== "admin") {
+    const { from, to } = getUpcomingEventWindow();
+    bookingsQuery = bookingsQuery.gte("event_date", from).lte("event_date", to);
+  }
+
+  const { data: bookings } = await bookingsQuery.order("event_date", { ascending: true });
 
   const bookingIds = (bookings ?? []).map((b) => b.id);
   const { data: playlistRows } = bookingIds.length

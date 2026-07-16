@@ -1,6 +1,29 @@
-import { BookOpen } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { fetchAllBookingsWithClient } from "@/lib/eventos";
+import { EventosManager } from "@/components/admin/EventosManager";
 
-export default function AsesorComercialPanel() {
+export default async function AsesorComercialPanel() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !["admin", "asesor_comercial"].includes(profile.role)) {
+    redirect("/portal");
+  }
+
+  const rows = await fetchAllBookingsWithClient(supabase, {
+    restrictToUpcoming: profile.role !== "admin",
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -8,18 +31,12 @@ export default function AsesorComercialPanel() {
           Panel <span className="text-dorado">Asesor Comercial</span>
         </h2>
         <p className="text-gris text-[0.88rem] mt-1">
-          Leads, reservas y calendario
+          {profile.role === "admin"
+            ? "Todos los eventos"
+            : "Eventos de las próximas 2 semanas"}
         </p>
       </div>
-      <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-10 text-center">
-        <BookOpen size={40} className="text-dorado/50 mx-auto mb-4" />
-        <p className="font-serif text-[1.3rem] text-negro mb-2">
-          Módulo en construcción
-        </p>
-        <p className="text-gris text-[0.87rem] max-w-[340px] mx-auto">
-          El panel de asesor comercial estará disponible próximamente.
-        </p>
-      </div>
+      <EventosManager rows={rows} />
     </div>
   );
 }

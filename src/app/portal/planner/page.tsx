@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ClipboardList, Calendar, Users, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CancelEventButton } from "@/components/portal/CancelEventButton";
+import { getUpcomingEventWindow } from "@/lib/event-window";
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
   boda: "Boda",
@@ -30,15 +31,31 @@ export default async function PlannerPanel() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: bookings } = await supabase
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !["admin", "wedding_planner"].includes(profile.role)) {
+    redirect("/portal");
+  }
+
+  let query = supabase
     .from("bookings")
     .select(
       `id, client_id, event_type, event_date, event_start_time, guest_count, status,
        service_order_approved,
        profiles (full_name, email)`
     )
-    .in("status", ["pending", "confirmed"])
-    .order("event_date", { ascending: true });
+    .in("status", ["pending", "confirmed"]);
+
+  if (profile.role !== "admin") {
+    const { from, to } = getUpcomingEventWindow();
+    query = query.gte("event_date", from).lte("event_date", to);
+  }
+
+  const { data: bookings } = await query.order("event_date", { ascending: true });
 
   type Row = {
     id: string;
