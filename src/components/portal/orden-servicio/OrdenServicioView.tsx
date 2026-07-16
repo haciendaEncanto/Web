@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, Clock3, Music2 } from "lucide-react";
-import {
-  saveMusicItems,
-  approveServiceOrder,
-  type OrdenState,
-} from "@/app/actions/orden-servicio";
+import { CheckCircle2, Clock3 } from "lucide-react";
+import { approveServiceOrder } from "@/app/actions/orden-servicio";
 import type { Json } from "@/types/database";
 
 // ─── Tipos ────────────────────────────────────────────────────────────
@@ -99,166 +95,6 @@ function ReadOnlySection({ section }: { section: Section }) {
   );
 }
 
-// ─── Sección Música — editable por el cliente ────────────────────────
-
-function MusicaSection({
-  section,
-  bookingId,
-}: {
-  section: Section;
-  bookingId: string;
-}) {
-  const items = sortedItems(section.service_order_items);
-  const centinela = items.find(
-    (i) => i.label === "Llevo acompañamiento musical propio"
-  );
-  const observaciones = items.find(
-    (i) => i.label === "Observaciones del cliente"
-  );
-  const urlItems = items.filter(
-    (i) =>
-      i.id !== centinela?.id &&
-      i.id !== observaciones?.id
-  );
-
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(items.map((i) => [i.id, i.value ?? ""]))
-  );
-  const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<OrdenState>(null);
-
-  const ownMusic = values[centinela?.id ?? ""] === "true";
-
-  function set(id: string, val: string) {
-    setValues((v) => ({ ...v, [id]: val }));
-    setResult(null);
-  }
-
-  function handleSave() {
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.append("bookingId", bookingId);
-      for (const [id, val] of Object.entries(values)) {
-        fd.append(id, val);
-      }
-      const res = await saveMusicItems(null, fd);
-      setResult(res);
-    });
-  }
-
-  return (
-    <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Music2 size={16} className="text-dorado/70" />
-          <h3 className="font-serif text-[1.05rem] text-negro tracking-[-0.01em]">
-            {section.name}
-          </h3>
-        </div>
-        <span className="text-[0.65rem] tracking-[0.18em] text-dorado uppercase font-medium bg-dorado/10 px-2.5 py-1 rounded-full">
-          Lo llenas tú
-        </span>
-      </div>
-
-      <div className="px-6 py-5 space-y-5">
-        {/* Toggle centinela */}
-        {centinela && (
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={ownMusic}
-              onClick={() =>
-                set(centinela.id, ownMusic ? "false" : "true")
-              }
-              className={[
-                "relative w-10 h-5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dorado",
-                ownMusic ? "bg-dorado" : "bg-negro/20",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-blanco shadow-sm transition-transform duration-200",
-                  ownMusic ? "translate-x-5" : "translate-x-0",
-                ].join(" ")}
-              />
-            </button>
-            <span className="text-[0.85rem] text-negro">
-              {centinela.label}
-            </span>
-          </label>
-        )}
-
-        {/* Mensaje cuando lleva acompañamiento propio */}
-        {ownMusic && (
-          <div className="bg-dorado/8 border border-dorado/20 rounded-xl px-4 py-3 text-[0.82rem] text-negro/65 leading-relaxed">
-            Has indicado que llevarás acompañamiento musical propio. Si
-            cambias de opinión puedes actualizar esta opción.
-          </div>
-        )}
-
-        {/* Campos de URL — ocultos cuando lleva acompañamiento propio */}
-        {!ownMusic && (
-          <div className="space-y-4">
-            {urlItems.map((item) => (
-              <div key={item.id}>
-                <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-                  {item.label}{" "}
-                  <span className="normal-case text-gris/40">(opcional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={values[item.id] ?? ""}
-                  onChange={(e) => set(item.id, e.target.value)}
-                  placeholder="https://open.spotify.com/…  ·  youtube.com/watch?v=…"
-                  className="w-full border border-negro/10 bg-crema/20 px-3 py-2.5 text-[0.82rem] text-negro placeholder:text-gris/35 focus:outline-none focus:border-dorado/60 transition-colors rounded-lg"
-                />
-              </div>
-            ))}
-
-            {/* Observaciones */}
-            {observaciones && (
-              <div>
-                <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
-                  {observaciones.label}
-                </label>
-                <textarea
-                  value={values[observaciones.id] ?? ""}
-                  onChange={(e) => set(observaciones.id, e.target.value)}
-                  placeholder="Indicaciones adicionales para el equipo de sonido…"
-                  rows={3}
-                  className="w-full border border-negro/10 bg-crema/20 px-3 py-2.5 text-[0.82rem] text-negro placeholder:text-gris/35 focus:outline-none focus:border-dorado/60 transition-colors rounded-lg resize-none"
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Botón guardar */}
-        <div className="flex items-center gap-3 pt-1">
-          <button
-            onClick={handleSave}
-            disabled={isPending}
-            className="px-5 py-2.5 bg-dorado text-blanco text-[0.82rem] font-medium rounded-lg hover:bg-dorado/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isPending ? "Guardando…" : "Guardar cambios"}
-          </button>
-          {result?.success && (
-            <span className="flex items-center gap-1.5 text-[0.78rem] text-green-600">
-              <CheckCircle2 size={14} />
-              Guardado
-            </span>
-          )}
-          {result?.error && (
-            <span className="text-[0.78rem] text-red-500">{result.error}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Barra de progreso ────────────────────────────────────────────────
 
 function ProgressBar({
@@ -309,12 +145,10 @@ function ProgressBar({
 
 export function OrdenServicioView({
   bookingId,
-  eventType,
   isApproved,
   sections,
 }: {
   bookingId: string;
-  eventType: string;
   isApproved: boolean;
   sections: Section[];
 }) {
@@ -346,7 +180,6 @@ export function OrdenServicioView({
 
   const cabeceraSection = sections.find((s) => s.name === "Cabecera");
   const bebidasSection = sections.find((s) => s.name === "Bebidas");
-  const musicaSection = sections.find((s) => s.name === "Música y playlist");
 
   function handleApprove() {
     startApprove(async () => {
@@ -372,11 +205,6 @@ export function OrdenServicioView({
 
       {/* Bebidas */}
       {bebidasSection && <ReadOnlySection section={bebidasSection} />}
-
-      {/* Música — solo bodas */}
-      {eventType === "boda" && musicaSection && (
-        <MusicaSection section={musicaSection} bookingId={bookingId} />
-      )}
 
       {/* Aprobación */}
       {approved ? (

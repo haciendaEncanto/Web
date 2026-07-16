@@ -13,7 +13,7 @@ export default async function OrdenServicioPage() {
   const { data: booking } = await supabase
     .from("bookings")
     .select(
-      "id, event_type, event_date, event_start_time, event_end_time, guest_count, status, service_order_approved"
+      "id, event_date, event_start_time, event_end_time, guest_count, status, service_order_approved"
     )
     .eq("client_id", user.id)
     .in("status", ["pending", "confirmed"])
@@ -51,7 +51,6 @@ export default async function OrdenServicioPage() {
   return (
     <OrdenServicioView
       bookingId={booking.id}
-      eventType={booking.event_type ?? ""}
       isApproved={booking.service_order_approved ?? false}
       sections={(sections ?? []) as Parameters<typeof OrdenServicioView>[0]["sections"]}
     />
