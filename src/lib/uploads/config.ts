@@ -8,7 +8,9 @@ export type UploadKind =
   | "avatar"
   | "testimonial-photo"
   | "document"
-  | "payment-receipt";
+  | "payment-receipt"
+  | "guest-list"
+  | "salon-map";
 
 export const HERO_VIDEO_FOLDER: Record<string, string> = {
   "": "home",
@@ -68,10 +70,19 @@ export const UPLOAD_KINDS: Record<UploadKind, UploadKindConfig> = {
     maxBytes: 10 * 1024 * 1024,
     allowedMimeTypes: ["application/pdf"],
   },
-  // Futuro — módulo aún no construido (ver "Pendiente" en CLAUDE.md):
-  //   "guest-excel": bucket "documents", 5MB — requiere migración para
-  //                  agregar el mime type de Excel a allowed_mime_types
-  //                  del bucket "documents" antes de poder usarse.
+  "guest-list": {
+    bucket: "documents",
+    maxBytes: 5 * 1024 * 1024,
+    allowedMimeTypes: [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ],
+  },
+  "salon-map": {
+    bucket: "gallery",
+    maxBytes: 10 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png"],
+  },
 };
 
 export function heroVideoPath(eventType: string, fileName: string): string {
@@ -111,6 +122,15 @@ export function documentPath(bookingId: string, fileName: string): string {
 
 export function paymentReceiptPath(bookingId: string, fileName: string): string {
   return `${bookingId}/comprobantes/${Date.now()}_${safeFileName(fileName)}`;
+}
+
+export function guestListPath(bookingId: string, fileName: string): string {
+  return `${bookingId}/invitados/${Date.now()}_${safeFileName(fileName)}`;
+}
+
+export function salonMapPath(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  return `mapas/${Date.now()}.${ext}`;
 }
 
 export const SITE_IMAGE_KEYS = [

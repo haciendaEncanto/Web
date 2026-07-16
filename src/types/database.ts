@@ -747,6 +747,47 @@ export type Database = {
         }
         Relationships: []
       }
+      salon_maps: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          max_guests: number
+          min_guests: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          max_guests: number
+          min_guests: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          max_guests?: number
+          min_guests?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_maps_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_order_items: {
         Row: {
           created_at: string
