@@ -125,6 +125,9 @@ export function PortalSidebar({
     try {
       await logout();
     } finally {
+      // Este overlay de logout ya cubrió la transición — evita que el Home
+      // vuelva a mostrar su propio loader inicial al llegar.
+      sessionStorage.setItem("fromLogout", "true");
       window.location.href = "/";
     }
   };
