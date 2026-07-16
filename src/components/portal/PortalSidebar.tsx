@@ -24,6 +24,7 @@ import {
   Package,
   Shield,
   Music2,
+  Map,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -51,6 +52,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/actividades", label: "Mi agenda", icon: BookOpen },
       { href: "/portal/orden-servicio", label: "Mi Orden", icon: ClipboardList },
       { href: "/portal/playlist", label: "Mi Música", icon: Music2 },
+      { href: "/portal/invitados", label: "Invitados", icon: Map },
       { href: "/portal/documentos", label: "Documentos", icon: FileText },
       { href: "/portal/pagos", label: "Pagos", icon: CreditCard },
       { href: "/portal/mensajes", label: "Mensajes", icon: WhatsAppIcon },
@@ -87,6 +89,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/planner", label: "Órdenes de Servicio", icon: ClipboardList },
       { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
       { href: "/portal/planner/nuevo-cliente", label: "Nuevo cliente", icon: UserPlus },
+      { href: "/portal/planner/salon-mapas", label: "Mapas del salón", icon: Map },
     ];
   }
   const base: NavItem[] = [
@@ -122,6 +125,9 @@ export function PortalSidebar({
     try {
       await logout();
     } finally {
+      // Este overlay de logout ya cubrió la transición — evita que el Home
+      // vuelva a mostrar su propio loader inicial al llegar.
+      sessionStorage.setItem("fromLogout", "true");
       window.location.href = "/";
     }
   };

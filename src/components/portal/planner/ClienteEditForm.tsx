@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { editarCliente, type EditClientState } from "@/app/actions/editar-cliente";
+import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 
 const inputCls = (error: boolean) =>
   `w-full border ${
@@ -180,13 +181,20 @@ export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/
           />
         </Field>
         <Field label="Cantidad de invitados" error={fieldError("guest_count")}>
-          <input
-            type="number"
-            min={1}
+          <select
             value={guestCount}
             onChange={(e) => setGuestCount(e.target.value)}
             className={inputCls(!!fieldError("guest_count"))}
-          />
+          >
+            {!GUEST_COUNT_OPTIONS.includes(Number(guestCount) as (typeof GUEST_COUNT_OPTIONS)[number]) && (
+              <option value={guestCount}>{guestCount}</option>
+            )}
+            {GUEST_COUNT_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </Field>
       </Section>
 

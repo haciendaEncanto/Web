@@ -8,6 +8,7 @@ import {
   createClientAction,
   type CreateClientState,
 } from "@/app/actions/crear-cliente";
+import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 
 // ─── Helpers de estilo ────────────────────────────────────────────────
 
@@ -248,13 +249,20 @@ export function NuevoClienteForm() {
             required
             error={fieldError("guest_count")}
           >
-            <input
-              type="number"
+            <select
               name="guest_count"
-              min={1}
-              placeholder="Ej. 150"
+              defaultValue=""
               className={inputCls(!!fieldError("guest_count"))}
-            />
+            >
+              <option value="" disabled>
+                Seleccionar…
+              </option>
+              {GUEST_COUNT_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, ClipboardList, Users, CalendarDays, Eye, FileText, CreditCard, Music2 } from "lucide-react";
+import { Pencil, ClipboardList, Users, CalendarDays, Eye, FileText, CreditCard, Music2, Map } from "lucide-react";
 import { CancelEventButton } from "@/components/portal/CancelEventButton";
 import { getClientSegment, type ClientBookingRow, type ClientSegment } from "@/lib/clientes";
 
@@ -199,6 +199,13 @@ export function ClientesTable({
                                 >
                                   <Music2 size={15} />
                                 </Link>
+                                <Link
+                                  href={`/admin/clientes/${b.client_id}/invitados`}
+                                  title="Invitados"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <Map size={15} />
+                                </Link>
                               </>
                             ) : (
                               <>
@@ -236,6 +243,13 @@ export function ClientesTable({
                                   className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
                                 >
                                   <Music2 size={15} />
+                                </Link>
+                                <Link
+                                  href={`/portal/planner/clientes/${b.client_id}/invitados`}
+                                  title="Invitados"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <Map size={15} />
                                 </Link>
                               </>
                             )}

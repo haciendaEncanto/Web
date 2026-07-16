@@ -34,6 +34,9 @@ export function PortalShell({
     try {
       await logout();
     } finally {
+      // Este overlay de logout ya cubrió la transición — evita que el Home
+      // vuelva a mostrar su propio loader inicial al llegar.
+      sessionStorage.setItem("fromLogout", "true");
       // Fallback: garantiza la redirección aunque el redirect() de la
       // Server Action no se procese (llamada fuera de un form action).
       window.location.href = "/";
