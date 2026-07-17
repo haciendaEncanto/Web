@@ -67,7 +67,7 @@ function EstadoBadge({ status, hasReceipt }: { status: string; hasReceipt: boole
   );
 }
 
-function RegistrarPagoForm({ bookingId, onDone, onCancel }: { bookingId: string; onDone: () => void; onCancel: () => void }) {
+function RegistrarPagoForm({ bookingId, onDone, onCancel }: { bookingId: string; onDone: (payment: Pago) => void; onCancel: () => void }) {
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -91,8 +91,8 @@ function RegistrarPagoForm({ bookingId, onDone, onCancel }: { bookingId: string;
     };
     startTransition(async () => {
       const res = await registrarPago(data);
-      if (res.error) { setError(res.error); return; }
-      onDone();
+      if (res.error || !res.payment) { setError(res.error ?? "Error al registrar el pago"); return; }
+      onDone(res.payment);
     });
   }
 
@@ -158,13 +158,12 @@ function DownloadComprobanteBtn({ paymentId }: { paymentId: string }) {
   );
 }
 
-function ConfirmarPagoBtn({ paymentId }: { paymentId: string }) {
+function ConfirmarPagoBtn({ paymentId, onConfirmed }: { paymentId: string; onConfirmed: () => void }) {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
   function handle() {
     startTransition(async () => {
-      await confirmarPago(paymentId);
-      router.refresh();
+      const res = await confirmarPago(paymentId);
+      if (!res.error) onConfirmed();
     });
   }
   return (
@@ -186,9 +185,10 @@ export function PagosPlanner({
   initialPagos: Pago[];
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [pagos, setPagos] = useState(initialPagos);
   const router = useRouter();
 
-  const totalConfirmed = initialPagos
+  const totalConfirmed = pagos
     .filter((p) => p.status === "confirmed")
     .reduce((sum, p) => sum + p.amount, 0);
 
@@ -207,12 +207,16 @@ export function PagosPlanner({
       {showForm && (
         <RegistrarPagoForm
           bookingId={bookingId}
-          onDone={() => { setShowForm(false); router.refresh(); }}
+          onDone={(payment) => {
+            setPagos((prev) => [payment, ...prev]);
+            setShowForm(false);
+            router.refresh(); // sincroniza en background; la UI ya quedó actualizada arriba
+          }}
           onCancel={() => setShowForm(false)}
         />
       )}
 
-      {initialPagos.length === 0 && !showForm ? (
+      {pagos.length === 0 && !showForm ? (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-8 text-center">
           <p className="text-gris text-[0.85rem]">Sin pagos registrados aún.</p>
         </div>
@@ -231,7 +235,7 @@ export function PagosPlanner({
                 </tr>
               </thead>
               <tbody className="divide-y divide-negro/[0.04]">
-                {initialPagos.map((p) => (
+                {pagos.map((p) => (
                   <tr key={p.id} className="hover:bg-crema/20 transition-colors">
                     <td className="px-5 py-4">
                       <p className="text-[0.85rem] font-medium text-negro">{p.concept ?? "—"}</p>
@@ -247,7 +251,13 @@ export function PagosPlanner({
                       <div className="flex items-center justify-end gap-1.5">
                         {p.receipt_url && <DownloadComprobanteBtn paymentId={p.id} />}
                         {p.status === "pending" && p.receipt_url && (
-                          <ConfirmarPagoBtn paymentId={p.id} />
+                          <ConfirmarPagoBtn
+                            paymentId={p.id}
+                            onConfirmed={() => {
+                              setPagos((prev) => prev.map((pago) => pago.id === p.id ? { ...pago, status: "confirmed" } : pago));
+                              router.refresh();
+                            }}
+                          />
                         )}
                       </div>
                     </td>

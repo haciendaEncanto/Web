@@ -56,9 +56,18 @@ const confirmSchema = z.object({
   path: z.string().min(1),
 });
 
+export type SalonMapRow = {
+  id: string;
+  name: string;
+  image_url: string;
+  min_guests: number;
+  max_guests: number;
+  is_active: boolean;
+};
+
 export async function confirmSalonMapUpload(
   meta: z.infer<typeof confirmSchema>,
-): Promise<{ error?: string }> {
+): Promise<{ map?: SalonMapRow; error?: string }> {
   const { error: authErr, user } = await verifyPlanner();
   if (authErr || !user) return { error: authErr ?? "No autenticado" };
 
@@ -73,20 +82,20 @@ export async function confirmSalonMapUpload(
   const admin = createAdminClient();
   const url = publicUrlFor("salon-map", parsed.data.path);
 
-  const { error } = await admin.from("salon_maps").insert({
+  const { data: inserted, error } = await admin.from("salon_maps").insert({
     name: parsed.data.name.trim(),
     image_url: url,
     min_guests: minGuests,
     max_guests: maxGuests,
     created_by: user.id,
-  });
-  if (error) {
+  }).select("id, name, image_url, min_guests, max_guests, is_active").single();
+  if (error || !inserted) {
     await removeUploadedFile("salon-map", parsed.data.path);
-    return { error: error.message };
+    return { error: error?.message ?? "Error al guardar el mapa" };
   }
 
   revalidateSalonMaps();
-  return {};
+  return { map: inserted };
 }
 
 export async function toggleSalonMapActivo(id: string, isActive: boolean): Promise<{ error?: string }> {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { createActivity, updateActivity, deleteActivity, type ActividadData } from "@/app/actions/actividades";
 
@@ -38,7 +39,7 @@ function ActividadForm({
 }: {
   bookingId: string;
   initial?: Actividad;
-  onDone: () => void;
+  onDone: (actividad: Actividad) => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -56,8 +57,8 @@ function ActividadForm({
       const res = initial
         ? await updateActivity(initial.id, data)
         : await createActivity(bookingId, data);
-      if (res.error) { setError(res.error); return; }
-      onDone();
+      if (res.error || !res.activity) { setError(res.error ?? "Error al guardar la actividad"); return; }
+      onDone(res.activity);
     });
   }
 
@@ -112,7 +113,7 @@ function ActividadForm({
 
 // ─── Botón eliminar ───────────────────────────────────────────────────
 
-function DeleteBtn({ id }: { id: string }) {
+function DeleteBtn({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -121,7 +122,10 @@ function DeleteBtn({ id }: { id: string }) {
       <div className="inline-flex items-center gap-1.5">
         <span className="text-[0.74rem] text-rojo">¿Eliminar?</span>
         <button
-          onClick={() => startTransition(async () => { await deleteActivity(id); })}
+          onClick={() => startTransition(async () => {
+            const res = await deleteActivity(id);
+            if (!res.error) onDeleted();
+          })}
           disabled={isPending}
           className="text-[0.74rem] text-rojo font-medium hover:underline disabled:opacity-50"
         >
@@ -151,6 +155,8 @@ export function ActividadesPlanner({
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [actividades, setActividades] = useState(initialActividades);
+  const router = useRouter();
   const today = new Date().toISOString().split("T")[0];
 
   return (
@@ -171,13 +177,17 @@ export function ActividadesPlanner({
       {showForm && (
         <ActividadForm
           bookingId={bookingId}
-          onDone={() => setShowForm(false)}
+          onDone={(nueva) => {
+            setActividades((prev) => [nueva, ...prev]);
+            setShowForm(false);
+            router.refresh(); // sincroniza en background; la UI ya quedó actualizada arriba
+          }}
           onCancel={() => setShowForm(false)}
         />
       )}
 
       {/* Lista */}
-      {initialActividades.length === 0 && !showForm ? (
+      {actividades.length === 0 && !showForm ? (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-8 text-center">
           <p className="text-gris text-[0.85rem]">
             Sin actividades programadas aún. Agrega la primera.
@@ -185,7 +195,7 @@ export function ActividadesPlanner({
         </div>
       ) : (
         <div className="space-y-2">
-          {initialActividades.map((act) => {
+          {actividades.map((act) => {
             const isPast = act.activity_date < today;
             return (
               <div key={act.id}>
@@ -193,7 +203,11 @@ export function ActividadesPlanner({
                   <ActividadForm
                     bookingId={bookingId}
                     initial={act}
-                    onDone={() => setEditId(null)}
+                    onDone={(actualizada) => {
+                      setActividades((prev) => prev.map((a) => a.id === actualizada.id ? actualizada : a));
+                      setEditId(null);
+                      router.refresh();
+                    }}
                     onCancel={() => setEditId(null)}
                   />
                 ) : (
@@ -223,7 +237,13 @@ export function ActividadesPlanner({
                       >
                         <Pencil size={14} />
                       </button>
-                      <DeleteBtn id={act.id} />
+                      <DeleteBtn
+                        id={act.id}
+                        onDeleted={() => {
+                          setActividades((prev) => prev.filter((a) => a.id !== act.id));
+                          router.refresh();
+                        }}
+                      />
                     </div>
                   </div>
                 )}
