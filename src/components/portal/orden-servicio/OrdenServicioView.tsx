@@ -178,8 +178,14 @@ export function OrdenServicioView({
   );
   const plannerComplete = filledPlanner.length === plannerItems.length;
 
-  const cabeceraSection = sections.find((s) => s.name === "Cabecera");
-  const bebidasSection = sections.find((s) => s.name === "Bebidas");
+  // Todas las secciones salvo "Aprobación" (que tiene su propia UI abajo) se
+  // muestran en solo lectura. Genérico a propósito: las secciones varían por
+  // tipo de evento (Ceremonia/Protocolo en boda y quince, Programa en
+  // empresarial/revelación) — listar nombres fijos aquí fue justo el bug
+  // que rompió esta vista cuando "Bebidas" pasó a llamarse "Menú y Bebidas".
+  const displaySections = [...sections]
+    .filter((s) => s.name !== "Aprobación")
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   function handleApprove() {
     startApprove(async () => {
@@ -200,11 +206,10 @@ export function OrdenServicioView({
         filled={filledPlanner.length}
       />
 
-      {/* Cabecera */}
-      {cabeceraSection && <ReadOnlySection section={cabeceraSection} />}
-
-      {/* Bebidas */}
-      {bebidasSection && <ReadOnlySection section={bebidasSection} />}
+      {/* Secciones de la orden (todas menos Aprobación) */}
+      {displaySections.map((section) => (
+        <ReadOnlySection key={section.id} section={section} />
+      ))}
 
       {/* Aprobación */}
       {approved ? (

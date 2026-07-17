@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 
 // ─── Schema ───────────────────────────────────────────────────────────
 
@@ -20,7 +21,15 @@ const schema = z
     event_date: z.string().min(1, "La fecha del evento es requerida"),
     event_start_time: z.string().min(1, "La hora de inicio es requerida"),
     event_end_time: z.string().min(1, "La hora de fin es requerida"),
-    guest_count: z.coerce.number().int().min(1, "Mínimo 1 invitado"),
+    guest_count: z.coerce
+      .number()
+      .int()
+      .refine(
+        (v) => (GUEST_COUNT_OPTIONS as readonly number[]).includes(v),
+        {
+          message: `La cantidad de invitados debe ser una de: ${GUEST_COUNT_OPTIONS.join(", ")}`,
+        }
+      ),
   })
   .refine(
     (d) => {
