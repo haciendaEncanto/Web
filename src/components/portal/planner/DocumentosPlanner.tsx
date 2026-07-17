@@ -28,7 +28,15 @@ function formatDate(d: string) {
   });
 }
 
-function UploadForm({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+function UploadForm({
+  bookingId,
+  onDone,
+  onCancel,
+}: {
+  bookingId: string;
+  onDone: (doc: DocumentoConSize) => void;
+  onCancel: () => void;
+}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -64,9 +72,15 @@ function UploadForm({ bookingId, onDone }: { bookingId: string; onDone: () => vo
       if (upErr.error) { setError(upErr.error); return; }
 
       const result = await confirmDocumentoUpload({ bookingId, path: req.path, title: title.trim() });
-      if (result.error) { setError(result.error); return; }
+      if (result.error || !result.document) { setError(result.error ?? "Error al guardar el documento"); return; }
 
-      onDone();
+      onDone({
+        id: result.document.id,
+        title: title.trim(),
+        type: "contrato",
+        created_at: result.document.created_at,
+        size: file.size,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
@@ -93,7 +107,7 @@ function UploadForm({ bookingId, onDone }: { bookingId: string; onDone: () => vo
       </div>
       {error && <p className="text-[0.78rem] text-rojo">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onDone} disabled={uploading}
+        <button type="button" onClick={onCancel} disabled={uploading}
           className="px-3 py-2 text-[0.8rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5 transition-colors disabled:opacity-50">
           Cancelar
         </button>
@@ -158,6 +172,7 @@ export function DocumentosPlanner({
   initialDocumentos: DocumentoConSize[];
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [documentos, setDocumentos] = useState(initialDocumentos);
   const router = useRouter();
 
   return (
@@ -173,11 +188,16 @@ export function DocumentosPlanner({
       {showForm && (
         <UploadForm
           bookingId={bookingId}
-          onDone={() => { setShowForm(false); router.refresh(); }}
+          onDone={(doc) => {
+            setDocumentos((prev) => [doc, ...prev]);
+            setShowForm(false);
+            router.refresh(); // sincroniza en background; la UI ya quedó actualizada arriba
+          }}
+          onCancel={() => setShowForm(false)}
         />
       )}
 
-      {initialDocumentos.length === 0 && !showForm ? (
+      {documentos.length === 0 && !showForm ? (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-8 text-center">
           <FileText size={32} className="text-dorado/40 mx-auto mb-3" />
           <p className="text-gris text-[0.85rem]">Sin documentos subidos aún.</p>
@@ -196,7 +216,7 @@ export function DocumentosPlanner({
                 </tr>
               </thead>
               <tbody className="divide-y divide-negro/[0.04]">
-                {initialDocumentos.map((d) => (
+                {documentos.map((d) => (
                   <tr key={d.id} className="hover:bg-crema/20 transition-colors">
                     <td className="px-5 py-4 text-[0.85rem] font-medium text-negro">{d.title}</td>
                     <td className="px-4 py-4 text-[0.82rem] text-gris">{TYPE_LABEL[d.type] ?? d.type}</td>
@@ -205,7 +225,13 @@ export function DocumentosPlanner({
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-0.5">
                         <DownloadBtn id={d.id} />
-                        <DeleteBtn id={d.id} onDeleted={() => router.refresh()} />
+                        <DeleteBtn
+                          id={d.id}
+                          onDeleted={() => {
+                            setDocumentos((prev) => prev.filter((doc) => doc.id !== d.id));
+                            router.refresh();
+                          }}
+                        />
                       </div>
                     </td>
                   </tr>

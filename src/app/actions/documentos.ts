@@ -63,7 +63,7 @@ const confirmSchema = z.object({
 
 export async function confirmDocumentoUpload(
   meta: z.infer<typeof confirmSchema>,
-): Promise<{ error?: string }> {
+): Promise<{ document?: { id: string; created_at: string }; error?: string }> {
   const { error: authErr, user } = await verifyPlanner();
   if (authErr || !user) return { error: authErr ?? "No autenticado" };
 
@@ -74,16 +74,16 @@ export async function confirmDocumentoUpload(
   const { data: booking } = await admin
     .from("bookings").select("client_id").eq("id", parsed.data.bookingId).single();
 
-  const { error } = await admin.from("documents").insert({
+  const { data: inserted, error } = await admin.from("documents").insert({
     booking_id: parsed.data.bookingId,
     title: parsed.data.title.trim(),
     file_url: parsed.data.path,
     type: "contrato",
     created_by: user.id,
-  });
-  if (error) {
+  }).select("id, created_at").single();
+  if (error || !inserted) {
     await removeUploadedFile("document", parsed.data.path);
-    return { error: error.message };
+    return { error: error?.message ?? "Error al guardar el documento" };
   }
 
   if (booking?.client_id) {
@@ -96,7 +96,7 @@ export async function confirmDocumentoUpload(
   }
 
   await revalidateDocumentos(booking?.client_id);
-  return {};
+  return { document: inserted };
 }
 
 export async function deleteDocumento(id: string): Promise<{ error?: string }> {

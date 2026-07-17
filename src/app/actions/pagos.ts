@@ -64,7 +64,20 @@ const registrarSchema = z.object({
 
 export type RegistrarPagoData = z.infer<typeof registrarSchema>;
 
-export async function registrarPago(data: RegistrarPagoData): Promise<{ error?: string }> {
+export type PagoRow = {
+  id: string;
+  concept: string | null;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  status: string;
+  notes: string | null;
+  receipt_url: string | null;
+};
+
+export async function registrarPago(
+  data: RegistrarPagoData,
+): Promise<{ payment?: PagoRow; error?: string }> {
   const { error: authErr, user } = await verifyPlanner();
   if (authErr || !user) return { error: authErr ?? "No autenticado" };
 
@@ -72,7 +85,7 @@ export async function registrarPago(data: RegistrarPagoData): Promise<{ error?: 
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const admin = createAdminClient();
-  const { error } = await admin.from("payments").insert({
+  const { data: inserted, error } = await admin.from("payments").insert({
     booking_id: parsed.data.bookingId,
     concept: parsed.data.concept.trim(),
     notes: parsed.data.notes?.trim() || null,
@@ -81,13 +94,13 @@ export async function registrarPago(data: RegistrarPagoData): Promise<{ error?: 
     payment_method: parsed.data.payment_method,
     status: "pending",
     recorded_by: user.id,
-  });
-  if (error) return { error: error.message };
+  }).select("id, concept, amount, payment_date, payment_method, status, notes, receipt_url").single();
+  if (error || !inserted) return { error: error?.message ?? "Error al registrar el pago" };
 
   const { data: booking } = await admin
     .from("bookings").select("client_id").eq("id", parsed.data.bookingId).single();
   await revalidatePagos(booking?.client_id);
-  return {};
+  return { payment: inserted };
 }
 
 // ─── Cliente: subir comprobante ────────────────────────────────────────

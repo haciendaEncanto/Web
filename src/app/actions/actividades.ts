@@ -12,6 +12,15 @@ export type ActividadData = {
   notes?: string;
 };
 
+export type ActividadRow = {
+  id: string;
+  title: string;
+  activity_date: string;
+  activity_time: string | null;
+  location: string | null;
+  notes: string | null;
+};
+
 async function verifyPlanner() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -26,7 +35,7 @@ async function verifyPlanner() {
 export async function createActivity(
   bookingId: string,
   data: ActividadData
-): Promise<{ error?: string }> {
+): Promise<{ activity?: ActividadRow; error?: string }> {
   const { error: authErr, user } = await verifyPlanner();
   if (authErr || !user) return { error: authErr ?? "No autenticado" };
 
@@ -39,7 +48,7 @@ export async function createActivity(
   const { data: booking } = await admin
     .from("bookings").select("client_id").eq("id", bookingId).single();
 
-  const { error } = await admin.from("client_activities").insert({
+  const { data: inserted, error } = await admin.from("client_activities").insert({
     booking_id:    bookingId,
     title:         data.title.trim(),
     activity_date: data.activity_date,
@@ -47,8 +56,8 @@ export async function createActivity(
     location:      data.location?.trim() || null,
     notes:         data.notes?.trim() || null,
     created_by:    user.id,
-  });
-  if (error) return { error: error.message };
+  }).select("id, title, activity_date, activity_time, location, notes").single();
+  if (error || !inserted) return { error: error?.message ?? "Error al crear la actividad" };
 
   // Notificar al cliente
   if (booking?.client_id) {
@@ -62,13 +71,13 @@ export async function createActivity(
 
   revalidatePath(`/portal/planner/clientes/${booking?.client_id}/actividades`);
   revalidatePath("/portal/actividades");
-  return {};
+  return { activity: inserted };
 }
 
 export async function updateActivity(
   id: string,
   data: ActividadData
-): Promise<{ error?: string }> {
+): Promise<{ activity?: ActividadRow; error?: string }> {
   const { error: authErr } = await verifyPlanner();
   if (authErr) return { error: authErr };
 
@@ -76,14 +85,14 @@ export async function updateActivity(
   const { data: act } = await admin
     .from("client_activities").select("booking_id").eq("id", id).single();
 
-  const { error } = await admin.from("client_activities").update({
+  const { data: updated, error } = await admin.from("client_activities").update({
     title:         data.title.trim(),
     activity_date: data.activity_date,
     activity_time: data.activity_time || null,
     location:      data.location?.trim() || null,
     notes:         data.notes?.trim() || null,
-  }).eq("id", id);
-  if (error) return { error: error.message };
+  }).eq("id", id).select("id, title, activity_date, activity_time, location, notes").single();
+  if (error || !updated) return { error: error?.message ?? "Error al actualizar la actividad" };
 
   revalidatePath("/portal/actividades");
   if (act?.booking_id) {
@@ -92,7 +101,7 @@ export async function updateActivity(
     if (b?.client_id)
       revalidatePath(`/portal/planner/clientes/${b.client_id}/actividades`);
   }
-  return {};
+  return { activity: updated };
 }
 
 export async function deleteActivity(id: string): Promise<{ error?: string }> {

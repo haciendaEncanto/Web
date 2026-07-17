@@ -32,7 +32,7 @@ function capacityLabel(c: SalonMapCapacity): string {
   return c === "120-150" ? "120 – 150 (compartido)" : `${c} invitados`;
 }
 
-function UploadForm({ onDone }: { onDone: () => void }) {
+function UploadForm({ onDone, onCancel }: { onDone: (map: SalonMap) => void; onCancel: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState<SalonMapCapacity | "">("");
@@ -69,9 +69,9 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       if (upErr.error) { setError(upErr.error); return; }
 
       const result = await confirmSalonMapUpload({ name: name.trim(), capacity, path: req.path });
-      if (result.error) { setError(result.error); return; }
+      if (result.error || !result.map) { setError(result.error ?? "Error al guardar el mapa"); return; }
 
-      onDone();
+      onDone(result.map);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
@@ -112,7 +112,7 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       </div>
       {error && <p className="text-[0.78rem] text-rojo">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onDone} disabled={uploading}
+        <button type="button" onClick={onCancel} disabled={uploading}
           className="px-3 py-2 text-[0.8rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5 transition-colors disabled:opacity-50">
           Cancelar
         </button>
@@ -126,21 +126,30 @@ function UploadForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function MapCard({ map, onChanged }: { map: SalonMap; onChanged: () => void }) {
+function MapCard({
+  map,
+  onToggled,
+  onDeleted,
+}: {
+  map: SalonMap;
+  onToggled: (id: string, isActive: boolean) => void;
+  onDeleted: (id: string) => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const [confirmDel, setConfirmDel] = useState(false);
 
   function handleToggle() {
+    const next = !map.is_active;
     startTransition(async () => {
-      await toggleSalonMapActivo(map.id, !map.is_active);
-      onChanged();
+      const res = await toggleSalonMapActivo(map.id, next);
+      if (!res.error) onToggled(map.id, next);
     });
   }
 
   function handleDelete() {
     startTransition(async () => {
-      await deleteSalonMap(map.id);
-      onChanged();
+      const res = await deleteSalonMap(map.id);
+      if (!res.error) onDeleted(map.id);
     });
   }
 
@@ -188,6 +197,7 @@ function MapCard({ map, onChanged }: { map: SalonMap; onChanged: () => void }) {
 
 export function SalonMapasManager({ initialMaps }: { initialMaps: SalonMap[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [maps, setMaps] = useState(initialMaps);
   const router = useRouter();
 
   return (
@@ -206,10 +216,17 @@ export function SalonMapasManager({ initialMaps }: { initialMaps: SalonMap[] }) 
       </div>
 
       {showForm && (
-        <UploadForm onDone={() => { setShowForm(false); router.refresh(); }} />
+        <UploadForm
+          onDone={(map) => {
+            setMaps((prev) => [map, ...prev]);
+            setShowForm(false);
+            router.refresh(); // sincroniza en background; la UI ya quedó actualizada arriba
+          }}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
-      {initialMaps.length === 0 && !showForm ? (
+      {maps.length === 0 && !showForm ? (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-12 text-center">
           <MapIcon size={36} className="text-dorado/40 mx-auto mb-4" />
           <p className="font-serif text-[1.2rem] text-negro mb-2">Sin mapas aún</p>
@@ -217,8 +234,19 @@ export function SalonMapasManager({ initialMaps }: { initialMaps: SalonMap[] }) 
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {initialMaps.map((m) => (
-            <MapCard key={m.id} map={m} onChanged={() => router.refresh()} />
+          {maps.map((m) => (
+            <MapCard
+              key={m.id}
+              map={m}
+              onToggled={(id, isActive) => {
+                setMaps((prev) => prev.map((map) => map.id === id ? { ...map, is_active: isActive } : map));
+                router.refresh();
+              }}
+              onDeleted={(id) => {
+                setMaps((prev) => prev.filter((map) => map.id !== id));
+                router.refresh();
+              }}
+            />
           ))}
         </div>
       )}
