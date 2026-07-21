@@ -30,7 +30,7 @@ export default async function EditarClientePage({ params }: Props) {
   // Perfil del cliente
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, email, phone, address")
+    .select("id, full_name, email, phone, address, cc")
     .eq("id", clientId)
     .single();
 
@@ -39,7 +39,8 @@ export default async function EditarClientePage({ params }: Props) {
   // Booking activo del cliente (el más reciente si hay varios)
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, event_type, event_date, event_start_time, event_end_time, guest_count")
+    .select(`id, event_type, event_date, event_start_time, event_end_time, guest_count,
+             valor_total, valor_anticipo, fecha_segundo_abono, fecha_tercer_abono, capilla, contract_items`)
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -47,16 +48,25 @@ export default async function EditarClientePage({ params }: Props) {
 
   if (!booking) notFound();
 
+  const { DEFAULT_CONTRACT_ITEMS } = await import("@/lib/contract-items");
+
   const defaults = {
-    full_name:        profile.full_name ?? "",
-    phone:            profile.phone ?? "",
-    address:          profile.address ?? "",
-    email:            profile.email,
-    event_type:       booking.event_type ?? "boda",
-    event_date:       booking.event_date ?? "",
-    event_start_time: booking.event_start_time ?? "",
-    event_end_time:   booking.event_end_time ?? "",
-    guest_count:      booking.guest_count ?? 1,
+    full_name:           profile.full_name ?? "",
+    cc:                  profile.cc ?? "",
+    phone:               profile.phone ?? "",
+    address:             profile.address ?? "",
+    email:               profile.email,
+    event_type:          booking.event_type ?? "boda",
+    event_date:          booking.event_date ?? "",
+    event_start_time:    booking.event_start_time ?? "",
+    event_end_time:      booking.event_end_time ?? "",
+    guest_count:         booking.guest_count ?? 1,
+    valor_total:         booking.valor_total?.toString() ?? "",
+    valor_anticipo:      booking.valor_anticipo?.toString() ?? "",
+    fecha_segundo_abono: booking.fecha_segundo_abono ?? "",
+    fecha_tercer_abono:  booking.fecha_tercer_abono ?? "",
+    capilla:             booking.capilla === true ? "true" : booking.capilla === false ? "false" : "",
+    contract_items:      (booking.contract_items as typeof DEFAULT_CONTRACT_ITEMS | null) ?? DEFAULT_CONTRACT_ITEMS,
   };
 
   return (

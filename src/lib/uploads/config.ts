@@ -10,7 +10,9 @@ export type UploadKind =
   | "document"
   | "payment-receipt"
   | "guest-list"
-  | "salon-map";
+  | "salon-map"
+  | "firma-representante"
+  | "signed-contract";
 
 export const HERO_VIDEO_FOLDER: Record<string, string> = {
   "": "home",
@@ -83,6 +85,16 @@ export const UPLOAD_KINDS: Record<UploadKind, UploadKindConfig> = {
     maxBytes: 10 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png"],
   },
+  "firma-representante": {
+    bucket: "avatars",
+    maxBytes: 2 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  "signed-contract": {
+    bucket: "documents",
+    maxBytes: 15 * 1024 * 1024,
+    allowedMimeTypes: ["application/pdf"],
+  },
 };
 
 export function heroVideoPath(eventType: string, fileName: string): string {
@@ -131,6 +143,19 @@ export function guestListPath(bookingId: string, fileName: string): string {
 export function salonMapPath(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
   return `mapas/${Date.now()}.${ext}`;
+}
+
+export function firmaRepresentantePath(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
+  return `firmas/firma_${Date.now()}.${ext}`;
+}
+
+export function signedContractPath(bookingId: string, version: number): string {
+  return `${bookingId}/contratos_firmados/contrato_firmado_v${version}_${Date.now()}.pdf`;
+}
+
+export function generatedContractPath(bookingId: string, version: number): string {
+  return `${bookingId}/contratos/contrato_v${version}_${Date.now()}.pdf`;
 }
 
 export const SITE_IMAGE_KEYS = [

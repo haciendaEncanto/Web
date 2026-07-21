@@ -11,7 +11,7 @@ export default async function DocumentosPage() {
 
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id")
+    .select("id, contract_locked")
     .eq("client_id", user.id)
     .in("status", ["pending", "confirmed"])
     .order("event_date", { ascending: true })
@@ -50,7 +50,11 @@ export default async function DocumentosPage() {
           Contratos y archivos que el equipo comparte contigo.
         </p>
       </div>
-      <DocumentosClienteView documentos={documentos} />
+      <DocumentosClienteView
+        documentos={documentos}
+        bookingId={booking.id}
+        isLocked={booking.contract_locked ?? false}
+      />
     </div>
   );
 }

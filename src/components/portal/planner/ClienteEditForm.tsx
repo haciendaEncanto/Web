@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { editarCliente, type EditClientState } from "@/app/actions/editar-cliente";
 import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
+import {
+  DEFAULT_CONTRACT_ITEMS,
+  VARIABLE_ITEM_LABELS,
+  VARIABLE_ITEM_TYPES,
+  type ContractItems,
+} from "@/lib/contract-items";
 
 const inputCls = (error: boolean) =>
   `w-full border ${
@@ -14,7 +20,7 @@ const inputCls = (error: boolean) =>
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-      <div className="px-6 py-4 border-b border-negro/[0.05] bg-crema/30">
+      <div className="px-6 py-4 border-b border-negro/5 bg-crema/30">
         <h3 className="font-serif text-[1rem] text-negro tracking-[-0.01em]">{title}</h3>
       </div>
       <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
@@ -49,6 +55,7 @@ interface Props {
   bookingId: string;
   defaults: {
     full_name: string;
+    cc: string;
     phone: string;
     address: string;
     email: string;
@@ -57,17 +64,29 @@ interface Props {
     event_start_time: string;
     event_end_time: string;
     guest_count: number;
+    valor_total: string;
+    valor_anticipo: string;
+    fecha_segundo_abono: string;
+    fecha_tercer_abono: string;
+    capilla: string;
+    contract_items: ContractItems;
   };
   redirectTo?: string;
 }
 
-export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/portal/planner/clientes" }: Props) {
+export function ClienteEditForm({
+  clientId,
+  bookingId,
+  defaults,
+  redirectTo = "/portal/planner/clientes",
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<EditClientState>(null);
 
   // Perfil
   const [fullName, setFullName] = useState(defaults.full_name);
+  const [cc, setCc] = useState(defaults.cc);
   const [phone, setPhone] = useState(defaults.phone);
   const [address, setAddress] = useState(defaults.address);
   const [email, setEmail] = useState(defaults.email);
@@ -79,21 +98,41 @@ export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/
   const [endTime, setEndTime] = useState(defaults.event_end_time);
   const [guestCount, setGuestCount] = useState(String(defaults.guest_count));
 
+  // Financiero
+  const [valorTotal, setValorTotal] = useState(defaults.valor_total);
+  const [valorAnticipo, setValorAnticipo] = useState(defaults.valor_anticipo);
+  const [fechaSegundoAbono, setFechaSegundoAbono] = useState(defaults.fecha_segundo_abono);
+  const [fechaTercerAbono, setFechaTercerAbono] = useState(defaults.fecha_tercer_abono);
+  const [capilla, setCapilla] = useState(defaults.capilla);
+
+  // Ítems del contrato
+  const [items, setItems] = useState<ContractItems>(defaults.contract_items);
+
+  const setItem = (key: keyof ContractItems, value: string) =>
+    setItems((prev) => ({ ...prev, [key]: value }));
+
   const fieldError = (f: string): string | undefined =>
     state && "error" in state && state.field === f ? state.error : undefined;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const fd = new FormData();
-    fd.set("full_name",        fullName);
-    fd.set("phone",            phone);
-    fd.set("address",          address);
-    fd.set("email",            email);
-    fd.set("event_type",       eventType);
-    fd.set("event_date",       eventDate);
-    fd.set("event_start_time", startTime);
-    fd.set("event_end_time",   endTime);
-    fd.set("guest_count",      guestCount);
+    fd.set("full_name",           fullName);
+    fd.set("cc",                  cc);
+    fd.set("phone",               phone);
+    fd.set("address",             address);
+    fd.set("email",               email);
+    fd.set("event_type",          eventType);
+    fd.set("event_date",          eventDate);
+    fd.set("event_start_time",    startTime);
+    fd.set("event_end_time",      endTime);
+    fd.set("guest_count",         guestCount);
+    fd.set("valor_total",         valorTotal);
+    fd.set("valor_anticipo",      valorAnticipo);
+    fd.set("fecha_segundo_abono", fechaSegundoAbono);
+    fd.set("fecha_tercer_abono",  fechaTercerAbono);
+    fd.set("capilla",             capilla);
+    fd.set("contract_items",      JSON.stringify(items));
 
     startTransition(async () => {
       const res = await editarCliente(clientId, bookingId, fd);
@@ -114,6 +153,14 @@ export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className={inputCls(!!fieldError("full_name"))}
+          />
+        </Field>
+        <Field label="CC / Cédula" error={fieldError("cc")}>
+          <input
+            type="text"
+            value={cc}
+            onChange={(e) => setCc(e.target.value)}
+            className={inputCls(!!fieldError("cc"))}
           />
         </Field>
         <Field label="Teléfono" error={fieldError("phone")}>
@@ -190,13 +237,118 @@ export function ClienteEditForm({ clientId, bookingId, defaults, redirectTo = "/
               <option value={guestCount}>{guestCount}</option>
             )}
             {GUEST_COUNT_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
         </Field>
+        <Field label="Capilla" error={fieldError("capilla")}>
+          <select
+            value={capilla}
+            onChange={(e) => setCapilla(e.target.value)}
+            className={inputCls(!!fieldError("capilla"))}
+          >
+            <option value="">Sin definir</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+          </select>
+        </Field>
       </Section>
+
+      {/* Datos financieros */}
+      <Section title="Valores y pagos">
+        <Field label="Valor total del evento (sin IVA)" error={fieldError("valor_total")}>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            value={valorTotal}
+            onChange={(e) => setValorTotal(e.target.value)}
+            placeholder="Ej. 15000000"
+            className={inputCls(!!fieldError("valor_total"))}
+          />
+        </Field>
+        <Field label="Primer anticipo" error={fieldError("valor_anticipo")}>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            value={valorAnticipo}
+            onChange={(e) => setValorAnticipo(e.target.value)}
+            placeholder="Ej. 3000000"
+            className={inputCls(!!fieldError("valor_anticipo"))}
+          />
+        </Field>
+        <Field label="Fecha 2.° abono" error={fieldError("fecha_segundo_abono")}>
+          <input
+            type="date"
+            value={fechaSegundoAbono}
+            onChange={(e) => setFechaSegundoAbono(e.target.value)}
+            className={inputCls(!!fieldError("fecha_segundo_abono"))}
+          />
+        </Field>
+        <Field label="Fecha 3.° abono" error={fieldError("fecha_tercer_abono")}>
+          <input
+            type="date"
+            value={fechaTercerAbono}
+            onChange={(e) => setFechaTercerAbono(e.target.value)}
+            className={inputCls(!!fieldError("fecha_tercer_abono"))}
+          />
+        </Field>
+      </Section>
+
+      {/* Ítems del contrato */}
+      <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
+        <div className="px-6 py-4 border-b border-negro/5 bg-crema/30">
+          <h3 className="font-serif text-[1rem] text-negro tracking-[-0.01em]">
+            Ítems del contrato
+          </h3>
+          <p className="text-[0.75rem] text-gris mt-0.5">
+            Ingresa &quot;0&quot; o &quot;No aplica&quot; para ítems que no van incluidos
+          </p>
+        </div>
+        <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(Object.keys(DEFAULT_CONTRACT_ITEMS) as (keyof ContractItems)[]).map((key) => {
+            const type = VARIABLE_ITEM_TYPES[key];
+            const label = VARIABLE_ITEM_LABELS[key];
+            const value = items[key] ?? "";
+
+            return (
+              <div key={key}>
+                <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                  {label}
+                </label>
+                {type === "select-coctel" ? (
+                  <select
+                    value={value}
+                    onChange={(e) => setItem(key, e.target.value)}
+                    className={inputCls(false)}
+                  >
+                    <option value="Ilimitado">Ilimitado</option>
+                    <option value="No aplica">No aplica</option>
+                  </select>
+                ) : type === "select-sino" ? (
+                  <select
+                    value={value}
+                    onChange={(e) => setItem(key, e.target.value)}
+                    className={inputCls(false)}
+                  >
+                    <option value="Sí">Sí</option>
+                    <option value="No">No</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setItem(key, e.target.value)}
+                    placeholder={key === "tarjetas_invitacion" ? "Según cotización" : "Cantidad"}
+                    className={inputCls(false)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Error global */}
       {state && "error" in state && !state.field && (

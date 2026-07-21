@@ -1,13 +1,12 @@
 export function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/573247836852"
+      href="/api/asignar-asesor"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"
       className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-[0_4px_20px_rgba(37,211,102,0.35)] z-[99] hover:scale-110 transition-transform duration-300"
     >
-      {/* Ícono oficial de WhatsApp */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
