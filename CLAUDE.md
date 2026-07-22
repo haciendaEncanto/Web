@@ -37,6 +37,9 @@
 | **Restricción de visibilidad de eventos por rol (15 días)** | Nuevo helper compartido `getUpcomingEventWindow()` (`src/lib/event-window.ts`, `UPCOMING_EVENT_WINDOW_DAYS = 15`) calcula el rango `[hoy, hoy+15 días]`. `fetchAllBookingsWithClient()` (`src/lib/eventos.ts`) y `fetchClientBookingRows()` (`src/lib/clientes.ts`) ganan `options.restrictToUpcoming` — al activarlo filtran `event_date >= hoy AND event_date <= hoy+15`; sin el flag (llamadas desde `/admin/dashboard` y `/admin/clientes`) el comportamiento no cambia. **Solo `admin` y `gerente` ven todos los eventos sin restricción de fecha**; el resto (`wedding_planner`, `staff`, `asesor_comercial`, `asesor_logistica`) solo ve los próximos 15 días. Aplicado en: `/portal/planner` y `/portal/planner/clientes` (ambas rutas también las visita un admin, así que la restricción depende del rol del perfil autenticado, no de la ruta — ambas páginas ganan el fetch de `profile.role` que les faltaba); `/portal/staff` (gana el mismo guard de rol `admin|staff` que ya tenían las rutas hermanas del planner); `/portal/asesor-comercial` y `/portal/asesor-logistica` (eran placeholders "Módulo en construcción" sin ninguna lista de eventos — ahora muestran los eventos reales reusando `EventosManager.tsx`); `/portal/gerente` (no existía como página — el redirect post-login ya apuntaba ahí pero sin `page.tsx` — se crea sin restricción de fecha, misma vista de solo lectura). `PortalSidebar.tsx`: los roles `asesor_comercial`, `asesor_logistica` y `gerente` ganan su propio ítem de sidebar ("Eventos") en vez de heredar el fallback genérico con enlaces rotos. | ✅ |
 | **Regresión QA completa (118 casos, dos rondas) + 6 bugs corregidos** | Ejecución real end-to-end de los 118 casos del plan de pruebas (Playwright headless + `@supabase/supabase-js` con sesiones reales por rol para RLS), contra el servidor de desarrollo, con datos de prueba creados y eliminados en cada caso. **Ronda 1**: 117/118 PASS, 4 hallazgos reales + 1 menor. **Fixes**: (1) *Crítico* — `OrdenServicioView.tsx` (vista cliente) solo renderizaba "Cabecera": buscaba una sección `"Bebidas"` que ya no existe desde la migración `20260625000000` (se llama `"Menú y Bebidas"`); se reemplaza por un filtro genérico (todas las secciones salvo `"Aprobación"`, ordenadas por `sort_order`) — ya no depende de nombres fijos, funciona para los 4 tipos de evento. (2) *Alto* — la migración `20260721000000` (fix de "Ramo" en quinceañera, ver fila anterior) estaba en el repo pero nunca se había desplegado al remoto — `supabase db push` la aplicó. (3) *Medio* — `packages.price` era legible por cualquiera vía la API REST pública de Supabase (`anon key` + `select=*`) pese a que la UI nunca la mostraba; se eliminó la columna por completo (migración `20260722000000_drop_packages_price.sql`, confirmado sin referencias en `src/`) en vez de intentar restringirla por RLS (Postgres RLS es a nivel de fila, no de columna) — tipos regenerados. (4) *Medio* — `guest_count` solo se validaba en el `<select>` del cliente; se agregó `.refine()` contra `GUEST_COUNT_OPTIONS` en los schemas Zod de `crear-cliente.ts` y `editar-cliente.ts`. (5) *Menor* — `GET /admin` (sin subruta) daba 404 en vez de redirigir porque no existía `page.tsx` ahí; se agregó `src/app/admin/page.tsx` con `redirect("/admin/dashboard")` (mismo patrón que `editor/page.tsx`), el guard de rol en `admin/layout.tsx` hace el resto. **Ronda 2** (regresión completa de los 118 casos tras los 5 fixes): confirmó los 5 resueltos y encontró un 6to bug real — ver fila siguiente. | ✅ |
 | **Estado local optimista tras crear/editar/borrar (4 componentes del planner)** | Bug encontrado en la ronda 2 de regresión (PF-04-08): tras subir un contrato en `DocumentosPlanner.tsx`, el archivo se guardaba correctamente en BD/Storage (confirmado en ~1.5s) pero la tabla en pantalla no lo mostraba sin recargar la página — reproducido 3 veces. `revalidatePath()` ya se invocaba correctamente en la Server Action; el refresco del árbol de Server Components vía `router.refresh()` no era confiable a tiempo (mismo síntoma existía en `ActividadesPlanner.tsx`, que ni siquiera llamaba a `router.refresh()`). **Fix**: las Server Actions de creación/edición (`confirmDocumentoUpload`, `registrarPago`, `createActivity`/`updateActivity`, `confirmSalonMapUpload`) ahora devuelven el registro insertado/actualizado (`.select().single()`) en vez de solo `{error?}`. Los 4 componentes (`DocumentosPlanner.tsx`, `PagosPlanner.tsx`, `ActividadesPlanner.tsx`, `SalonMapasManager.tsx`) pasan de leer directo la prop `initialX` a mantener `useState(initialX)`, actualizado de inmediato con el dato devuelto — prepend en creación, replace en edición, filter en borrado, patch de campo en toggle/confirmar. `router.refresh()` se conserva como sincronización en background (otras pestañas/usuarios), pero la UI visible ya no depende de su timing. Verificado en vivo con Playwright sin esperar reload manual: crear+ver de inmediato en los 4, eliminar de inmediato en Documentos/Actividades, activar/desactivar de inmediato en Mapas, confirmar pago de inmediato en Pagos. | ✅ |
+| **Módulo de contrato** | CC/cédula en `profiles`, campos financieros (`valor_total`, `valor_anticipo`, fechas de abono) + `contract_items` JSONB + `contract_locked` en `bookings`. `/admin/contrato`: 12 cláusulas editables + 8 datos de hacienda editables (site_content) + upload firma representante legal. Generación PDF con `@react-pdf/renderer` (`renderToBuffer` server-side, dos páginas: portada+ítems / cláusulas+firmas, parrafo introductorio auto-generado entre las partes). `ContratoPlanner.tsx`: prereq checklist + textarea "Otro sí" + versiones con descarga. `DocumentosClienteView` gana `FirmarContratoSection` (banner ámbar) para que el cliente suba el PDF firmado → `contract_locked=true` → notifica planner. Rutas `/portal/planner/clientes/[clientId]/contrato` y `/admin/clientes/[clientId]/contrato`. Ícono `ScrollText` en sidebar admin y tabla de clientes. | ✅ |
+| **Round-robin asesores comerciales** | `/api/asignar-asesor` (API Route GET): redirige al `wa.me` del `asesor_comercial` activo con menos conversaciones (tabla `asesor_assignments`, UNIQUE `asesor_id`). Fallback a número fijo si no hay asesores con teléfono. Botón WhatsApp flotante del sitio público apunta a esta ruta. `/admin/contrato` muestra tabla de asignaciones con botón "Reiniciar" por asesor (`resetAsignaciones` SA). | ✅ |
+| **Política de sesión segura** | JWT expiry 1h (pendiente configurar manualmente en Supabase Dashboard). `profiles.last_active_at timestamptz` (migración 20260724000000). `proxy.ts` verifica inactividad en cada request a rutas protegidas via RPC `check_and_update_last_active` (PL/pgSQL SECURITY DEFINER — verifica + actualiza en un solo round-trip, retorna `false` si >5 min). Cliente admin creado inline en proxy.ts (`createServerClient` + `SUPABASE_SERVICE_ROLE_KEY`, edge-compatible). `auth.ts` actualiza `last_active_at=NOW()` al login para evitar falso positivo en el primer request post-login. `useInactivityTimer` se mantiene sin cambios (4 min warning + 60 s countdown). | ✅ |
 
 ### Decisiones de arquitectura
 
@@ -99,22 +102,29 @@
 
 ### Pendiente — próximas sesiones
 
-1. **Conectar dominio hacienda-encanto.com a Vercel** — cuando el sitio esté listo para producción. Cuenta Vercel ya aprobada.
+1. **Configurar JWT expiry a 3600s** — ir a Supabase Dashboard → Authentication → Settings → "JWT expiry limit: 3600". No se puede hacer por código.
 
-2. **Videos empresarial y revelación** — pendientes del cliente. Subirlos desde `/editor/videos` (upload ya funcional), activar para la página correspondiente.
+2. **Subir firma de Ana Victoria** — desde `/admin/contrato`, sección "Firma del representante legal". JPG/PNG/WebP, fondo blanco recomendado.
 
-3. **Fotos reales en galería empresarial y revelación** — pendientes del cliente. Boda y quince ya tienen fotos reales subidas; empresarial y revelación (y cualquier otra categoría sin cubrir) siguen mostrando el fallback de marca (`HeroLogoFallback`/placeholder) porque no hay fotos publicadas en `gallery_images` para esas categorías todavía.
+3. **Renovar dominio hacienda-encanto.com** — venció; gestionado por un tercero. Hasta que se renueve el dominio no resuelve. Conectar a Vercel una vez renovado (cuenta Vercel ya aprobada).
 
-4. **Tour virtual 360°** — pendiente de contratación. `Vista360.tsx` ya está integrado en las 4 páginas de evento y lee `tour_360_url` de `site_content`, pero el botón apunta a `#` porque el cliente aún no ha contratado el servicio (Matterport, Kuula, etc.). Una vez exista el tour, solo hay que cargar la URL real en `site_content`.
+4. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos` (upload ya funcional), activar para la página correspondiente.
 
-5. **Pruebas con usuarios reales en producción** — una vez desplegado (ver punto 1), validar el flujo completo por rol con datos reales, no solo con los usuarios de prueba sembrados por migración.
+5. **Fotos reales galería empresarial y revelación** — pendientes del cliente. Boda y quince ya tienen fotos reales; empresarial y revelación muestran el fallback de marca.
 
-- **Mapas del salón** — ya no está pendiente: el planner subió los mapas reales de distribución (30 a 120–150 invitados) desde `/portal/planner/salon-mapas`; confirmado en vivo durante la regresión de esta sesión.
-- **Mensajería avanzada** — evaluación con el cliente sobre si vale la pena ir más allá de la versión simplificada actual (`/portal/mensajes`, link directo a WhatsApp) sigue sin agendarse; no es blocker de nada, solo no ha vuelto a surgir en conversación con el cliente.
+6. **Tour virtual 360°** — pendiente de contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar `tour_360_url` en `site_content` cuando exista.
+
+7. **Pruebas del módulo de contrato** — probar flujo completo con usuarios reales: planner genera contrato → cliente recibe notificación → descarga + sube firmado → planner recibe notificación + `contract_locked=true`.
 
 - **`salon_maps` — mapas de distribución del salón** — un mapa individual por cada capacidad fija en `GUEST_COUNT_OPTIONS` (`src/lib/guest-count.ts`: 30 a 110 de 10 en 10, `min_guests = max_guests`) y uno compartido para 120–150 (`min_guests=120, max_guests=150`). El planner elige la capacidad al subir (`SALON_MAP_CAPACITIES` en `src/lib/salon-map-capacities.ts` — nunca en el archivo `"use server"` de las acciones, ver bullet de uploads). Al buscar el mapa de un cliente (`min_guests <= guest_count AND max_guests >= guest_count AND is_active = true`) usar siempre `.limit(1)` y tomar el primer resultado, no `.maybeSingle()` — si dos mapas activos llegan a solapar el mismo rango (error de captura), `.maybeSingle()` lanza excepción y la página no muestra ningún mapa; `.limit(1)` es tolerante.
 - **Constantes compartidas nunca en archivos `"use server"`** — además de `SITE_IMAGE_KEYS`, aplica a `SALON_MAP_CAPACITIES`/`SalonMapCapacity` (`src/lib/salon-map-capacities.ts`) y `GUEST_COUNT_OPTIONS` (`src/lib/guest-count.ts`). Exportar un array/const junto a Server Actions en el mismo archivo rompe en runtime con errores como `X.map is not a function` en el componente cliente que la importa — Next.js solo permite exportar funciones async desde un módulo `"use server"`.
 - **`guest_tables` reusada para historial de archivos** — la tabla ya existía desde Fase 5 (sin `unique` en `booking_id`), así que cada fila es una versión histórica del Excel de invitados subido por el cliente; no hay límite de cantidad. RLS ampliada (migración `20260719000000`) para permitir que el cliente borre sus propias filas (antes solo `admin` podía eliminar) — el planner solo tiene lectura/descarga, nunca borra el archivo del cliente.
+- **Contrato PDF (`@react-pdf/renderer 4.5.1`)** — `renderToBuffer()` server-side (no funciona en Edge). JSX auto-transform: no hace falta `import React` en `ContratoPDF.tsx`, pero sí en el archivo que llama `React.createElement(ContratoPDF, props)` (generar-contrato.ts). Fuentes built-in: `Helvetica`/`Helvetica-Bold`/`Times-Roman`. Estilos con `StyleSheet.create()`, sin herencia CSS. El buffer generado se sube directo al bucket `documents` vía `admin.storage.from("documents").upload(path, buffer, { contentType: "application/pdf" })` — no usa signed URL porque la generación ya ocurre en el servidor. `renderToBuffer` espera un `ReactElement<DocumentProps>` (un `<Document>`), no un FC — tipado estricto puede requerir cast.
+- **`contract_items` JSONB** — `ContractItems` en `src/lib/contract-items.ts`: 4 `ContractFieldType` (`sino-fixed-1` = bool con badge "1 unidad" automático, `sino` = bool Sí/No, `cantidad` = string numérico, `texto` = texto libre). `VARIABLE_ITEM_ORDER` define el orden. `FIXED_ITEMS` (Sonido/Luces/Pista/Gaseosa/Cóctel) siempre presentes. Capilla viene de `bookings.capilla` (boolean). `DEFAULT_CONTRACT_ITEMS` para filas antiguas sin JSONB — no se necesitó migración de shape.
+- **Datos editables de la hacienda** — `HACIENDA_INFO` (valores hardcoded fallback), `HACIENDA_CONTENT_KEYS` (campo→clave site_content), `HACIENDA_FIELD_LABELS`, `resolveHaciendaData(contentMap)` en `src/lib/contract-items.ts` (nunca en `"use server"`). `saveHaciendaField` valida la clave contra `Object.values(HACIENDA_CONTENT_KEYS)` antes del upsert. El PDF usa `h = haciendaData ?? HACIENDA_INFO` como fallback.
+- **Round-robin asesores** — tabla `asesor_assignments` (UNIQUE `asesor_id`). API Route `/api/asignar-asesor` (GET → redirect 302): `ORDER BY total_assignments ASC, last_assigned_at ASC NULLS FIRST`, toma el primero, upserta incrementando `total_assignments`. Fallback a número fijo si no hay asesores activos con `phone`. API Route en vez de Server Action porque hace un redirect HTTP puro, no una mutación con revalidación.
+- **`uploadFileToSignedUrl` — orden correcto** — `(bucket: string, path: string, token: string, file: File)`. Confusión frecuente: `req.signedUrl` NO es el primer argumento. El primer argumento es el nombre del bucket (p. ej. `"avatars"`, `"documents"`). El path y token vienen del response de `requestXUpload`.
+- **Política de sesión — `check_and_update_last_active`** — función PL/pgSQL `SECURITY DEFINER` (migración 20260724000000): recibe `(p_user_id uuid, p_timeout_minutes int DEFAULT 5)`. Lee `profiles.last_active_at`. Si `NULL` (primera vez) o reciente → UPDATE `last_active_at = now()` → `RETURN true`. Si expirada → `RETURN false`. proxy.ts solo redirige cuando `sessionValid === false` explícito (no en `null` = error de red). auth.ts llama `createAdminClient().from("profiles").update({ last_active_at })` al login para evitar el bucle: usuario con timestamp viejo → login → proxy rechaza → redirige a login → bucle infinito.
 
 ### Archivos clave
 
@@ -138,6 +148,10 @@ src/
       documentos.ts                               ← requestDocumentoUpload/confirmDocumentoUpload (devuelve {id, created_at} del documento creado), deleteDocumento, getDocumentoDownloadUrl, listDocumentosConTamano
       admin/
         usuarios.ts                               ← crearUsuario, editarUsuario, toggleUsuarioActivo (roles equipo, nunca "client")
+        contrato.ts                               ← saveClausula, saveHaciendaField, requestFirmaUpload/confirmFirmaUpload/deleteFirma
+        generar-contrato.ts                       ← generarContratoPDF: fetch cliente+booking+content → renderToBuffer → upload Storage → insert documents → notifica cliente
+        asesores.ts                               ← resetAsignaciones
+      contrato-firmado.ts                         ← requestContratoFirmadoUpload/confirmContratoFirmadoUpload (contract_locked=true, notifica planner)
       editor/
         galeria.ts                                ← requestGaleriaUpload/confirmGaleriaUpload (signed URL), updateGaleriaImage, deleteGaleriaImage, reorderGaleriaImages
         videos.ts                                 ← requestVideoUpload/confirmVideoUpload (signed URL), activateVideo, deactivateVideo, deleteVideo
@@ -161,6 +175,7 @@ src/
       planner/clientes/page.tsx                   ← Fetch (fetchClientBookingRows) + ClientesTable (tabs Activos/Cumplidos/Cancelados)
       planner/clientes/[clientId]/actividades/page.tsx ← Vista planner: CRUD actividades del cliente
       planner/clientes/[clientId]/invitados/page.tsx   ← Vista planner: mapa asignado + descarga (solo lectura) de Excel del cliente, InvitadosReadOnly
+      planner/clientes/[clientId]/contrato/page.tsx    ← ContratoPlanner: prereq checklist + "Otro sí" + generar PDF + lista de versiones
       planner/salon-mapas/page.tsx                ← Fetch salon_maps + SalonMapasManager (gestión de mapas del salón)
       invitados/page.tsx                          ← Vista cliente: mapa según guest_count + subir/descargar/eliminar Excel, InvitadosClienteView
       asesor-comercial/page.tsx                   ← EventosManager con eventos de los próximos 15 días (admin: sin restricción)
@@ -176,6 +191,10 @@ src/
       clientes/nuevo/page.tsx                     ← Reusa NuevoClienteForm sin modificar
       clientes/[clientId]/page.tsx                ← Vista única: ClienteEditForm + PlannerOrdenForm (edición + orden de servicio)
       clientes/[clientId]/invitados/page.tsx      ← Misma vista de solo lectura que el planner (InvitadosReadOnly)
+      clientes/[clientId]/contrato/page.tsx       ← Misma vista que planner (ContratoPlanner)
+      contrato/page.tsx                           ← AsesoresAsignacionesView + ContratoAdminManager (cláusulas, datos hacienda, firma)
+    api/
+      asignar-asesor/route.ts                     ← GET: redirect 302 a wa.me del asesor con menos conversaciones (round-robin)
     editor/
       layout.tsx                                  ← Admin y editor, usa PortalShell
       page.tsx                                    ← redirect("/editor/galeria")
@@ -201,14 +220,20 @@ src/
         PlannerOrdenForm.tsx                      ← Vista planner: ítems editables (InitButton, campo condicional adicionales) + campos de música en solo lectura desde playlists (MusicField)
       planner/
         ActividadesPlanner.tsx                    ← CRUD inline actividades: form agregar, editar, confirmar borrar. Estado local optimista (useState(initialActividades))
-        ClienteEditForm.tsx                       ← Edición de cliente/booking, select GUEST_COUNT_OPTIONS
+        ClienteEditForm.tsx                       ← Edición de cliente/booking + sección ítems del contrato (ContractFieldType por campo). Estado local optimista
         SalonMapasManager.tsx                     ← Grid de mapas (preview, activo/inactivo, eliminar) + formulario de subida (signed URL). Estado local optimista (useState(initialMaps))
         DocumentosPlanner.tsx                     ← Subir/eliminar contrato PDF (signed URL). Estado local optimista (useState(initialDocumentos))
         PagosPlanner.tsx                          ← Registrar pago, confirmar pago (requiere comprobante). Estado local optimista (useState(initialPagos)), totalConfirmed recalculado del estado
+        ContratoPlanner.tsx                       ← Prereq checklist (CC, dirección, valor_total, valor_anticipo), "Otro sí", botón generar, lista de versiones descargables, banner isLocked
+    contrato/
+      ContratoPDF.tsx                             ← Document de @react-pdf/renderer: 2 páginas, parrafo introductorio, tabla de ítems, cláusulas, firmas. Props: ContractPDFData + HaciendaData
+    DocumentosClienteView.tsx                     ← Lista documentos + FirmarContratoSection (banner ámbar si hay contrato sin firmar)
     admin/
       UsuariosManager.tsx                         ← Equipo (staff): tabla + CrearModal + EditarModal + toggleUsuarioActivo, sin rol "client"
       EventosManager.tsx                          ← Tabla filtrable (tabs estado + rango fechas) sobre BookingEventRow[]. Sin KPIs propios — los calcula el caller.
       KpiCard.tsx                                 ← Card rounded-2xl con ícono, reusado en admin/dashboard
+      ContratoAdminManager.tsx                    ← HaciendaFieldEditor (8 campos editables) + FirmaSection (upload signed URL) + 12 ClausulEditor
+      AsesoresAsignacionesView.tsx                ← Tabla asesor_comercial con total_assignments + botón Reiniciar
     clientes/
       ClientesTable.tsx                           ← Compartido admin/planner: tabs Activos/Cumplidos/Cancelados, prop readOnly
     editor/
@@ -241,7 +266,8 @@ src/
   lib/random-slider.ts                            ← pickRandomSliderImages: reparte 8 cupos entre categorías con fotos, selección al azar por request
   lib/guest-count.ts                              ← GUEST_COUNT_OPTIONS (30 a 150 de 10 en 10) — select de invitados en formularios de cliente
   lib/salon-map-capacities.ts                     ← SALON_MAP_CAPACITIES/SalonMapCapacity (10 opciones + "120-150") — nunca en un archivo "use server"
-  proxy.ts                                        ← Middleware Next.js 16 (protege /portal, /admin, /editor)
+  lib/contract-items.ts                           ← ContractItems interface, ContractFieldType, VARIABLE_ITEM_ORDER/LABELS/TYPES, FIXED_ITEMS, DEFAULT_CONTRACT_ITEMS, HACIENDA_INFO/HACIENDA_CONTENT_KEYS/HACIENDA_FIELD_LABELS, resolveHaciendaData(), CLAUSULA_KEYS, FIRMA_KEY
+  proxy.ts                                        ← Middleware Next.js 16 (protege /portal, /admin, /editor). Verifica inactividad via RPC check_and_update_last_active con cliente admin inline (service role)
   types/
     database.ts                                   ← Tipos generados Supabase
     recaptcha.d.ts
@@ -285,4 +311,6 @@ supabase/migrations/
   20260720000000_seed_staff_dj_animador.sql       ← dj@haciendaencanto.com / animador@haciendaencanto.com / Staff2026! / role=staff
   20260721000000_fix_quince_template_ramo_scope.sql ← mueve "Ramo" de event_type='all' a event_type='boda' (ya no aparece en quince/empresarial/revelación)
   20260722000000_drop_packages_price.sql          ← elimina packages.price (sin uso en código, era legible vía REST público con la anon key)
+  20260723000000_contract_module.sql              ← profiles.cc, bookings (valor_total/anticipo/fechas/capilla/contract_items/contract_locked), document_type enum +contrato_firmado, asesor_assignments
+  20260724000000_profiles_last_active_at.sql      ← profiles.last_active_at timestamptz + función check_and_update_last_active (SECURITY DEFINER)
 ```
