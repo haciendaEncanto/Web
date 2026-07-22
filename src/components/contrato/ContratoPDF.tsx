@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Document,
   Page,
@@ -10,8 +9,11 @@ import {
 import {
   HACIENDA_INFO,
   VARIABLE_ITEM_LABELS,
+  VARIABLE_ITEM_TYPES,
+  VARIABLE_ITEM_ORDER,
   FIXED_ITEMS,
   type ContractItems,
+  type HaciendaData,
 } from "@/lib/contract-items";
 
 const DORADO = "#C8A24B";
@@ -29,23 +31,19 @@ const s = StyleSheet.create({
     paddingHorizontal: 48,
     paddingVertical: 44,
   },
-  // Header
-  header: { marginBottom: 20, borderBottom: `1.5px solid ${DORADO}`, paddingBottom: 14 },
+  header: { marginBottom: 18, borderBottom: `1.5px solid ${DORADO}`, paddingBottom: 14 },
   headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   haciendaName: { fontFamily: "Times-Roman", fontSize: 13, color: DORADO, letterSpacing: 0.5 },
   headerMeta: { fontSize: 7.5, color: GRIS, marginTop: 2 },
   contractTitle: { fontFamily: "Times-Roman", fontSize: 11, color: NEGRO, marginTop: 12, textAlign: "center", letterSpacing: 0.3 },
   versionBadge: { fontSize: 7, color: GRIS, textAlign: "center", marginTop: 2 },
-  // Secciones
   section: { marginBottom: 14 },
   sectionTitle: { fontFamily: "Times-Roman", fontSize: 10, color: DORADO, marginBottom: 6, paddingBottom: 3, borderBottom: `0.5px solid ${DORADO}` },
-  // Grid de datos
+  intro: { fontSize: 8.5, color: NEGRO, lineHeight: 1.65, marginBottom: 14 },
   grid2: { flexDirection: "row", flexWrap: "wrap" },
   cell: { width: "50%", marginBottom: 5 },
-  cellFull: { width: "100%", marginBottom: 5 },
   label: { fontSize: 7, color: GRIS, marginBottom: 1.5 },
   value: { fontSize: 8.5, color: NEGRO },
-  // Tabla de ítems
   table: { width: "100%", marginTop: 4 },
   tableHeader: { flexDirection: "row", backgroundColor: NEGRO, paddingVertical: 4, paddingHorizontal: 6 },
   tableHeaderText: { color: BLANCO, fontSize: 7.5, fontFamily: "Helvetica-Bold" },
@@ -55,11 +53,9 @@ const s = StyleSheet.create({
   tableRowAlt: { backgroundColor: "#FAFAF8" },
   tableCell: { fontSize: 8.5 },
   fixedBadge: { fontSize: 6.5, color: GRIS, fontStyle: "italic" },
-  // Cláusula
   clausulaNum: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginBottom: 2 },
   clausulaText: { fontSize: 8, color: "#333333", lineHeight: 1.6 },
   clausulaWrap: { marginBottom: 10 },
-  // Firmas
   firmasRow: { flexDirection: "row", marginTop: 32, gap: 24 },
   firmaBox: { flex: 1, alignItems: "center" },
   firmaLine: { width: "80%", borderBottom: `0.75px solid ${NEGRO}`, marginBottom: 4 },
@@ -67,7 +63,6 @@ const s = StyleSheet.create({
   firmaName: { fontSize: 7.5, color: NEGRO, textAlign: "center", marginTop: 1 },
   firmaImg: { width: 90, height: 36, objectFit: "contain", marginBottom: 4 },
   firmaBlank: { height: 36, marginBottom: 4 },
-  // Footer
   footer: { position: "absolute", bottom: 24, left: 48, right: 48, borderTop: `0.5px solid ${GRIS_CLARO}`, paddingTop: 6, flexDirection: "row", justifyContent: "space-between" },
   footerText: { fontSize: 6.5, color: GRIS },
 });
@@ -94,6 +89,7 @@ export interface ContractPDFData {
   version: number;
   generatedAt: string;
   otroSi?: string;
+  haciendaData?: HaciendaData;
 }
 
 function fmt(n: number | null) {
@@ -115,22 +111,53 @@ const EVENT_LABEL: Record<string, string> = {
   revelacion: "Revelación de Género",
 };
 
+function itemDisplayValue(key: keyof ContractItems, val: boolean | string): string {
+  const type = VARIABLE_ITEM_TYPES[key];
+  if (type === "sino-fixed-1") return (val as boolean) ? "1" : "No";
+  if (type === "sino") return (val as boolean) ? "Sí" : "No";
+  return (val as string) || "0";
+}
+
 export function ContratoPDF({
   clientName, clientCc, clientPhone, clientAddress, clientEmail,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
   valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
   contractItems, clauses, firmaUrl, version, generatedAt, otroSi,
+  haciendaData,
 }: ContractPDFData) {
-  const variableRows = (Object.keys(contractItems) as (keyof ContractItems)[]).map((key) => ({
+  const h: HaciendaData = haciendaData ?? { ...HACIENDA_INFO };
+
+  const introText =
+    `Entre los suscritos a saber ${h.representante} mayor de edad y vecino de Bogotá, ` +
+    `identificada con C.C ${h.cc_representante}, como representante legal de la ` +
+    `${h.nombre} NIT ${h.nit}, parte que en lo sucesivo y que para efectos del siguiente ` +
+    `contrato se denominará EL CONTRATISTA por una parte; y por la otra ${clientName} ` +
+    `mayor de edad, identificado(a) con CC ${clientCc}, quien de ahora en adelante se ` +
+    `llamará el CONTRATANTE, hemos acordado celebrar el presente contrato contenido ` +
+    `dentro de las siguientes cláusulas:`;
+
+  type ItemRow = { label: string; value: string; fixed?: true };
+
+  const variableRows: ItemRow[] = VARIABLE_ITEM_ORDER.map((key) => ({
     label: VARIABLE_ITEM_LABELS[key],
-    value: contractItems[key] ?? "0",
+    value: itemDisplayValue(key, contractItems[key] as boolean | string),
   }));
-  const allRows = [...variableRows, ...FIXED_ITEMS.map((f) => ({ label: f.label, value: f.value, fixed: true }))];
+
+  const capillaRow: ItemRow = {
+    label: "Capilla",
+    value: capilla === true ? "Sí" : capilla === false ? "No" : "Sin definir",
+  };
+
+  const allRows: ItemRow[] = [
+    ...variableRows,
+    capillaRow,
+    ...FIXED_ITEMS.map((f): ItemRow => ({ label: f.label, value: f.value, fixed: true })),
+  ];
 
   return (
     <Document
       title={`Contrato de Servicios v${version} — ${clientName}`}
-      author={HACIENDA_INFO.nombre}
+      author={h.nombre}
       subject="Contrato de servicios para evento"
     >
       <Page size="LETTER" style={s.page}>
@@ -138,8 +165,8 @@ export function ContratoPDF({
         <View style={s.header}>
           <View style={s.headerTop}>
             <View>
-              <Text style={s.haciendaName}>{HACIENDA_INFO.nombre}</Text>
-              <Text style={s.headerMeta}>NIT: {HACIENDA_INFO.nit} · {HACIENDA_INFO.direccion}</Text>
+              <Text style={s.haciendaName}>{h.nombre}</Text>
+              <Text style={s.headerMeta}>NIT: {h.nit} · {h.direccion}</Text>
             </View>
             <View style={{ alignItems: "flex-end" }}>
               <Text style={s.headerMeta}>Generado: {generatedAt}</Text>
@@ -149,27 +176,8 @@ export function ContratoPDF({
           <Text style={s.versionBadge}>Versión {version}</Text>
         </View>
 
-        {/* ── Partes ── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>PARTES DEL CONTRATO</Text>
-          <View style={s.grid2}>
-            <View style={s.cell}>
-              <Text style={[s.label, { color: DORADO }]}>CONTRATANTE (La Hacienda)</Text>
-              <Text style={s.value}>{HACIENDA_INFO.nombre}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>NIT: {HACIENDA_INFO.nit}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>Rep. Legal: {HACIENDA_INFO.representante}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>CC Rep.: {HACIENDA_INFO.cc_representante}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={[s.label, { color: DORADO }]}>CONTRATADO (El Cliente)</Text>
-              <Text style={s.value}>{clientName}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>CC/NIT: {clientCc}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>Tel: {clientPhone}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>Dirección: {clientAddress}</Text>
-              <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>Correo: {clientEmail}</Text>
-            </View>
-          </View>
-        </View>
+        {/* ── Párrafo entre las partes ── */}
+        <Text style={s.intro}>{introText}</Text>
 
         {/* ── Datos del evento ── */}
         <View style={s.section}>
@@ -192,8 +200,12 @@ export function ContratoPDF({
               <Text style={s.value}>{guestCount}</Text>
             </View>
             <View style={s.cell}>
-              <Text style={s.label}>Capilla</Text>
-              <Text style={s.value}>{capilla === true ? "Sí" : capilla === false ? "No" : "Sin definir"}</Text>
+              <Text style={s.label}>Nombre del cliente</Text>
+              <Text style={s.value}>{clientName}</Text>
+            </View>
+            <View style={s.cell}>
+              <Text style={s.label}>CC / NIT del cliente</Text>
+              <Text style={s.value}>{clientCc}</Text>
             </View>
           </View>
         </View>
@@ -207,7 +219,7 @@ export function ContratoPDF({
               <Text style={[s.value, { fontFamily: "Helvetica-Bold" }]}>{fmt(valorTotal)}</Text>
             </View>
             <View style={s.cell}>
-              <Text style={s.label}>Primer anticipo (50%)</Text>
+              <Text style={s.label}>Primer anticipo</Text>
               <Text style={s.value}>{fmt(valorAnticipo)}</Text>
             </View>
             <View style={s.cell}>
@@ -221,7 +233,7 @@ export function ContratoPDF({
           </View>
           <View style={{ marginTop: 5 }}>
             <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>
-              Cuenta Davivienda: {HACIENDA_INFO.cuenta_davivienda} a nombre de {HACIENDA_INFO.nombre}
+              Cuenta Davivienda: {h.cuenta_davivienda} a nombre de {h.nombre}
             </Text>
           </View>
         </View>
@@ -248,9 +260,8 @@ export function ContratoPDF({
           </View>
         </View>
 
-        {/* ── Footer (primera página) ── */}
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>{HACIENDA_INFO.nombre} · NIT {HACIENDA_INFO.nit}</Text>
+          <Text style={s.footerText}>{h.nombre} · NIT {h.nit}</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
         </View>
       </Page>
@@ -258,7 +269,7 @@ export function ContratoPDF({
       {/* ── Página 2: Cláusulas + Firmas ── */}
       <Page size="LETTER" style={s.page}>
         <View style={[s.header, { marginBottom: 14 }]}>
-          <Text style={[s.haciendaName, { fontSize: 10 }]}>{HACIENDA_INFO.nombre} — Contrato de Servicios v{version}</Text>
+          <Text style={[s.haciendaName, { fontSize: 10 }]}>{h.nombre} — Contrato de Servicios v{version}</Text>
           <Text style={[s.versionBadge, { textAlign: "left", marginTop: 0 }]}>Continuación — Cláusulas</Text>
         </View>
 
@@ -274,7 +285,6 @@ export function ContratoPDF({
           )}
         </View>
 
-        {/* Otro sí */}
         {otroSi && (
           <View style={[s.section, { marginTop: 6 }]}>
             <Text style={s.sectionTitle}>OTRO SÍ</Text>
@@ -284,7 +294,6 @@ export function ContratoPDF({
 
         {/* ── Firmas ── */}
         <View style={s.firmasRow}>
-          {/* Representante hacienda */}
           <View style={s.firmaBox}>
             {firmaUrl ? (
               <Image src={firmaUrl} style={s.firmaImg} />
@@ -293,10 +302,9 @@ export function ContratoPDF({
             )}
             <View style={s.firmaLine} />
             <Text style={s.firmaLabel}>Por la Hacienda El Encanto</Text>
-            <Text style={s.firmaName}>{HACIENDA_INFO.representante}</Text>
-            <Text style={[s.firmaLabel, { marginTop: 1 }]}>CC {HACIENDA_INFO.cc_representante}</Text>
+            <Text style={s.firmaName}>{h.representante}</Text>
+            <Text style={[s.firmaLabel, { marginTop: 1 }]}>CC {h.cc_representante}</Text>
           </View>
-          {/* Cliente */}
           <View style={s.firmaBox}>
             <View style={s.firmaBlank} />
             <View style={s.firmaLine} />
@@ -307,7 +315,7 @@ export function ContratoPDF({
         </View>
 
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>{HACIENDA_INFO.nombre} · NIT {HACIENDA_INFO.nit}</Text>
+          <Text style={s.footerText}>{h.nombre} · NIT {h.nit}</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
         </View>
       </Page>

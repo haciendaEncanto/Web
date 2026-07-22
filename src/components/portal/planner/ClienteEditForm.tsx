@@ -6,9 +6,9 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { editarCliente, type EditClientState } from "@/app/actions/editar-cliente";
 import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 import {
-  DEFAULT_CONTRACT_ITEMS,
   VARIABLE_ITEM_LABELS,
   VARIABLE_ITEM_TYPES,
+  VARIABLE_ITEM_ORDER,
   type ContractItems,
 } from "@/lib/contract-items";
 
@@ -108,7 +108,7 @@ export function ClienteEditForm({
   // Ítems del contrato
   const [items, setItems] = useState<ContractItems>(defaults.contract_items);
 
-  const setItem = (key: keyof ContractItems, value: string) =>
+  const setItem = (key: keyof ContractItems, value: string | boolean) =>
     setItems((prev) => ({ ...prev, [key]: value }));
 
   const fieldError = (f: string): string | undefined =>
@@ -303,47 +303,91 @@ export function ClienteEditForm({
             Ítems del contrato
           </h3>
           <p className="text-[0.75rem] text-gris mt-0.5">
-            Ingresa &quot;0&quot; o &quot;No aplica&quot; para ítems que no van incluidos
+            Activa o desactiva cada ítem e ingresa cantidades donde aplique
           </p>
         </div>
         <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(Object.keys(DEFAULT_CONTRACT_ITEMS) as (keyof ContractItems)[]).map((key) => {
+          {VARIABLE_ITEM_ORDER.map((key) => {
             const type = VARIABLE_ITEM_TYPES[key];
             const label = VARIABLE_ITEM_LABELS[key];
-            const value = items[key] ?? "";
+            const boolVal = items[key] as boolean;
+            const strVal = items[key] as string;
 
+            if (type === "sino-fixed-1") {
+              return (
+                <div key={key}>
+                  <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                    {label}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={boolVal ? "si" : "no"}
+                      onChange={(e) => setItem(key, e.target.value === "si")}
+                      className={inputCls(false)}
+                    >
+                      <option value="si">Sí</option>
+                      <option value="no">No</option>
+                    </select>
+                    {boolVal && (
+                      <span className="shrink-0 text-[0.78rem] text-gris bg-negro/5 px-2.5 py-2 rounded-lg">
+                        1 unidad
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            if (type === "sino") {
+              return (
+                <div key={key}>
+                  <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                    {label}
+                  </label>
+                  <select
+                    value={boolVal ? "si" : "no"}
+                    onChange={(e) => setItem(key, e.target.value === "si")}
+                    className={inputCls(false)}
+                  >
+                    <option value="no">No</option>
+                    <option value="si">Sí</option>
+                  </select>
+                </div>
+              );
+            }
+
+            if (type === "cantidad") {
+              return (
+                <div key={key}>
+                  <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+                    {label}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={strVal}
+                    onChange={(e) => setItem(key, e.target.value)}
+                    placeholder="0"
+                    className={inputCls(false)}
+                  />
+                </div>
+              );
+            }
+
+            // tipo "texto"
             return (
               <div key={key}>
                 <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
                   {label}
                 </label>
-                {type === "select-coctel" ? (
-                  <select
-                    value={value}
-                    onChange={(e) => setItem(key, e.target.value)}
-                    className={inputCls(false)}
-                  >
-                    <option value="Ilimitado">Ilimitado</option>
-                    <option value="No aplica">No aplica</option>
-                  </select>
-                ) : type === "select-sino" ? (
-                  <select
-                    value={value}
-                    onChange={(e) => setItem(key, e.target.value)}
-                    className={inputCls(false)}
-                  >
-                    <option value="Sí">Sí</option>
-                    <option value="No">No</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => setItem(key, e.target.value)}
-                    placeholder={key === "tarjetas_invitacion" ? "Según cotización" : "Cantidad"}
-                    className={inputCls(false)}
-                  />
-                )}
+                <input
+                  type="text"
+                  value={strVal}
+                  onChange={(e) => setItem(key, e.target.value)}
+                  placeholder="Según cotización"
+                  className={inputCls(false)}
+                />
               </div>
             );
           })}
