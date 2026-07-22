@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      asesor_assignments: {
+        Row: {
+          asesor_id: string
+          created_at: string
+          id: string
+          last_assigned_at: string | null
+          total_assignments: number
+        }
+        Insert: {
+          asesor_id: string
+          created_at?: string
+          id?: string
+          last_assigned_at?: string | null
+          total_assignments?: number
+        }
+        Update: {
+          asesor_id?: string
+          created_at?: string
+          id?: string
+          last_assigned_at?: string | null
+          total_assignments?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asesor_assignments_asesor_id_fkey"
+            columns: ["asesor_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_events: {
         Row: {
           actor_id: string | null
@@ -100,12 +132,17 @@ export type Database = {
       }
       bookings: {
         Row: {
+          capilla: boolean | null
           client_id: string
+          contract_items: Json | null
+          contract_locked: boolean
           created_at: string
           event_date: string
           event_end_time: string
           event_start_time: string
           event_type: string
+          fecha_segundo_abono: string | null
+          fecha_tercer_abono: string | null
           guest_count: number
           id: string
           notes: string | null
@@ -116,14 +153,21 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           total_amount: number
           updated_at: string
+          valor_anticipo: number | null
+          valor_total: number | null
         }
         Insert: {
+          capilla?: boolean | null
           client_id: string
+          contract_items?: Json | null
+          contract_locked?: boolean
           created_at?: string
           event_date: string
           event_end_time: string
           event_start_time: string
           event_type: string
+          fecha_segundo_abono?: string | null
+          fecha_tercer_abono?: string | null
           guest_count?: number
           id?: string
           notes?: string | null
@@ -134,14 +178,21 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
           updated_at?: string
+          valor_anticipo?: number | null
+          valor_total?: number | null
         }
         Update: {
+          capilla?: boolean | null
           client_id?: string
+          contract_items?: Json | null
+          contract_locked?: boolean
           created_at?: string
           event_date?: string
           event_end_time?: string
           event_start_time?: string
           event_type?: string
+          fecha_segundo_abono?: string | null
+          fecha_tercer_abono?: string | null
           guest_count?: number
           id?: string
           notes?: string | null
@@ -152,6 +203,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
           updated_at?: string
+          valor_anticipo?: number | null
+          valor_total?: number | null
         }
         Relationships: [
           {
@@ -709,11 +762,13 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          cc: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
           is_active: boolean
+          last_active_at: string | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
@@ -721,11 +776,13 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          cc?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
           is_active?: boolean
+          last_active_at?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -733,11 +790,13 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          cc?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
           is_active?: boolean
+          last_active_at?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -1093,6 +1152,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_update_last_active: {
+        Args: { p_timeout_minutes?: number; p_user_id: string }
+        Returns: boolean
+      }
       initialize_service_order: {
         Args: { p_booking_id: string }
         Returns: undefined
@@ -1107,7 +1170,7 @@ export type Database = {
     Enums: {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       contact_status: "unread" | "read" | "replied"
-      document_type: "contrato"
+      document_type: "contrato" | "contrato_firmado"
       payment_method_type:
         | "transferencia"
         | "efectivo"
@@ -1277,7 +1340,7 @@ export const Constants = {
     Enums: {
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
       contact_status: ["unread", "read", "replied"],
-      document_type: ["contrato"],
+      document_type: ["contrato", "contrato_firmado"],
       payment_method_type: [
         "transferencia",
         "efectivo",

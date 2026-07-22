@@ -10,6 +10,7 @@ import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 const schema = z
   .object({
     full_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+    cc: z.string().min(5, "Ingresa la cédula o NIT del cliente"),
     phone: z.string().min(7, "Ingresa un número de teléfono válido"),
     address: z.string().min(4, "Ingresa la dirección de residencia"),
     email: z.string().email("El correo electrónico no es válido"),
@@ -101,6 +102,7 @@ export async function createClientAction(
   // 1 — Validar datos del formulario
   const parsed = schema.safeParse({
     full_name: formData.get("full_name"),
+    cc: formData.get("cc"),
     phone: formData.get("phone"),
     address: formData.get("address"),
     email: formData.get("email"),
@@ -182,7 +184,7 @@ export async function createClientAction(
     // 4 — Actualizar perfil (trigger handle_new_user ya lo creó con email + full_name)
     const { error: profileError } = await admin
       .from("profiles")
-      .update({ phone: d.phone, address: d.address })
+      .update({ phone: d.phone, address: d.address, cc: d.cc })
       .eq("id", createdUserId);
 
     if (profileError) {

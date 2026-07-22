@@ -108,6 +108,20 @@ export function NuevoClienteForm() {
           </Field>
 
           <Field
+            label="CC / Cédula"
+            required
+            error={fieldError("cc")}
+          >
+            <input
+              type="text"
+              name="cc"
+              autoComplete="off"
+              placeholder="Ej. 1234567890"
+              className={inputCls(!!fieldError("cc"))}
+            />
+          </Field>
+
+          <Field
             label="Teléfono"
             required
             error={fieldError("phone")}

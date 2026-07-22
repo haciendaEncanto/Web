@@ -5,23 +5,33 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
+import { DEFAULT_CONTRACT_ITEMS } from "@/lib/contract-items";
 
 const schema = z.object({
-  full_name:         z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  phone:             z.string().min(7, "Ingresa un número de teléfono válido"),
-  address:           z.string().min(4, "Ingresa la dirección"),
-  email:             z.string().email("Correo inválido"),
-  event_type:        z.enum(["boda", "quince", "empresarial", "revelacion"] as const),
-  event_date:        z.string().min(1, "La fecha es requerida"),
-  event_start_time:  z.string().min(1, "La hora de inicio es requerida"),
-  event_end_time:    z.string().min(1, "La hora de fin es requerida"),
-  guest_count:       z.coerce
+  full_name:           z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  cc:                  z.string().min(5, "Ingresa la cédula o NIT del cliente"),
+  phone:               z.string().min(7, "Ingresa un número de teléfono válido"),
+  address:             z.string().min(4, "Ingresa la dirección"),
+  email:               z.string().email("Correo inválido"),
+  event_type:          z.enum(["boda", "quince", "empresarial", "revelacion"] as const),
+  event_date:          z.string().min(1, "La fecha es requerida"),
+  event_start_time:    z.string().min(1, "La hora de inicio es requerida"),
+  event_end_time:      z.string().min(1, "La hora de fin es requerida"),
+  guest_count:         z.coerce
     .number()
     .int()
     .refine(
       (v) => (GUEST_COUNT_OPTIONS as readonly number[]).includes(v),
       { message: `La cantidad de invitados debe ser una de: ${GUEST_COUNT_OPTIONS.join(", ")}` }
     ),
+  // Financiero
+  valor_total:         z.string().optional(),
+  valor_anticipo:      z.string().optional(),
+  fecha_segundo_abono: z.string().optional(),
+  fecha_tercer_abono:  z.string().optional(),
+  capilla:             z.string().optional(),
+  // contract_items como JSON string
+  contract_items:      z.string().optional(),
 });
 
 export type EditClientState =
@@ -29,7 +39,7 @@ export type EditClientState =
   | { success: true }
   | null;
 
-// ─── Helpers de solapamiento (igual que crear-cliente) ────────────────
+// ─── Helpers de solapamiento ──────────────────────────────────────────
 
 function toMin(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -54,9 +64,7 @@ export async function editarCliente(
   formData: FormData
 ): Promise<EditClientState> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
 
   const { data: caller } = await supabase
@@ -101,7 +109,7 @@ export async function editarCliente(
     }
   }
 
-  // Actualizar auth email (admin, sin verificación)
+  // Actualizar auth email
   const { error: authErr } = await admin.auth.admin.updateUserById(clientId, {
     email: d.email,
   });
@@ -110,20 +118,40 @@ export async function editarCliente(
   // Actualizar perfil
   const { error: profileErr } = await admin
     .from("profiles")
-    .update({ full_name: d.full_name, phone: d.phone, address: d.address, email: d.email })
+    .update({ full_name: d.full_name, cc: d.cc, phone: d.phone, address: d.address, email: d.email })
     .eq("id", clientId);
   if (profileErr) return { error: profileErr.message };
 
+  // Parsear contract_items
+  let contractItems = DEFAULT_CONTRACT_ITEMS;
+  if (d.contract_items) {
+    try {
+      contractItems = JSON.parse(d.contract_items);
+    } catch {
+      // usar default si falla el parse
+    }
+  }
+
   // Actualizar booking
+  const bookingUpdate: Record<string, unknown> = {
+    event_type:       d.event_type,
+    event_date:       d.event_date,
+    event_start_time: d.event_start_time,
+    event_end_time:   d.event_end_time,
+    guest_count:      d.guest_count,
+    contract_items:   contractItems,
+  };
+
+  if (d.valor_total) bookingUpdate.valor_total = parseFloat(d.valor_total);
+  if (d.valor_anticipo) bookingUpdate.valor_anticipo = parseFloat(d.valor_anticipo);
+  if (d.fecha_segundo_abono) bookingUpdate.fecha_segundo_abono = d.fecha_segundo_abono;
+  if (d.fecha_tercer_abono) bookingUpdate.fecha_tercer_abono = d.fecha_tercer_abono;
+  if (d.capilla === "true") bookingUpdate.capilla = true;
+  else if (d.capilla === "false") bookingUpdate.capilla = false;
+
   const { error: bookingErr } = await admin
     .from("bookings")
-    .update({
-      event_type:       d.event_type,
-      event_date:       d.event_date,
-      event_start_time: d.event_start_time,
-      event_end_time:   d.event_end_time,
-      guest_count:      d.guest_count,
-    })
+    .update(bookingUpdate)
     .eq("id", bookingId);
   if (bookingErr) return { error: bookingErr.message };
 
