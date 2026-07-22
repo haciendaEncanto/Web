@@ -2,22 +2,25 @@
 
 import { useState, useRef, useTransition } from "react";
 import { CheckCircle2, Loader2, Upload, Trash2, FileSignature } from "lucide-react";
-import { saveClausula, requestFirmaUpload, confirmFirmaUpload, deleteFirma } from "@/app/actions/admin/contrato";
+import {
+  saveClausula,
+  saveHaciendaField,
+  requestFirmaUpload,
+  confirmFirmaUpload,
+  deleteFirma,
+} from "@/app/actions/admin/contrato";
 import { uploadFileToSignedUrl } from "@/lib/uploads/client";
-import { HACIENDA_INFO, CLAUSULA_KEYS } from "@/lib/contract-items";
+import {
+  HACIENDA_CONTENT_KEYS,
+  HACIENDA_FIELD_LABELS,
+  HACIENDA_INFO,
+  CLAUSULA_KEYS,
+} from "@/lib/contract-items";
 
 interface Props {
   clauses: Record<string, string | null>;
   firmaUrl: string | null;
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2 text-[0.83rem]">
-      <span className="text-gris min-w-[180px] shrink-0">{label}</span>
-      <span className="text-negro font-medium">{value}</span>
-    </div>
-  );
+  haciendaValues: Record<string, string | null>;
 }
 
 function ClausulEditor({ index, clausulaKey, initial }: { index: number; clausulaKey: string; initial: string }) {
@@ -73,6 +76,60 @@ function ClausulEditor({ index, clausulaKey, initial }: { index: number; clausul
   );
 }
 
+function HaciendaFieldEditor({
+  fieldKey,
+  contentKey,
+  label,
+  initial,
+}: {
+  fieldKey: keyof typeof HACIENDA_INFO;
+  contentKey: string;
+  label: string;
+  initial: string;
+}) {
+  const [value, setValue] = useState(initial);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    setErr("");
+    setSaved(false);
+    startTransition(async () => {
+      const res = await saveHaciendaField(contentKey, value);
+      if (res.error) { setErr(res.error); return; }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    });
+  }
+
+  return (
+    <div>
+      <label className="block text-[0.7rem] text-gris uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="flex-1 border border-negro/10 bg-crema/20 px-3 py-2 text-[0.83rem] text-negro rounded-lg focus:outline-none focus:border-dorado/70 transition-colors"
+        />
+        <button
+          onClick={handleSave}
+          disabled={isPending || value === initial}
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-dorado text-blanco text-[0.75rem] font-medium rounded-lg hover:bg-dorado/90 transition-colors disabled:opacity-50 shrink-0"
+        >
+          {isPending && <Loader2 size={11} className="animate-spin" />}
+          {saved ? <CheckCircle2 size={12} /> : null}
+          {isPending ? "…" : saved ? "¡Listo!" : "Guardar"}
+        </button>
+      </div>
+      {err && <p className="text-[0.73rem] text-rojo mt-1">{err}</p>}
+    </div>
+  );
+}
+
 function FirmaSection({ initial }: { initial: string | null }) {
   const [url, setUrl] = useState<string | null>(initial);
   const [uploading, setUploading] = useState(false);
@@ -93,7 +150,7 @@ function FirmaSection({ initial }: { initial: string | null }) {
         setErr(req.error ?? "Error al solicitar URL de subida");
         return;
       }
-      const upErr = await uploadFileToSignedUrl(req.signedUrl, req.token, file, "firma-representante");
+      const { error: upErr } = await uploadFileToSignedUrl("avatars", req.path, req.token, file);
       if (upErr) { setErr(upErr); return; }
 
       const confirm = await confirmFirmaUpload(req.path);
@@ -180,30 +237,33 @@ function FirmaSection({ initial }: { initial: string | null }) {
   );
 }
 
-export function ContratoAdminManager({ clauses, firmaUrl }: Props) {
+export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues }: Props) {
+  const haciendaFields = Object.keys(HACIENDA_CONTENT_KEYS) as (keyof typeof HACIENDA_INFO)[];
+
   return (
     <div className="space-y-8">
-      {/* Datos de la hacienda */}
+      {/* Datos editables de la hacienda */}
       <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
         <div className="px-5 py-3.5 border-b border-negro/5 bg-crema/30 flex items-center gap-2">
           <FileSignature size={15} className="text-dorado" />
           <h3 className="font-serif text-[0.92rem] text-negro tracking-[-0.01em]">
-            Datos de la hacienda (solo lectura)
+            Datos de la hacienda
           </h3>
         </div>
-        <div className="px-5 py-4 space-y-2.5">
-          <InfoRow label="Razón social" value={HACIENDA_INFO.nombre} />
-          <InfoRow label="NIT" value={HACIENDA_INFO.nit} />
-          <InfoRow label="Representante legal" value={HACIENDA_INFO.representante} />
-          <InfoRow label="CC representante" value={HACIENDA_INFO.cc_representante} />
-          <InfoRow label="Dirección" value={HACIENDA_INFO.direccion} />
-          <InfoRow label="WhatsApp" value={HACIENDA_INFO.whatsapp} />
-          <InfoRow label="Correo" value={HACIENDA_INFO.email} />
-          <InfoRow label="Cuenta Davivienda" value={HACIENDA_INFO.cuenta_davivienda} />
+        <div className="px-5 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {haciendaFields.map((fieldKey) => {
+            const contentKey = HACIENDA_CONTENT_KEYS[fieldKey];
+            return (
+              <HaciendaFieldEditor
+                key={fieldKey}
+                fieldKey={fieldKey}
+                contentKey={contentKey}
+                label={HACIENDA_FIELD_LABELS[fieldKey]}
+                initial={haciendaValues[contentKey] ?? HACIENDA_INFO[fieldKey]}
+              />
+            );
+          })}
         </div>
-        <p className="px-5 pb-4 text-[0.72rem] text-gris/70">
-          Para modificar estos datos contacta al equipo de desarrollo.
-        </p>
       </div>
 
       {/* Firma */}

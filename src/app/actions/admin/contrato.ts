@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
 import { firmaRepresentantePath } from "@/lib/uploads/config";
+import { HACIENDA_CONTENT_KEYS } from "@/lib/contract-items";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -94,6 +95,26 @@ export async function confirmFirmaUpload(
 
   revalidatePath("/admin/contrato");
   return { url };
+}
+
+export async function saveHaciendaField(
+  key: string,
+  value: string,
+): Promise<{ error?: string }> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  const validKeys = Object.values(HACIENDA_CONTENT_KEYS);
+  if (!validKeys.includes(key)) return { error: "Clave inválida" };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("site_content")
+    .upsert({ key, content: value }, { onConflict: "key" });
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/contrato");
+  return {};
 }
 
 export async function deleteFirma(): Promise<{ error?: string }> {

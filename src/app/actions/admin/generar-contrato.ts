@@ -10,6 +10,8 @@ import {
   DEFAULT_CONTRACT_ITEMS,
   CLAUSULA_KEYS,
   FIRMA_KEY,
+  HACIENDA_CONTENT_KEYS,
+  resolveHaciendaData,
   type ContractItems,
 } from "@/lib/contract-items";
 import { generatedContractPath } from "@/lib/uploads/config";
@@ -57,17 +59,23 @@ export async function generarContratoPDF(
   if (!booking.valor_total) return { error: "Ingresa el valor total del evento antes de generar el contrato." };
   if (!booking.valor_anticipo) return { error: "Ingresa el valor del anticipo antes de generar el contrato." };
 
-  // Fetch cláusulas y firma
+  // Fetch cláusulas, firma y datos editables de la hacienda
+  const allContentKeys = [
+    ...CLAUSULA_KEYS,
+    FIRMA_KEY,
+    ...Object.values(HACIENDA_CONTENT_KEYS),
+  ];
   const { data: contentRows } = await admin
     .from("site_content")
     .select("key, content")
-    .in("key", [...CLAUSULA_KEYS, FIRMA_KEY]);
+    .in("key", allContentKeys);
 
   const contentMap: Record<string, string | null> = {};
   for (const r of contentRows ?? []) contentMap[r.key] = r.content ?? null;
 
   const clauses = CLAUSULA_KEYS.map((k) => contentMap[k] ?? "");
   const firmaUrl = contentMap[FIRMA_KEY] ?? null;
+  const haciendaData = resolveHaciendaData(contentMap);
 
   // Determinar número de versión
   const { count } = await admin
@@ -105,6 +113,7 @@ export async function generarContratoPDF(
       version,
       generatedAt,
       otroSi: otroSi?.trim() || undefined,
+      haciendaData,
     })
   );
 

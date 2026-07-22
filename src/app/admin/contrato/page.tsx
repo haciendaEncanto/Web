@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ContratoAdminManager } from "@/components/admin/ContratoAdminManager";
 import { AsesoresAsignacionesView } from "@/components/admin/AsesoresAsignacionesView";
-import { CLAUSULA_KEYS, FIRMA_KEY } from "@/lib/contract-items";
+import { CLAUSULA_KEYS, FIRMA_KEY, HACIENDA_CONTENT_KEYS } from "@/lib/contract-items";
 
 export const metadata = { title: "Contrato y asesores — Hacienda El Encanto" };
 
@@ -18,8 +18,9 @@ export default async function ContratoAdminPage() {
 
   const admin = createAdminClient();
 
-  // Cláusulas y firma
-  const keysToFetch = [...CLAUSULA_KEYS, FIRMA_KEY];
+  // Cláusulas, firma y datos editables de la hacienda
+  const haciendaKeys = Object.values(HACIENDA_CONTENT_KEYS);
+  const keysToFetch = [...CLAUSULA_KEYS, FIRMA_KEY, ...haciendaKeys];
   const { data: contentRows } = await admin
     .from("site_content")
     .select("key, content")
@@ -35,6 +36,11 @@ export default async function ContratoAdminPage() {
     clauses[key] = contentMap[key] ?? null;
   }
   const firmaUrl = contentMap[FIRMA_KEY] ?? null;
+
+  const haciendaValues: Record<string, string | null> = {};
+  for (const key of haciendaKeys) {
+    haciendaValues[key] = contentMap[key] ?? null;
+  }
 
   // Asesores comerciales y sus contadores
   const { data: asesores } = await admin
@@ -96,7 +102,7 @@ export default async function ContratoAdminPage() {
             se reflejan en todos los contratos que se generen a partir de ahora.
           </p>
         </div>
-        <ContratoAdminManager clauses={clauses} firmaUrl={firmaUrl} />
+        <ContratoAdminManager clauses={clauses} firmaUrl={firmaUrl} haciendaValues={haciendaValues} />
       </div>
     </div>
   );
