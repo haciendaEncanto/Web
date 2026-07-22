@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -49,6 +50,13 @@ export async function login(
     .select("role")
     .eq("id", data.user.id)
     .single();
+
+  // Registrar actividad inicial para que proxy.ts no detecte sesión "expirada"
+  // en el primer request tras el login (cuando last_active_at venía de antes).
+  await createAdminClient()
+    .from("profiles")
+    .update({ last_active_at: new Date().toISOString() })
+    .eq("id", data.user.id);
 
   const destinations: Record<string, string> = {
     client: "/portal/dashboard",

@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -768,6 +768,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
+          last_active_at: string | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
@@ -781,6 +782,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean
+          last_active_at?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -794,6 +796,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          last_active_at?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -1149,6 +1152,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_update_last_active: {
+        Args: { p_timeout_minutes?: number; p_user_id: string }
+        Returns: boolean
+      }
       initialize_service_order: {
         Args: { p_booking_id: string }
         Returns: undefined
