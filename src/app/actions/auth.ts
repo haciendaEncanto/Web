@@ -113,3 +113,49 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+export type ResetPasswordState = { error?: string; success?: boolean } | null;
+
+export async function requestPasswordReset(
+  _prev: ResetPasswordState,
+  formData: FormData
+): Promise<ResetPasswordState> {
+  const email = (formData.get("email") as string)?.trim();
+  if (!email || !email.includes("@")) return { error: "Ingresa un correo electrónico válido" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://www.hacienda-encanto.com/update-password",
+  });
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export type UpdatePasswordState = { error?: string; success?: boolean } | null;
+
+export async function updatePassword(
+  _prev: UpdatePasswordState,
+  formData: FormData
+): Promise<UpdatePasswordState> {
+  const password = formData.get("password") as string;
+  const confirm = formData.get("confirmPassword") as string;
+
+  if (!password || password.length < 8)
+    return { error: "La contraseña debe tener mínimo 8 caracteres" };
+  if (password !== confirm)
+    return { error: "Las contraseñas no coinciden" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    if (error.message.includes("session")) {
+      return { error: "El enlace expiró o ya fue utilizado. Solicita uno nuevo." };
+    }
+    return { error: error.message };
+  }
+
+  await supabase.auth.signOut();
+  return { success: true };
+}
