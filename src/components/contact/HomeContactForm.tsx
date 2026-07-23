@@ -88,11 +88,14 @@ export function HomeContactForm() {
           />
         </div>
         <div>
-          <label className={label}>Teléfono / WhatsApp</label>
+          <label className={label}>
+            WhatsApp <span className="normal-case text-rojo">*</span>
+          </label>
           <input
-            name="phone"
+            name="whatsapp"
             type="tel"
-            placeholder="+57"
+            required
+            placeholder="+57 3XX XXX XXXX"
             className={input}
           />
         </div>

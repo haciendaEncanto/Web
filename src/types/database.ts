@@ -333,6 +333,7 @@ export type Database = {
       }
       contact_messages: {
         Row: {
+          assigned_asesor_id: string | null
           created_at: string
           email: string
           id: string
@@ -341,8 +342,10 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["contact_status"]
           subject: string | null
+          whatsapp: string
         }
         Insert: {
+          assigned_asesor_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -351,8 +354,10 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["contact_status"]
           subject?: string | null
+          whatsapp?: string
         }
         Update: {
+          assigned_asesor_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -361,8 +366,17 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["contact_status"]
           subject?: string | null
+          whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contact_messages_assigned_asesor_id_fkey"
+            columns: ["assigned_asesor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -1161,6 +1175,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_or_gerente: { Args: never; Returns: boolean }
       is_any_staff: { Args: never; Returns: boolean }
       is_editor: { Args: never; Returns: boolean }
       is_planner_or_admin: { Args: never; Returns: boolean }
@@ -1169,7 +1184,7 @@ export type Database = {
     }
     Enums: {
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
-      contact_status: "unread" | "read" | "replied"
+      contact_status: "unread" | "read" | "replied" | "en_proceso"
       document_type: "contrato" | "contrato_firmado"
       payment_method_type:
         | "transferencia"
@@ -1339,7 +1354,7 @@ export const Constants = {
   public: {
     Enums: {
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
-      contact_status: ["unread", "read", "replied"],
+      contact_status: ["unread", "read", "replied", "en_proceso"],
       document_type: ["contrato", "contrato_firmado"],
       payment_method_type: [
         "transferencia",

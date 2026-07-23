@@ -97,14 +97,15 @@ export function ContactForm() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label htmlFor="contact-phone" className={labelClass}>
-            Teléfono <span className="normal-case text-gris-claro">(opcional)</span>
+          <label htmlFor="contact-whatsapp" className={labelClass}>
+            WhatsApp *
           </label>
           <input
-            id="contact-phone"
-            name="phone"
+            id="contact-whatsapp"
+            name="whatsapp"
             type="tel"
-            placeholder="+57 300 000 0000"
+            required
+            placeholder="+57 3XX XXX XXXX"
             className={inputClass}
           />
         </div>
