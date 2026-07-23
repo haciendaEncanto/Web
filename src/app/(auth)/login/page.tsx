@@ -65,7 +65,7 @@ export default function LoginPage() {
       <div className="flex flex-col items-center gap-3 mt-6">
         <Link
           href="/reset-password"
-          className="text-xs text-gris hover:text-dorado transition-colors"
+          className="text-xs text-dorado hover:underline cursor-pointer transition-colors"
         >
           ¿Olvidaste tu contraseña?
         </Link>
