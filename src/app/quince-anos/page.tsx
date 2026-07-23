@@ -3,7 +3,7 @@ import { EventPageTemplate } from "@/components/events/EventPageTemplate";
 import type { EventPageConfig } from "@/components/events/types";
 
 export const metadata: Metadata = {
-  title: "Mis XV en Hacienda El Encanto | Cota, Cundinamarca",
+  title: "Quinceañeras en Hacienda El Encanto | Cota, Cundinamarca",
   description:
     "Celebra los quince años más especiales en un entorno mágico. Jardines, salones y atención personalizada en Cota, Cundinamarca.",
   openGraph: {

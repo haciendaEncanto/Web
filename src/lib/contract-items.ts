@@ -146,7 +146,7 @@ export const HACIENDA_FIELD_LABELS: Record<keyof typeof HACIENDA_INFO, string> =
 };
 
 // Resuelve datos de la hacienda combinando site_content con defaults
-export type HaciendaData = { [K in keyof typeof HACIENDA_INFO]: string };
+export type HaciendaData = { -readonly [K in keyof typeof HACIENDA_INFO]: string };
 
 export function resolveHaciendaData(
   contentMap: Record<string, string | null>

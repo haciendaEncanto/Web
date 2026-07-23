@@ -3,7 +3,7 @@ import { EventPageTemplate } from "@/components/events/EventPageTemplate";
 import type { EventPageConfig } from "@/components/events/types";
 
 export const metadata: Metadata = {
-  title: "Eventos Empresariales · Hacienda El Encanto | Cota, Cundinamarca",
+  title: "Eventos Empresariales | Hacienda El Encanto Cota",
   description:
     "Organiza tu próximo evento corporativo en un entorno único. Reuniones, conferencias y team building en Cota, Cundinamarca.",
   openGraph: {

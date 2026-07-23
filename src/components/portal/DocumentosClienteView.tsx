@@ -79,7 +79,7 @@ function FirmarContratoSection({
       if (req.error || !req.signedUrl || !req.token || !req.path) {
         setErr(req.error ?? "Error al solicitar la subida"); return;
       }
-      const upErr = await uploadFileToSignedUrl(req.signedUrl, req.token, file, "signed-contract");
+      const { error: upErr } = await uploadFileToSignedUrl("signed-contract", req.path, req.token, file);
       if (upErr) { setErr(upErr); return; }
 
       const confirm = await confirmContratoFirmadoUpload(bookingId, req.path);
