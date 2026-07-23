@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ClienteEditForm } from "@/components/portal/planner/ClienteEditForm";
 import { PlannerOrdenForm } from "@/components/portal/orden-servicio/PlannerOrdenForm";
+import { CambiarPasswordButton } from "@/components/admin/CambiarPasswordButton";
 import { DEFAULT_CONTRACT_ITEMS } from "@/lib/contract-items";
 
 interface Props {
@@ -96,12 +97,20 @@ export default async function AdminClienteDetailPage({ params }: Props) {
           <ChevronLeft size={14} />
           Volver a clientes
         </Link>
-        <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
-          <span className="text-dorado">{profile.full_name ?? profile.email}</span>
-        </h2>
-        <p className="text-gris text-[0.88rem] mt-1">
-          {eventTypeLabel[booking.event_type ?? ""] ?? "Evento"} — datos del cliente y orden de servicio
-        </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
+              <span className="text-dorado">{profile.full_name ?? profile.email}</span>
+            </h2>
+            <p className="text-gris text-[0.88rem] mt-1">
+              {eventTypeLabel[booking.event_type ?? ""] ?? "Evento"} — datos del cliente y orden de servicio
+            </p>
+          </div>
+          <CambiarPasswordButton
+            userId={clientId}
+            displayName={profile.full_name ?? profile.email}
+          />
+        </div>
       </div>
 
       <ClienteEditForm

@@ -125,7 +125,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://www.hacienda-encanto.com/auth/callback?next=/update-password",
+    redirectTo: "https://www.hacienda-encanto.com/update-password",
   });
 
   if (error) return { error: error.message };

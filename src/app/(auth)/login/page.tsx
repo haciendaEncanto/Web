@@ -35,14 +35,9 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor="password" className="block text-xs text-gris uppercase tracking-wider">
-              Contraseña
-            </label>
-            <Link href="/reset-password" className="text-xs text-dorado hover:text-dorado/70 transition-colors">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
+          <label htmlFor="password" className="block text-xs text-gris uppercase tracking-wider mb-2">
+            Contraseña
+          </label>
           <input
             id="password"
             name="password"
@@ -67,7 +62,13 @@ export default function LoginPage() {
         />
       </form>
 
-      <div className="text-center mt-6">
+      <div className="flex flex-col items-center gap-3 mt-6">
+        <Link
+          href="/reset-password"
+          className="text-xs text-gris hover:text-dorado transition-colors"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-xs text-dorado hover:text-dorado/70 transition-colors"

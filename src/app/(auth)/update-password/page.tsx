@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { updatePassword } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const inputClass =
@@ -13,6 +14,30 @@ export default function UpdatePasswordPage() {
   const [state, formAction] = useActionState(updatePassword, null);
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
+    if (code) {
+      const supabase = createClient();
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => {
+          if (error) {
+            setExchangeError("El enlace expiró o ya fue utilizado. Solicita uno nuevo.");
+          } else {
+            // Limpia el código de la URL
+            window.history.replaceState({}, "", "/update-password");
+            setReady(true);
+          }
+        });
+    } else {
+      // Podría llegar por hash (flujo implícito) — @supabase/ssr lo maneja automáticamente
+      setReady(true);
+    }
+  }, []);
 
   if (state?.success) {
     return (
@@ -25,12 +50,32 @@ export default function UpdatePasswordPage() {
         </div>
         <h2 className="font-serif text-2xl text-negro tracking-[-0.02em]">¡Contraseña actualizada!</h2>
         <p className="text-sm text-gris">
-          Tu contraseña fue cambiada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.
+          Tu contraseña fue cambiada exitosamente. Ya puedes iniciar sesión.
         </p>
         <Link href="/login"
           className="inline-block mt-2 px-6 py-2.5 bg-rojo text-blanco text-sm font-serif tracking-wider rounded-lg hover:bg-rojo-pro transition-colors">
           Iniciar sesión
         </Link>
+      </div>
+    );
+  }
+
+  if (exchangeError) {
+    return (
+      <div className="bg-blanco border border-crema-medio shadow-sm rounded-2xl px-8 py-10 text-center space-y-4">
+        <p className="text-sm text-rojo">{exchangeError}</p>
+        <Link href="/reset-password"
+          className="inline-flex items-center gap-1.5 text-xs text-dorado hover:text-dorado/70 transition-colors">
+          Solicitar nuevo enlace
+        </Link>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="bg-blanco border border-crema-medio shadow-sm rounded-2xl px-8 py-10 text-center">
+        <p className="text-sm text-gris">Verificando enlace…</p>
       </div>
     );
   }
