@@ -149,13 +149,17 @@ export function ContactForm() {
         className="w-full bg-rojo text-blanco py-3 font-serif tracking-wider text-sm hover:bg-rojo-pro"
       />
 
-      {SITE_KEY && (
-        <p className="text-[0.65rem] text-gris-claro text-center">
-          Protegido por reCAPTCHA —{" "}
-          <a href="https://policies.google.com/privacy" className="underline">Privacidad</a> ·{" "}
-          <a href="https://policies.google.com/terms" className="underline">Términos</a>
-        </p>
-      )}
+      <p className="text-[0.65rem] text-gris-claro text-center leading-relaxed">
+        Protegido por reCAPTCHA —{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Política de privacidad
+        </a>{" "}
+        y{" "}
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Términos de servicio
+        </a>{" "}
+        de Google.
+      </p>
     </form>
   );
 }

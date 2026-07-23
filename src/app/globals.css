@@ -68,3 +68,10 @@ h1, h2, h3, h4, h5, h6 {
   75%  { transform: scaleX(1); }  /* llega al 100% en 600ms (75% de 800ms) */
   100% { transform: scaleX(1); }  /* mantiene 200ms en 100% */
 }
+
+/* reCAPTCHA v3 — ocultar badge flotante.
+   Legalmente permitido siempre que el sitio muestre texto de atribución
+   cerca del formulario (ver ContactForm y HomeContactForm). */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
