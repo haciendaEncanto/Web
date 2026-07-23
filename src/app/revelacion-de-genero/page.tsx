@@ -3,7 +3,7 @@ import { EventPageTemplate } from "@/components/events/EventPageTemplate";
 import type { EventPageConfig } from "@/components/events/types";
 
 export const metadata: Metadata = {
-  title: "Revelación de Género · Hacienda El Encanto | Cota, Cundinamarca",
+  title: "Revelación de Género | Hacienda El Encanto Cota",
   description:
     "Celebra el momento más esperado en un entorno mágico. Revelaciones de género íntimas y memorables en Cota, Cundinamarca.",
   openGraph: {
