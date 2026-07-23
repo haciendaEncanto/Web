@@ -8,13 +8,17 @@
 Next.js 16 + TypeScript + Tailwind v4 (`@theme inline {}` en globals.css) + Supabase (PostgreSQL + Storage + Auth). Fuentes: Cormorant Garamond. `pnpm` exclusivamente — nunca `npm install`. Paleta: `--rojo`, `--dorado`, `--crema`, `--negro`, `--verde-bosque`, `--blush`.
 
 ### Usuarios de prueba
-| Email | Contraseña | Rol |
-|---|---|---|
-| admin@haciendaencanto.com | Admin2026! | admin |
-| editor@haciendaencanto.com | Editor2026! | editor |
-| cliente@test.com | (migración 20260625000011) | client |
-| dj@haciendaencanto.com | Staff2026! | staff |
-| animador@haciendaencanto.com | Staff2026! | staff |
+| Email | Contraseña | Rol | Nombre |
+|---|---|---|---|
+| admin@hacienda-encanto.com | Admin2026! | admin | Admin Hacienda |
+| editor@hacienda-encanto.com | Editor2026! | editor | Editor Hacienda |
+| planner@hacienda-encanto.com | Planner2026! | wedding_planner | Jonny Delgado |
+| asesor@hacienda-encanto.com | Asesor2026! | asesor_comercial | David Castillo |
+| jeissondeejay11@gmail.com | DJ2026! | staff | Staff DJ |
+| cliente@test.com | (migración 20260625000011) | client | — |
+| ing_jeisson_rincon@outlook.com | — | client | jeisson yebrail rincon ariza |
+
+Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 20260725000003.
 
 ### Módulos completados (todos ✅)
 
@@ -42,6 +46,8 @@ Next.js 16 + TypeScript + Tailwind v4 (`@theme inline {}` en globals.css) + Supa
 | Optimismo en UI | DocumentosPlanner, PagosPlanner, ActividadesPlanner, SalonMapasManager usan useState(initialX) + Server Action devuelve registro creado |
 | Imágenes del sitio | /editor/imagenes-sitio: 8 imágenes editables del Home guardadas en site_content, upload signed URL |
 | Fotos perfil/testimonios | avatar_url desde /portal/perfil (cliente) y /admin/usuarios (equipo). testimonials.photo_url editable desde /editor/testimonios |
+| Flujo contacto WhatsApp | Campo whatsapp requerido en formularios. Round-robin de asesores vía asesor_assignments. Notificación CallMeBot (fire & forget). Panel /portal/asesor-comercial con lista de contactos asignados, cambio de estado, botón wa.me prellenado |
+| Badge reCAPTCHA oculto | `.grecaptcha-badge { visibility: hidden }` en globals.css. Texto legal "Protegido por reCAPTCHA — Política de privacidad y Términos de servicio de Google" en ambos formularios de contacto |
 
 ### Decisiones de arquitectura
 
@@ -96,6 +102,16 @@ Next.js 16 + TypeScript + Tailwind v4 (`@theme inline {}` en globals.css) + Supa
 - reCAPTCHA v3: se omite en dev si `RECAPTCHA_SECRET_KEY` no está configurada.
 - Sin precios públicos — paquetes muestran nombre + contenido. CTA siempre "Cuéntanos tu evento" / "Conoce más".
 
+**Flujo de contacto WhatsApp**
+- Campo `whatsapp` requerido en `contact_messages` (text not null default ''). Validación Zod: `/^(\+?57)?3\d{9}$/` via `.refine()` (no `.regex()` — obsoleto en Zod v4).
+- Round-robin: al llegar un contacto, se consultan `asesor_assignments` ordenado por `total_assignments ASC, last_assigned_at ASC NULLS FIRST`. Se filtra contra perfiles activos de roles `asesor_comercial` y `wedding_planner`. Se incrementa el contador del asesor seleccionado.
+- CallMeBot (`src/lib/callmebot.ts`): `sendWhatsAppNotification(msg)` — fire & forget, nunca bloquea al usuario. Usa `CALLMEBOT_PHONE_CENTRAL + CALLMEBOT_API_KEY_CENTRAL` si ambas están configuradas; de lo contrario cae al número de prueba.
+- `contact_status` enum: `unread | read | replied | en_proceso`. Display: Nuevo / Leído / Respondido / En Proceso.
+- RLS `contact_messages`: `asesor_comercial` → solo `assigned_asesor_id = auth.uid()`. `wedding_planner` → todos. `admin | gerente` → todos (via `is_admin_or_gerente()` nueva helper). Políticas `staff select` y `staff update` eliminadas.
+- Panel `/portal/asesor-comercial`: lista de contactos asignados (arriba) + EventosManager (abajo). `ContactosAsesorView` es client component con estado optimista para cambios de estado.
+- `profiles.phone`: privado — solo seleccionado en `/admin/usuarios` (admin query). UsuariosManager CrearModal y EditarModal incluyen campo phone etiquetado "(privado)". La RLS ya impide que clientes y anónimos lean perfiles ajenos (select: `auth.uid() = id OR is_staff_or_admin()`).
+- **Badge reCAPTCHA**: `.grecaptcha-badge { visibility: hidden !important; }` en `globals.css`. Legalmente permitido si el formulario muestra texto de atribución con links a `policies.google.com/privacy` y `policies.google.com/terms`. Ambos formularios (`ContactForm`, `HomeContactForm`) incluyen este texto.
+
 **Restricción de visibilidad por rol**
 - `UPCOMING_EVENT_WINDOW_DAYS = 15` en `src/lib/event-window.ts` (único lugar que calcula la ventana).
 - Admin y gerente: sin restricción de fecha. Resto (planner, staff, asesores): solo próximos 15 días (`options.restrictToUpcoming`).
@@ -117,7 +133,8 @@ src/
     bodas|quince-anos|eventos-empresariales|revelacion-de-genero/page.tsx  ← EventPageConfig + EventPageTemplate
     actions/
       auth.ts                         ← login (redirect por rol), logout, cierre por inactividad
-      contact.ts                      ← submitContactForm (Zod + reCAPTCHA)
+      contact.ts                      ← submitContactForm (Zod + reCAPTCHA + whatsapp requerido + round-robin asesores + CallMeBot)
+      contactos-asesor.ts             ← updateContactStatus (asesor actualiza estado de sus contactos)
       crear-cliente.ts                ← createClientAction: onboarding completo con rollback y overlap check
       orden-servicio.ts               ← savePlannerItems, approveServiceOrder, initServiceOrder
       actividades.ts                  ← createActivity/updateActivity (devuelven ActividadRow), deleteActivity
@@ -148,7 +165,8 @@ src/
       planner/clientes/page.tsx       ← ClientesTable (tabs Activos/Cumplidos/Cancelados)
       planner/clientes/[clientId]/actividades|invitados|documentos|pagos|playlist/page.tsx
       planner/salon-mapas/page.tsx
-      asesor-comercial|asesor-logistica/page.tsx  ← EventosManager 15 días
+      asesor-comercial/page.tsx       ← ContactosAsesorView (contactos asignados) + EventosManager 15 días
+      asesor-logistica/page.tsx       ← EventosManager 15 días
       gerente/page.tsx                ← EventosManager sin restricción de fecha
       staff/page.tsx                  ← Eventos activos + playlist (15 días), StaffEventsView
     admin/
@@ -171,6 +189,7 @@ src/
       InvitadosClienteView.tsx|InvitadosReadOnly.tsx
       orden-servicio/OrdenServicioView.tsx|PlannerOrdenForm.tsx
       planner/ActividadesPlanner.tsx|ClienteEditForm.tsx|SalonMapasManager.tsx|DocumentosPlanner.tsx|PagosPlanner.tsx
+    asesor/ContactosAsesorView.tsx    ← lista contactos asignados, cambio estado, botón wa.me prellenado
     admin/UsuariosManager.tsx|EventosManager.tsx|KpiCard.tsx
     clientes/ClientesTable.tsx        ← Compartido admin/planner, prop basePath: "planner"|"admin"
     editor/GaleriaManager.tsx|VideosManager.tsx|ImagenesSitioManager.tsx|TestimoniosManager.tsx|PaquetesManager.tsx|ContenidoManager.tsx
@@ -186,6 +205,7 @@ src/
     random-slider.ts                  ← pickRandomSliderImages (8 cupos, Math.random por request SSR)
     guest-count.ts                    ← GUEST_COUNT_OPTIONS (30–150 de 10 en 10)
     salon-map-capacities.ts           ← SALON_MAP_CAPACITIES (nunca en "use server")
+    callmebot.ts                      ← sendWhatsAppNotification (fire & forget; número central si CALLMEBOT_API_KEY_CENTRAL está configurada)
   proxy.ts                            ← Middleware Next.js 16 (función exportada como "proxy")
   types/database.ts                   ← Tipos generados Supabase (regenerar tras cada migración)
 public/
@@ -194,5 +214,5 @@ public/
   placeholder-avatar.svg
   placeholder-evento.svg              ← Placeholder de marca local (nunca dependencias externas)
 supabase/migrations/
-  (última aplicada: 20260722000000_drop_packages_price.sql — ver git log para historial completo)
+  (última aplicada: 20260725000003_migrate_users_new_domain.sql — ver git log para historial completo)
 ```

@@ -17,6 +17,7 @@ type Usuario = {
   is_active: boolean;
   created_at: string;
   avatar_url: string | null;
+  phone: string | null;
 };
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -96,6 +97,12 @@ function CrearModal({ onClose }: { onClose: () => void }) {
               <option value="" disabled>Seleccionar rol…</option>
               {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
+              Teléfono / WhatsApp <span className="normal-case text-gris/50">(privado)</span>
+            </label>
+            <input name="phone" type="tel" placeholder="+57 3XX XXX XXXX" className={inputCls} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose}
@@ -205,6 +212,18 @@ function EditarModal({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
             <select name="role" defaultValue={usuario.role} required className={inputCls}>
               {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
+              Teléfono / WhatsApp <span className="normal-case text-gris/50">(privado)</span>
+            </label>
+            <input
+              name="phone"
+              type="tel"
+              defaultValue={usuario.phone ?? ""}
+              placeholder="+57 3XX XXX XXXX"
+              className={inputCls}
+            />
           </div>
           <div className="flex items-center justify-between py-1">
             <span className="text-[0.8rem] text-negro">Estado de cuenta</span>

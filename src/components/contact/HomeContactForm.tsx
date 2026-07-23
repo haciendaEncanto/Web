@@ -88,11 +88,14 @@ export function HomeContactForm() {
           />
         </div>
         <div>
-          <label className={label}>Teléfono / WhatsApp</label>
+          <label className={label}>
+            WhatsApp <span className="normal-case text-rojo">*</span>
+          </label>
           <input
-            name="phone"
+            name="whatsapp"
             type="tel"
-            placeholder="+57"
+            required
+            placeholder="+57 3XX XXX XXXX"
             className={input}
           />
         </div>
@@ -160,6 +163,18 @@ export function HomeContactForm() {
         pendingLabel="Enviando…"
         className="w-full text-center bg-rojo text-blanco px-9 py-[14px] rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
       />
+
+      <p className="text-[0.65rem] text-gris/50 text-center leading-relaxed">
+        Protegido por reCAPTCHA —{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Política de privacidad
+        </a>{" "}
+        y{" "}
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Términos de servicio
+        </a>{" "}
+        de Google.
+      </p>
     </form>
   );
 }

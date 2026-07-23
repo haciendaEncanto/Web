@@ -15,14 +15,14 @@ export default async function UsuariosPage() {
   const admin = createAdminClient();
   const { data: usuarios } = await admin
     .from("profiles")
-    .select("id, full_name, email, role, is_active, created_at, avatar_url")
+    .select("id, full_name, email, role, is_active, created_at, avatar_url, phone")
     .neq("role", "client")
     .order("created_at", { ascending: false });
 
   type Row = {
     id: string; full_name: string | null; email: string;
     role: string; is_active: boolean; created_at: string;
-    avatar_url: string | null;
+    avatar_url: string | null; phone: string | null;
   };
 
   return <UsuariosManager usuarios={(usuarios ?? []) as Row[]} />;
