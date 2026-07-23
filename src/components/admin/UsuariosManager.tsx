@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState, useTransition, useActionState } from "react";
-import { UserPlus, Pencil, ToggleLeft, ToggleRight, Loader2, X, Eye, EyeOff, Upload, User } from "lucide-react";
+import { UserPlus, Pencil, ToggleLeft, ToggleRight, Loader2, X, Eye, EyeOff, Upload, User, KeyRound } from "lucide-react";
 import {
-  crearUsuario, editarUsuario, toggleUsuarioActivo,
+  crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword,
   requestUsuarioAvatarUpload, confirmUsuarioAvatarUpload,
-  type CrearUsuarioState, type EditarUsuarioState,
+  type CrearUsuarioState, type EditarUsuarioState, type CambiarPasswordState,
 } from "@/app/actions/admin/usuarios";
 import { uploadFileToSignedUrl } from "@/lib/uploads/client";
 
@@ -48,6 +48,66 @@ function Badge({ role }: { role: string }) {
 }
 
 const inputCls = "w-full border border-negro/10 bg-crema/20 px-3 py-2.5 text-[0.83rem] text-negro rounded-lg focus:outline-none focus:border-dorado/70 transition-colors placeholder:text-gris/35";
+
+// ─── Modal Cambiar Contraseña ─────────────────────────────────
+function CambiarPasswordModal({ usuario, onClose }: { usuario: Usuario; onClose: () => void }) {
+  const [state, action] = useActionState<CambiarPasswordState, FormData>(cambiarPassword, null);
+  const [showPwd, setShowPwd] = useState(false);
+
+  if (state?.success) { onClose(); return null; }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-negro/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-blanco rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-[1.1rem] text-negro">Cambiar contraseña</h3>
+            <p className="text-[0.75rem] text-gris mt-0.5">{usuario.full_name ?? usuario.email}</p>
+          </div>
+          <button onClick={onClose} className="text-gris hover:text-negro p-1"><X size={18} /></button>
+        </div>
+
+        {state?.error && (
+          <p className="text-[0.78rem] text-rojo bg-rojo/5 rounded-lg px-3 py-2">{state.error}</p>
+        )}
+
+        <form action={action} className="space-y-3">
+          <input type="hidden" name="userId" value={usuario.id} />
+          <div>
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
+              Nueva contraseña <span className="normal-case text-gris/50">(mín. 8 caracteres)</span>
+            </label>
+            <div className="relative">
+              <input
+                name="password"
+                type={showPwd ? "text" : "password"}
+                required
+                minLength={8}
+                placeholder="••••••••"
+                className={`${inputCls} pr-10`}
+              />
+              <button type="button" onClick={() => setShowPwd(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gris/50 hover:text-gris transition-colors">
+                {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 text-[0.8rem] text-gris border border-negro/15 rounded-lg hover:bg-negro/5">
+              Cancelar
+            </button>
+            <button type="submit"
+              className="px-5 py-2 bg-rojo text-blanco text-[0.8rem] font-medium rounded-lg hover:bg-rojo-pro transition-colors">
+              Guardar contraseña
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 // ─── Modal Crear Usuario ──────────────────────────────────────
 function CrearModal({ onClose }: { onClose: () => void }) {
@@ -253,6 +313,7 @@ function EditarModal({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
 export function UsuariosManager({ usuarios }: { usuarios: Usuario[] }) {
   const [showCrear, setShowCrear] = useState(false);
   const [editando, setEditando] = useState<Usuario | null>(null);
+  const [cambiandoPassword, setCambiandoPassword] = useState<Usuario | null>(null);
   const [toggling, startToggle] = useTransition();
 
   function handleToggle(u: Usuario) {
@@ -265,6 +326,7 @@ export function UsuariosManager({ usuarios }: { usuarios: Usuario[] }) {
     <>
       {showCrear && <CrearModal onClose={() => setShowCrear(false)} />}
       {editando && <EditarModal usuario={editando} onClose={() => setEditando(null)} />}
+      {cambiandoPassword && <CambiarPasswordModal usuario={cambiandoPassword} onClose={() => setCambiandoPassword(null)} />}
 
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -325,6 +387,10 @@ export function UsuariosManager({ usuarios }: { usuarios: Usuario[] }) {
                       <button onClick={() => setEditando(u)}
                         className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors" title="Editar">
                         <Pencil size={14} />
+                      </button>
+                      <button onClick={() => setCambiandoPassword(u)}
+                        className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors" title="Cambiar contraseña">
+                        <KeyRound size={14} />
                       </button>
                       <button onClick={() => handleToggle(u)} disabled={toggling}
                         className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors disabled:opacity-50"

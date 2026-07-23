@@ -39,8 +39,9 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-xs text-gris uppercase tracking-wider">
               Contraseña
             </label>
-            {/* Recuperar contraseña — Fase 3 */}
-            <span className="text-xs text-gris-claro">¿Olvidaste tu contraseña?</span>
+            <Link href="/reset-password" className="text-xs text-dorado hover:text-dorado/70 transition-colors">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
           <input
             id="password"

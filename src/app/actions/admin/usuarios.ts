@@ -137,6 +137,29 @@ export async function toggleUsuarioActivo(
   return {};
 }
 
+export type CambiarPasswordState = { error?: string; success?: boolean } | null;
+
+export async function cambiarPassword(
+  _prev: CambiarPasswordState,
+  formData: FormData
+): Promise<CambiarPasswordState> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  const userId = (formData.get("userId") as string)?.trim();
+  const password = (formData.get("password") as string)?.trim();
+
+  if (!userId) return { error: "Usuario no especificado" };
+  if (!password || password.length < 8)
+    return { error: "La contraseña debe tener mínimo 8 caracteres" };
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
+  if (error) return { error: error.message };
+
+  return { success: true };
+}
+
 export async function requestUsuarioAvatarUpload(meta: {
   userId: string;
   fileName: string;
