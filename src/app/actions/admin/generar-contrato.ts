@@ -1,7 +1,7 @@
 "use server";
 
 import React from "react";
-import { renderToBuffer } from "@react-pdf/renderer";
+import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
@@ -114,7 +114,7 @@ export async function generarContratoPDF(
       generatedAt,
       otroSi: otroSi?.trim() || undefined,
       haciendaData,
-    })
+    }) as unknown as React.ReactElement<DocumentProps>
   );
 
   // Subir a Storage (servidor, sin signed URL)

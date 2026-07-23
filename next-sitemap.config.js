@@ -2,16 +2,14 @@
 module.exports = {
   siteUrl: 'https://www.hacienda-encanto.com',
   generateRobotsTxt: true,
-  exclude: [
-    '/portal',
-    '/portal/*',
-    '/admin',
-    '/admin/*',
-    '/editor',
-    '/editor/*',
-    '/login',
-    '/registro',
-    '/api/*',
+  // App Router with dynamic Server Components no se detecta automáticamente
+  exclude: ['/*'],
+  additionalPaths: async () => [
+    { loc: '/',                         changefreq: 'monthly', priority: 1.0,  lastmod: new Date().toISOString() },
+    { loc: '/bodas',                    changefreq: 'monthly', priority: 0.9,  lastmod: new Date().toISOString() },
+    { loc: '/quince-anos',              changefreq: 'monthly', priority: 0.9,  lastmod: new Date().toISOString() },
+    { loc: '/eventos-empresariales',    changefreq: 'monthly', priority: 0.9,  lastmod: new Date().toISOString() },
+    { loc: '/revelacion-de-genero',     changefreq: 'monthly', priority: 0.9,  lastmod: new Date().toISOString() },
   ],
   robotsTxtOptions: {
     policies: [

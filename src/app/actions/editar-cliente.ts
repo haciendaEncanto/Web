@@ -6,6 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { GUEST_COUNT_OPTIONS } from "@/lib/guest-count";
 import { DEFAULT_CONTRACT_ITEMS } from "@/lib/contract-items";
+import type { Database } from "@/types/database";
+
+type BookingUpdate = Database["public"]["Tables"]["bookings"]["Update"];
+type Json = Database["public"]["Tables"]["bookings"]["Row"]["contract_items"];
 
 const schema = z.object({
   full_name:           z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -133,13 +137,13 @@ export async function editarCliente(
   }
 
   // Actualizar booking
-  const bookingUpdate: Record<string, unknown> = {
+  const bookingUpdate: BookingUpdate = {
     event_type:       d.event_type,
     event_date:       d.event_date,
     event_start_time: d.event_start_time,
     event_end_time:   d.event_end_time,
     guest_count:      d.guest_count,
-    contract_items:   contractItems,
+    contract_items:   contractItems as unknown as Json,
   };
 
   if (d.valor_total) bookingUpdate.valor_total = parseFloat(d.valor_total);

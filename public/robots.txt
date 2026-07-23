@@ -1,0 +1,14 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /portal/
+Disallow: /admin/
+Disallow: /editor/
+Disallow: /login
+Disallow: /api/
+
+# Host
+Host: https://www.hacienda-encanto.com
+
+# Sitemaps
+Sitemap: https://www.hacienda-encanto.com/sitemap.xml
