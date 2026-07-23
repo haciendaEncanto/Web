@@ -147,7 +147,7 @@ export async function updatePassword(
     return { error: "Las contraseñas no coinciden" };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password });
+  const { data: updateData, error } = await supabase.auth.updateUser({ password });
 
   if (error) {
     if (error.message.includes("session")) {
@@ -156,6 +156,22 @@ export async function updatePassword(
     return { error: error.message };
   }
 
-  await supabase.auth.signOut();
-  return { success: true };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", updateData.user.id)
+    .single();
+
+  const destinations: Record<string, string> = {
+    client: "/portal/dashboard",
+    admin: "/admin/dashboard",
+    wedding_planner: "/portal/planner",
+    asesor_comercial: "/portal/asesor-comercial",
+    asesor_logistica: "/portal/asesor-logistica",
+    staff: "/portal/staff",
+    editor: "/editor/galeria",
+    gerente: "/portal/gerente",
+  };
+
+  redirect(destinations[profile?.role ?? "client"] ?? "/portal/dashboard");
 }
