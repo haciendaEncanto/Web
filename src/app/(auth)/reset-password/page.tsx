@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { requestPasswordReset } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -10,6 +10,11 @@ const inputClass =
 
 export default function ResetPasswordPage() {
   const [state, formAction] = useActionState(requestPasswordReset, null);
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    setExpired(new URLSearchParams(window.location.search).get("expired") === "1");
+  }, []);
 
   if (state?.success) {
     return (
@@ -41,6 +46,14 @@ export default function ResetPasswordPage() {
       <p className="text-sm text-gris mb-8">
         Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
       </p>
+
+      {expired && (
+        <div className="mb-5 rounded-lg bg-rojo/8 border border-rojo/20 px-4 py-3">
+          <p className="text-sm text-rojo">
+            El enlace expiró o ya fue utilizado. Solicita uno nuevo.
+          </p>
+        </div>
+      )}
 
       <form action={formAction} className="space-y-5">
         <div>
