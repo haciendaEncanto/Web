@@ -48,6 +48,8 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 | Fotos perfil/testimonios | avatar_url desde /portal/perfil (cliente) y /admin/usuarios (equipo). testimonials.photo_url editable desde /editor/testimonios |
 | Flujo contacto WhatsApp | Campo whatsapp requerido en formularios. Round-robin de asesores vía asesor_assignments. Notificación CallMeBot (fire & forget). Panel /portal/asesor-comercial con lista de contactos asignados, cambio de estado, botón wa.me prellenado |
 | Badge reCAPTCHA oculto | `.grecaptcha-badge { visibility: hidden }` en globals.css. Texto legal "Protegido por reCAPTCHA — Política de privacidad y Términos de servicio de Google" en ambos formularios de contacto |
+| SEO | `src/app/sitemap.ts` + `src/app/robots.ts` nativos de App Router. Disallow: /portal/ /admin/ /editor/ /login /api/. No usar next-sitemap — no funciona en Vercel con App Router. |
+| Gestión de contraseñas | /reset-password: formulario email → resetPasswordForEmail. /update-password: intercambia código PKCE client-side y muestra form nueva contraseña. Admin puede cambiar contraseña de cualquier usuario desde /admin/usuarios y /admin/clientes/[id] vía CambiarPasswordButton + cambiarPassword SA. |
 
 ### Decisiones de arquitectura
 
@@ -116,13 +118,25 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - `UPCOMING_EVENT_WINDOW_DAYS = 15` en `src/lib/event-window.ts` (único lugar que calcula la ventana).
 - Admin y gerente: sin restricción de fecha. Resto (planner, staff, asesores): solo próximos 15 días (`options.restrictToUpcoming`).
 
+**Recuperación de contraseña — flujo PKCE (crítico)**
+- `resetPasswordForEmail(email, { redirectTo: "https://www.hacienda-encanto.com/update-password" })` — el link del email llega directo a `/update-password?code=XXXX`.
+- El intercambio del código **DEBE hacerse client-side** con `createClient()` de `src/lib/supabase/client.ts` (browser client). El `code_verifier` del flujo PKCE vive en `localStorage` del navegador. Si se intenta intercambiar server-side (Route Handler, Server Action), falla con "PKCE code verifier not found in storage".
+- `/update-password` es standalone (fuera del grupo `(auth)`) para que Next.js lo sirva en la URL exacta que espera Supabase.
+- Estados de la página: `loading` (intercambiando) → `expired` (falló, muestra botón "Solicitar nuevo enlace") → `ready` (muestra form).
+- Al éxito: `window.history.replaceState({}, "", "/update-password")` limpia el `?code=` de la URL.
+- `updatePassword` SA llama `supabase.auth.updateUser({ password })` con el server client (que ya lee la sesión de las cookies que el browser client grabó) y luego `redirect()` por rol.
+- `src/app/auth/confirm/route.ts` existe pero **no se usa para password reset** — el intercambio PKCE requiere el browser.
+- En Supabase Dashboard → Authentication → URL Configuration → Redirect URLs debe estar: `https://www.hacienda-encanto.com/update-password` y `http://localhost:3000/update-password`.
+- Admin cambia contraseña: `cambiarPassword` SA en `admin/usuarios.ts` usa `createAdminClient().auth.admin.updateUserById(userId, { password })`. Componente `CambiarPasswordButton` reutilizable (usado en `/admin/usuarios` y `/admin/clientes/[clientId]`).
+
 ### Pendiente
 
 1. **Conectar dominio hacienda-encanto.com a Vercel** — cuenta Vercel ya aprobada.
-2. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
-3. **Fotos galería empresarial y revelación** — pendientes del cliente.
-4. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
-5. **Pruebas con usuarios reales en producción** — tras conectar dominio.
+2. **Verificar flujo completo de recuperación de contraseña en producción** — probar con email real tras conectar dominio.
+3. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
+4. **Fotos galería empresarial y revelación** — pendientes del cliente.
+5. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
+6. **Pruebas con usuarios reales en producción** — tras conectar dominio.
 
 ### Archivos clave
 
@@ -131,8 +145,12 @@ src/
   app/
     page.tsx                          ← Home público (Server Component, fetch paralelo)
     bodas|quince-anos|eventos-empresariales|revelacion-de-genero/page.tsx  ← EventPageConfig + EventPageTemplate
+    sitemap.ts                        ← sitemap dinámico App Router (5 URLs públicas)
+    robots.ts                         ← robots dinámico App Router
+    auth/confirm/route.ts             ← Route Handler auxiliar (intercambio PKCE server-side; NO usar para password reset — ver decisión PKCE)
+    update-password/page.tsx          ← standalone (fuera de (auth)); intercambio PKCE browser-side + form nueva contraseña
     actions/
-      auth.ts                         ← login (redirect por rol), logout, cierre por inactividad
+      auth.ts                         ← login (redirect por rol), logout, cierre por inactividad, requestPasswordReset, updatePassword
       contact.ts                      ← submitContactForm (Zod + reCAPTCHA + whatsapp requerido + round-robin asesores + CallMeBot)
       contactos-asesor.ts             ← updateContactStatus (asesor actualiza estado de sus contactos)
       crear-cliente.ts                ← createClientAction: onboarding completo con rollback y overlap check
@@ -143,12 +161,13 @@ src/
       pagos.ts                        ← registrarPago (devuelve PagoRow), confirmarPago, requestComprobanteUpload/confirmComprobanteUpload
       documentos.ts                   ← requestDocumentoUpload/confirmDocumentoUpload (devuelve {id,created_at}), deleteDocumento, listDocumentosConTamano
       playlist.ts                     ← savePlaylist (upsert onConflict booking_id,section; notifica admin/planner)
-      admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo (roles equipo, nunca "client")
+      admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword (roles equipo, nunca "client")
       editor/galeria.ts               ← requestGaleriaUpload/confirmGaleriaUpload, updateGaleriaImage, reorderGaleriaImages
       editor/videos.ts                ← requestVideoUpload/confirmVideoUpload, activateVideo, deactivateVideo, deleteVideo
       editor/imagenes-sitio.ts        ← requestSiteImageUpload/confirmSiteImageUpload (upsert site_content), deleteSiteImage
       editor/testimonios.ts|paquetes.ts|contenido.ts
-    (auth)/login/page.tsx             ← Login con identidad de marca
+    (auth)/login/page.tsx             ← Login con identidad de marca. Link "¿Olvidaste tu contraseña?" → /reset-password
+    (auth)/reset-password/page.tsx    ← Formulario email para resetPasswordForEmail
     portal/
       layout.tsx                      ← auth check + fetch profile + PortalShell
       page.tsx                        ← Redirect por rol
@@ -190,7 +209,7 @@ src/
       orden-servicio/OrdenServicioView.tsx|PlannerOrdenForm.tsx
       planner/ActividadesPlanner.tsx|ClienteEditForm.tsx|SalonMapasManager.tsx|DocumentosPlanner.tsx|PagosPlanner.tsx
     asesor/ContactosAsesorView.tsx    ← lista contactos asignados, cambio estado, botón wa.me prellenado
-    admin/UsuariosManager.tsx|EventosManager.tsx|KpiCard.tsx
+    admin/UsuariosManager.tsx|EventosManager.tsx|KpiCard.tsx|CambiarPasswordButton.tsx  ← botón+modal reutilizable para cambio de contraseña por admin
     clientes/ClientesTable.tsx        ← Compartido admin/planner, prop basePath: "planner"|"admin"
     editor/GaleriaManager.tsx|VideosManager.tsx|ImagenesSitioManager.tsx|TestimoniosManager.tsx|PaquetesManager.tsx|ContenidoManager.tsx
     ui/SliderGaleria.tsx|WhatsAppIcon.tsx|CopyButton.tsx|SubmitButton.tsx|HeroLogoFallback.tsx
