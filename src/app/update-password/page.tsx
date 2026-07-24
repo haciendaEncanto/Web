@@ -38,19 +38,18 @@ export default function UpdatePasswordPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("code");
+    const params = new URLSearchParams(window.location.search);
+    const token_hash = params.get("token_hash");
+    const type = params.get("type");
 
-    if (!code) {
-      // Sin código — acceso directo o sesión ya establecida.
+    if (!token_hash || type !== "recovery") {
+      // Sin token — acceso directo o sesión ya establecida.
       setPageState("ready");
       return;
     }
 
-    // El code_verifier del flujo PKCE vive en localStorage del browser.
-    // Debe intercambiarse con el browser client (createBrowserClient),
-    // nunca con el server client, que no tiene acceso a localStorage.
     const supabase = createClient();
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    supabase.auth.verifyOtp({ token_hash, type: "recovery" }).then(({ error }) => {
       if (error) {
         setPageState("expired");
       } else {
