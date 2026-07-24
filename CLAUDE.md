@@ -129,14 +129,17 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - En Supabase Dashboard → Authentication → URL Configuration → Redirect URLs debe estar: `https://www.hacienda-encanto.com/update-password` y `http://localhost:3000/update-password`.
 - Admin cambia contraseña: `cambiarPassword` SA en `admin/usuarios.ts` usa `createAdminClient().auth.admin.updateUserById(userId, { password })`. Componente `CambiarPasswordButton` reutilizable (usado en `/admin/usuarios` y `/admin/clientes/[clientId]`).
 
+### Producción
+
+El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a Vercel. Último deploy de producción: READY.
+
 ### Pendiente
 
-1. **Conectar dominio hacienda-encanto.com a Vercel** — cuenta Vercel ya aprobada.
-2. **Verificar flujo completo de recuperación de contraseña en producción** — probar con email real tras conectar dominio.
+1. **Sitemap 404 en Google Search Console** — `src/app/sitemap.ts` existe y el build local genera `○ /sitemap.xml` correctamente. El problema puede ser de indexación (GSC tarda en procesar) o el `redirectTo` del flujo de contraseña sigue apuntando a `/auth/confirm` en vez de `/update-password` directamente, lo que podría afectar las cabeceras. Verificar accediendo a `https://www.hacienda-encanto.com/sitemap.xml` en el navegador.
+2. **Flujo de recuperación de contraseña** — el link del email sigue pasando por `/auth/confirm` en vez de llegar directo a `/update-password?code=XXXX`. Según la decisión PKCE en este archivo, el `redirectTo` en `resetPasswordForEmail` debe apuntar a `/update-password`. Verificar `src/app/actions/auth.ts` y que en Supabase Dashboard → Redirect URLs esté `https://www.hacienda-encanto.com/update-password`.
 3. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
 4. **Fotos galería empresarial y revelación** — pendientes del cliente.
 5. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
-6. **Pruebas con usuarios reales en producción** — tras conectar dominio.
 
 ### Archivos clave
 
