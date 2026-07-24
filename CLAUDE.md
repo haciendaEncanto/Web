@@ -118,15 +118,15 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - `UPCOMING_EVENT_WINDOW_DAYS = 15` en `src/lib/event-window.ts` (único lugar que calcula la ventana).
 - Admin y gerente: sin restricción de fecha. Resto (planner, staff, asesores): solo próximos 15 días (`options.restrictToUpcoming`).
 
-**Recuperación de contraseña — flujo PKCE (crítico)**
-- `resetPasswordForEmail(email, { redirectTo: "https://www.hacienda-encanto.com/update-password" })` — el link del email llega directo a `/update-password?code=XXXX`.
-- El intercambio del código **DEBE hacerse client-side** con `createClient()` de `src/lib/supabase/client.ts` (browser client). El `code_verifier` del flujo PKCE vive en `localStorage` del navegador. Si se intenta intercambiar server-side (Route Handler, Server Action), falla con "PKCE code verifier not found in storage".
+**Recuperación de contraseña — flujo token_hash (crítico)**
+- `resetPasswordForEmail(email, { redirectTo: "https://www.hacienda-encanto.com/update-password" })` — el template de Supabase envía el link con `?token_hash=XXXX&type=recovery`.
+- `/update-password` lee `token_hash` y `type` de `window.location.search` y llama `supabase.auth.verifyOtp({ token_hash, type: "recovery" })` con el browser client. Si `type !== "recovery"` o no hay `token_hash`, asume sesión ya establecida y muestra el form directo.
 - `/update-password` es standalone (fuera del grupo `(auth)`) para que Next.js lo sirva en la URL exacta que espera Supabase.
-- Estados de la página: `loading` (intercambiando) → `expired` (falló, muestra botón "Solicitar nuevo enlace") → `ready` (muestra form).
-- Al éxito: `window.history.replaceState({}, "", "/update-password")` limpia el `?code=` de la URL.
-- `updatePassword` SA llama `supabase.auth.updateUser({ password })` con el server client (que ya lee la sesión de las cookies que el browser client grabó) y luego `redirect()` por rol.
-- `src/app/auth/confirm/route.ts` existe pero **no se usa para password reset** — el intercambio PKCE requiere el browser.
-- En Supabase Dashboard → Authentication → URL Configuration → Redirect URLs debe estar: `https://www.hacienda-encanto.com/update-password` y `http://localhost:3000/update-password`.
+- Estados de la página: `loading` (verificando OTP) → `expired` (falló, muestra botón "Solicitar nuevo enlace") → `ready` (muestra form).
+- Al éxito: `window.history.replaceState({}, "", "/update-password")` limpia `?token_hash=...&type=recovery` de la URL.
+- `updatePassword` SA llama `supabase.auth.updateUser({ password })` con el server client (que lee la sesión de las cookies que el browser client grabó) y luego `redirect()` por rol.
+- `src/app/auth/confirm/route.ts` existe pero **no se usa para password reset** — solo es auxiliar para otros flujos futuros.
+- En Supabase Dashboard → Authentication → Email Templates → Reset Password: el link debe usar `{{ .ConfirmationURL }}` (genera `?token_hash=...&type=recovery`). En URL Configuration → Redirect URLs: `https://www.hacienda-encanto.com/update-password` y `http://localhost:3000/update-password`.
 - Admin cambia contraseña: `cambiarPassword` SA en `admin/usuarios.ts` usa `createAdminClient().auth.admin.updateUserById(userId, { password })`. Componente `CambiarPasswordButton` reutilizable (usado en `/admin/usuarios` y `/admin/clientes/[clientId]`).
 
 ### Producción
@@ -136,7 +136,7 @@ El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a
 ### Pendiente
 
 1. **Sitemap 404 en Google Search Console** — `src/app/sitemap.ts` existe y el build local genera `○ /sitemap.xml` correctamente. El problema puede ser de indexación (GSC tarda en procesar) o el `redirectTo` del flujo de contraseña sigue apuntando a `/auth/confirm` en vez de `/update-password` directamente, lo que podría afectar las cabeceras. Verificar accediendo a `https://www.hacienda-encanto.com/sitemap.xml` en el navegador.
-2. **Flujo de recuperación de contraseña** — el link del email sigue pasando por `/auth/confirm` en vez de llegar directo a `/update-password?code=XXXX`. El código es correcto (`auth.ts` línea 128: `redirectTo: "https://www.hacienda-encanto.com/update-password"`). El problema está en el **template del email en Supabase Dashboard → Authentication → Email Templates → Reset Password**: el link debe usar `{{ .ConfirmationURL }}` (URL gestionada por Supabase que genera el PKCE code y redirige a `/update-password?code=XXXX`). NO usar `{{ .SiteURL }}/auth/confirm?...` ni `{{ .Token }}` directamente — `{{ .Token }}` es flujo implícito y no funciona con el exchange client-side en `/update-password`. También verificar en Authentication → URL Configuration → Redirect URLs: `https://www.hacienda-encanto.com/update-password` y `http://localhost:3000/update-password`.
+2. **Verificar flujo completo de recuperación de contraseña en producción** — template de Supabase ya usa `{{ .ConfirmationURL }}` que genera `?token_hash=XXXX&type=recovery`. `/update-password` actualizado para usar `verifyOtp({ token_hash, type: "recovery" })`. Pendiente: probar con email real en producción.
 3. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
 4. **Fotos galería empresarial y revelación** — pendientes del cliente.
 5. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
