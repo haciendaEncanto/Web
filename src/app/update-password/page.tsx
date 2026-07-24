@@ -4,6 +4,7 @@ import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { updatePassword } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const inputClass =
@@ -28,24 +29,57 @@ function BrandedShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+type PageState = "loading" | "ready" | "expired";
+
 export default function UpdatePasswordPage() {
   const [state, formAction] = useActionState(updatePassword, null);
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [pageState, setPageState] = useState<PageState>("loading");
 
   useEffect(() => {
-    setExpired(new URLSearchParams(window.location.search).get("expired") === "1");
+    const code = new URLSearchParams(window.location.search).get("code");
+
+    if (!code) {
+      // Sin código — acceso directo o sesión ya establecida.
+      setPageState("ready");
+      return;
+    }
+
+    // El code_verifier del flujo PKCE vive en localStorage del browser.
+    // Debe intercambiarse con el browser client (createBrowserClient),
+    // nunca con el server client, que no tiene acceso a localStorage.
+    const supabase = createClient();
+    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      if (error) {
+        setPageState("expired");
+      } else {
+        window.history.replaceState({}, "", "/update-password");
+        setPageState("ready");
+      }
+    });
   }, []);
 
-  if (expired) {
+  if (pageState === "loading") {
+    return (
+      <BrandedShell>
+        <div className="bg-blanco border border-crema-medio shadow-sm rounded-2xl px-8 py-10 text-center">
+          <p className="text-sm text-gris">Verificando enlace…</p>
+        </div>
+      </BrandedShell>
+    );
+  }
+
+  if (pageState === "expired") {
     return (
       <BrandedShell>
         <div className="bg-blanco border border-crema-medio shadow-sm rounded-2xl px-8 py-10 text-center space-y-5">
           <div className="w-12 h-12 rounded-full bg-rojo/8 flex items-center justify-center mx-auto">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rojo">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
           <div>
