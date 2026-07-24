@@ -12,14 +12,27 @@ export async function sendWhatsAppNotification(message: string): Promise<void> {
     ? process.env.CALLMEBOT_API_KEY_CENTRAL!
     : process.env.CALLMEBOT_API_KEY;
 
-  if (!phone || !apiKey) return;
+  console.log("[callmebot] vars:", {
+    hasCentral: !!hasCentral,
+    phone: phone ? `${phone.slice(0, 4)}***${phone.slice(-3)}` : "MISSING",
+    apiKey: apiKey ? `${apiKey.slice(0, 3)}***` : "MISSING",
+  });
+
+  if (!phone || !apiKey) {
+    console.log("[callmebot] abortando — faltan credenciales");
+    return;
+  }
 
   const url = new URL("https://api.callmebot.com/whatsapp.php");
   url.searchParams.set("phone", phone);
   url.searchParams.set("text", message);
   url.searchParams.set("apikey", apiKey);
 
-  await fetch(url.toString()).catch(() => {
-    // Fallo silencioso — CallMeBot nunca debe bloquear el flujo del usuario
-  });
+  try {
+    const res = await fetch(url.toString());
+    const body = await res.text();
+    console.log("[callmebot] status:", res.status, "| body:", body.slice(0, 300));
+  } catch (err) {
+    console.log("[callmebot] fetch error:", err instanceof Error ? err.message : err);
+  }
 }
