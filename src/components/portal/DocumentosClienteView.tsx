@@ -1,17 +1,14 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { FileText, Download, Loader2, PenLine, CheckCircle2, Lock } from "lucide-react";
+import { useState, useTransition } from "react";
+import { FileText, Download, Loader2, PenLine, CheckCircle2 } from "lucide-react";
 import { getDocumentoDownloadUrl, type DocumentoConSize } from "@/app/actions/documentos";
-import { requestContratoFirmadoUpload, confirmContratoFirmadoUpload } from "@/app/actions/contrato-firmado";
-import { uploadFileToSignedUrl } from "@/lib/uploads/client";
+import { aprobarContrato, solicitarAjustesContrato } from "@/app/actions/contrato-aprobacion";
 
 const TYPE_LABEL: Record<string, string> = {
-  contrato: "Contrato",
+  contrato:         "Contrato",
   contrato_firmado: "Contrato firmado",
 };
-
-const MAX_SIGNED_BYTES = 15 * 1024 * 1024;
 
 function formatBytes(bytes: number | null): string {
   if (bytes === null) return "—";
@@ -53,96 +50,156 @@ function DownloadButton({ id }: { id: string }) {
   );
 }
 
-function FirmarContratoSection({
+function ContratoAprobacionSection({
   bookingId,
   isLocked,
-  yaFirmo,
 }: {
   bookingId: string;
   isLocked: boolean;
-  yaFirmo: boolean;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [done, setDone] = useState(yaFirmo || isLocked);
+  const [showModal, setShowModal] = useState(false);
+  const [showAjustes, setShowAjustes] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [approving, startApprove] = useTransition();
+  const [sendingAjustes, startAjustes] = useTransition();
+  const [approved, setApproved] = useState(isLocked);
+  const [ajustesDone, setAjustesDone] = useState(false);
   const [err, setErr] = useState("");
 
-  async function handleFile(file: File) {
-    if (file.type !== "application/pdf") { setErr("Solo se aceptan archivos PDF"); return; }
-    if (file.size > MAX_SIGNED_BYTES) { setErr("El archivo supera 15 MB"); return; }
-    setErr("");
-    setUploading(true);
-    try {
-      const req = await requestContratoFirmadoUpload({
-        bookingId, fileName: file.name, contentType: file.type, size: file.size,
-      });
-      if (req.error || !req.signedUrl || !req.token || !req.path) {
-        setErr(req.error ?? "Error al solicitar la subida"); return;
-      }
-      const { error: upErr } = await uploadFileToSignedUrl("signed-contract", req.path, req.token, file);
-      if (upErr) { setErr(upErr); return; }
-
-      const confirm = await confirmContratoFirmadoUpload(bookingId, req.path);
-      if (confirm.error) { setErr(confirm.error); return; }
-      setDone(true);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  if (done) {
+  if (approved) {
     return (
       <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-2xl px-5 py-4">
         <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
         <div>
-          <p className="text-[0.85rem] text-negro font-medium">Contrato firmado entregado</p>
+          <p className="text-[0.85rem] text-negro font-medium">Contrato aprobado</p>
           <p className="text-[0.8rem] text-gris mt-0.5">
-            Gracias. El equipo revisará tu contrato firmado y se pondrá en contacto contigo.
+            Has aprobado el contrato. El equipo ha sido notificado y la orden de servicio está lista.
           </p>
         </div>
       </div>
     );
   }
 
+  function handleConfirmarAprobacion() {
+    setErr("");
+    startApprove(async () => {
+      const res = await aprobarContrato(bookingId);
+      if (res.error) { setErr(res.error); setShowModal(false); return; }
+      setApproved(true);
+      setShowModal(false);
+    });
+  }
+
+  function handleEnviarAjustes() {
+    if (!mensaje.trim()) return;
+    setErr("");
+    startAjustes(async () => {
+      const res = await solicitarAjustesContrato(bookingId, mensaje);
+      if (res.error) { setErr(res.error); return; }
+      setAjustesDone(true);
+      setMensaje("");
+      setShowAjustes(false);
+    });
+  }
+
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-      <div className="flex items-start gap-3">
-        <PenLine size={16} className="text-amber-600 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-[0.88rem] text-negro font-medium">Contrato pendiente de firma</p>
-          <p className="text-[0.8rem] text-gris/80 mt-0.5">
-            Descarga el contrato, fírmalo e imprime, luego súbelo aquí en formato PDF.
-          </p>
+    <>
+      {/* Modal de confirmación */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-negro/60 backdrop-blur-[2px]">
+          <div className="bg-blanco rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="font-serif text-[1.15rem] text-negro mb-2 tracking-[-0.02em]">
+              Confirmar aprobación
+            </h3>
+            <p className="text-[0.82rem] text-gris leading-relaxed mb-5">
+              Esta acción no se puede deshacer. Una vez aprobado, el contrato quedará bloqueado y no podrá modificarse.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                disabled={approving}
+                className="px-4 py-2 text-[0.82rem] text-negro border border-negro/15 rounded-xl hover:bg-negro/5 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarAprobacion}
+                disabled={approving}
+                className="inline-flex items-center gap-2 px-4 py-2 text-[0.82rem] bg-dorado text-blanco font-medium rounded-xl hover:bg-dorado/90 transition-colors disabled:opacity-50"
+              >
+                {approving && <Loader2 size={13} className="animate-spin" />}
+                {approving ? "Aprobando…" : "Confirmar aprobación"}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco text-[0.82rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors disabled:opacity-50"
-        >
-          {uploading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          {uploading ? "Subiendo…" : "Subir contrato firmado (PDF)"}
-        </button>
-        {isLocked && (
-          <span className="inline-flex items-center gap-1 text-[0.75rem] text-gris">
-            <Lock size={12} /> Bloqueado
-          </span>
+      )}
+
+      {/* Panel de acciones */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <FileText size={16} className="text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-[0.88rem] text-negro font-medium">Contrato pendiente de revisión</p>
+            <p className="text-[0.8rem] text-gris/80 mt-0.5">
+              Descarga el contrato, léelo detenidamente y luego apruébalo o solicita ajustes.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco text-[0.82rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors"
+          >
+            <CheckCircle2 size={14} />
+            Aprobar contrato
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAjustes((v) => !v)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blanco text-negro text-[0.82rem] font-medium border border-negro/15 rounded-xl hover:bg-negro/5 transition-colors"
+          >
+            <PenLine size={14} />
+            Solicitar ajustes
+          </button>
+        </div>
+
+        {showAjustes && (
+          <div className="space-y-2.5 pt-1">
+            <textarea
+              value={mensaje}
+              onChange={(e) => setMensaje(e.target.value)}
+              rows={3}
+              placeholder="Describe los ajustes que necesitas en el contrato…"
+              className="w-full border border-amber-300 bg-blanco/70 px-3 py-2.5 text-[0.83rem] text-negro rounded-lg focus:outline-none focus:border-amber-500 transition-colors resize-y"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleEnviarAjustes}
+                disabled={!mensaje.trim() || sendingAjustes}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-negro text-crema text-[0.82rem] font-medium rounded-xl hover:bg-negro/85 transition-colors disabled:opacity-50"
+              >
+                {sendingAjustes && <Loader2 size={13} className="animate-spin" />}
+                {sendingAjustes ? "Enviando…" : "Enviar solicitud"}
+              </button>
+              {ajustesDone && (
+                <span className="flex items-center gap-1.5 text-[0.78rem] text-green-600">
+                  <CheckCircle2 size={13} />
+                  Solicitud enviada al equipo
+                </span>
+              )}
+            </div>
+          </div>
         )}
+
+        {err && <p className="text-[0.78rem] text-rojo">{err}</p>}
       </div>
-      {err && <p className="text-[0.78rem] text-rojo">{err}</p>}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = "";
-        }}
-      />
-    </div>
+    </>
   );
 }
 
@@ -154,8 +211,7 @@ interface Props {
 
 export function DocumentosClienteView({ documentos, bookingId, isLocked = false }: Props) {
   const tieneContrato = documentos.some((d) => d.type === "contrato");
-  const yaFirmo = documentos.some((d) => d.type === "contrato_firmado");
-  const mostrarFirma = tieneContrato && bookingId;
+  const mostrarAprobacion = tieneContrato && bookingId;
 
   if (documentos.length === 0) {
     return (
@@ -171,12 +227,8 @@ export function DocumentosClienteView({ documentos, bookingId, isLocked = false 
 
   return (
     <div className="space-y-5">
-      {mostrarFirma && (
-        <FirmarContratoSection
-          bookingId={bookingId}
-          isLocked={isLocked}
-          yaFirmo={yaFirmo}
-        />
+      {mostrarAprobacion && (
+        <ContratoAprobacionSection bookingId={bookingId} isLocked={isLocked} />
       )}
 
       <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">

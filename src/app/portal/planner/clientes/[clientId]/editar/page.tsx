@@ -1,6 +1,4 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ClienteEditForm } from "@/components/portal/planner/ClienteEditForm";
 
@@ -71,15 +69,7 @@ export default async function EditarClientePage({ params }: Props) {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* Cabecera */}
       <div>
-        <Link
-          href="/portal/planner/clientes"
-          className="inline-flex items-center gap-1.5 text-[0.8rem] text-gris hover:text-negro transition-colors mb-4"
-        >
-          <ChevronLeft size={14} />
-          Volver a clientes
-        </Link>
         <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
           Editar{" "}
           <span className="text-dorado">{profile.full_name ?? profile.email}</span>
