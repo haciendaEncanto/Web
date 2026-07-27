@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -284,8 +284,8 @@ export function NuevoClienteForm() {
       {/* ── Botón submit ──────────────────────────────────────────── */}
       <div className="bg-blanco rounded-2xl border border-negro/[0.07] px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <p className="text-[0.8rem] text-gris max-w-xs">
-          Se creará la cuenta, la reserva y la orden de servicio en un solo
-          paso.
+          Se creará la cuenta y la reserva del evento. La orden de servicio
+          se generará después de aprobar el contrato.
         </p>
         <button
           type="submit"
@@ -295,7 +295,7 @@ export function NuevoClienteForm() {
           {isPending && <Loader2 size={15} className="animate-spin" />}
           {isPending
             ? "Creando cliente…"
-            : "Crear cliente y generar orden →"}
+            : "Crear cliente →"}
         </button>
       </div>
     </form>
