@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendWhatsAppNotification, sendWhatsAppToPhone } from "@/lib/callmebot";
+import { sendWhatsAppNotification, sendWhatsAppToPhone, buildLeadMessage } from "@/lib/callmebot";
 
 export async function reassignLead(
   leadId: string,
@@ -80,20 +80,17 @@ export async function resendLeadNotification(
     }
   }
 
-  const lines = [
-    "📩 *[Reenvío] Contacto — Hacienda El Encanto*",
-    `👤 Nombre: ${lead.name}`,
-    `📱 WhatsApp: ${lead.whatsapp}`,
-  ];
-  if (lead.email) lines.push(`📧 Email: ${lead.email}`);
-  lines.push(
-    `🎉 Tipo: ${lead.subject ?? "No especificado"}`,
-    `📅 Fecha est.: ${lead.event_date ?? "No especificada"}`,
-    `👥 Invitados: ${lead.guest_count ?? "No especificado"}`,
-    `💬 Mensaje: ${lead.message}`,
-    `🤝 Asesor: ${asesorName}`
-  );
-  const msg = lines.join("\n");
+  const msg = buildLeadMessage({
+    name: lead.name,
+    whatsapp: lead.whatsapp,
+    email: lead.email ?? null,
+    subject: lead.subject ?? null,
+    event_date: lead.event_date ?? null,
+    guest_count: lead.guest_count ?? null,
+    message: lead.message,
+    asesorName,
+    isResend: true,
+  });
 
   void sendWhatsAppNotification(msg);
   if (asesorPhone && asesorApiKey) {

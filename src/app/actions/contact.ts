@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { sendWhatsAppNotification, sendWhatsAppToPhone } from "@/lib/callmebot";
+import { sendWhatsAppNotification, sendWhatsAppToPhone, buildLeadMessage } from "@/lib/callmebot";
 
 export type ContactState = { success?: boolean; error?: string } | null;
 
@@ -27,32 +27,6 @@ const schema = z.object({
   message: z.string().min(5, "Cuéntanos un poco más sobre tu evento"),
   recaptchaToken: z.string(),
 });
-
-function buildWaMessage(params: {
-  name: string;
-  whatsapp: string;
-  email: string;
-  subject: string;
-  event_date: string;
-  guest_count: string;
-  message: string;
-  asesorName: string;
-}): string {
-  const lines: string[] = [
-    "📩 *Nuevo contacto - Hacienda El Encanto*",
-    `👤 Nombre: ${params.name}`,
-    `📱 WhatsApp: ${params.whatsapp}`,
-  ];
-  if (params.email) lines.push(`📧 Email: ${params.email}`);
-  lines.push(
-    `🎉 Tipo de evento: ${params.subject}`,
-    `📅 Fecha estimada: ${params.event_date}`,
-    `👥 Invitados: ${params.guest_count}`,
-    `💬 Mensaje: ${params.message}`,
-    `🤝 Asignado a: ${params.asesorName}`
-  );
-  return lines.join("\n");
-}
 
 export async function submitContactForm(
   _prevState: ContactState,
@@ -152,7 +126,7 @@ export async function submitContactForm(
   }
 
   // Construir mensaje completo con todos los campos
-  const waMsg = buildWaMessage({ name, whatsapp, email, subject, event_date, guest_count, message, asesorName });
+  const waMsg = buildLeadMessage({ name, whatsapp, email: email || null, subject, event_date, guest_count, message, asesorName });
 
   // Notificación al número central — fire and forget
   void sendWhatsAppNotification(waMsg);

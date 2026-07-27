@@ -1,6 +1,31 @@
 // CallMeBot WhatsApp notification utility — fire and forget.
 // Nunca bloquea al usuario. Todas las funciones son void.
 
+export function buildLeadMessage(params: {
+  name: string;
+  whatsapp: string;
+  email: string | null;
+  subject: string | null;
+  event_date: string | null;
+  guest_count: string | null;
+  message: string;
+  asesorName: string;
+  isResend?: boolean;
+}): string {
+  return [
+    "*Hacienda El Encanto te informa:*",
+    params.isResend ? "📩 *Reenvío de contacto*" : "📩 *Nuevo contacto*",
+    `👤 Nombre: ${params.name}`,
+    `📱 WhatsApp: ${params.whatsapp}`,
+    `📧 Email: ${params.email || "No proporcionó"}`,
+    `🎉 Tipo de evento: ${params.subject || "No especificado"}`,
+    `📅 Fecha estimada: ${params.event_date || "No especificada"}`,
+    `👥 Invitados: ${params.guest_count || "No especificado"}`,
+    `💬 Mensaje: ${params.message}`,
+    `🤝 Asignado a: ${params.asesorName}`,
+  ].join("\n");
+}
+
 async function callMeBot(phone: string, apiKey: string, message: string, label: string): Promise<void> {
   const url = new URL("https://api.callmebot.com/whatsapp.php");
   url.searchParams.set("phone", phone);
