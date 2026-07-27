@@ -135,11 +135,12 @@ El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a
 
 ### Pendiente
 
-1. **Sitemap 404 en Google Search Console** — `src/app/sitemap.ts` existe y el build local genera `○ /sitemap.xml` correctamente. El problema puede ser de indexación (GSC tarda en procesar) o el `redirectTo` del flujo de contraseña sigue apuntando a `/auth/confirm` en vez de `/update-password` directamente, lo que podría afectar las cabeceras. Verificar accediendo a `https://www.hacienda-encanto.com/sitemap.xml` en el navegador.
-2. **Verificar flujo completo de recuperación de contraseña en producción** — template de Supabase ya usa `{{ .ConfirmationURL }}` que genera `?token_hash=XXXX&type=recovery`. `/update-password` actualizado para usar `verifyOtp({ token_hash, type: "recovery" })`. Pendiente: probar con email real en producción.
-3. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
-4. **Fotos galería empresarial y revelación** — pendientes del cliente.
-5. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
+1. **Sitemap — verificar indexación en GSC** — `src/app/sitemap.ts` corregido: URL raíz con trailing slash (`https://www.hacienda-encanto.com/`), `lastModified` fijo `2026-07-24`. Build genera `○ /sitemap.xml` estático. Acceder a `https://www.hacienda-encanto.com/sitemap.xml` para confirmar que responde; luego solicitar reindexación en Google Search Console.
+2. **Verificar flujo de recuperación de contraseña en producción** — `/update-password` usa `verifyOtp({ token_hash, type: "recovery" })` (template de Supabase envía `?token_hash=XXXX&type=recovery` vía `{{ .ConfirmationURL }}`). Pendiente: probar con email real en producción.
+3. **CallMeBot — registrar número central** — `CALLMEBOT_API_KEY_CENTRAL` está vacío en `.env.local` y en Vercel → el sistema usa el fallback (`CALLMEBOT_PHONE` / `CALLMEBOT_API_KEY`, que sí funciona). Para activar el número central: desde ese WhatsApp enviar mensaje al bot `+1 (347) 798-2047` con el texto `I allow callmebot.com to send me messages`, obtener el API key y configurarlo en `.env.local` y en Vercel → Environment Variables como `CALLMEBOT_API_KEY_CENTRAL`.
+4. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
+5. **Fotos galería empresarial y revelación** — pendientes del cliente.
+6. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
 
 ### Archivos clave
 
@@ -150,8 +151,8 @@ src/
     bodas|quince-anos|eventos-empresariales|revelacion-de-genero/page.tsx  ← EventPageConfig + EventPageTemplate
     sitemap.ts                        ← sitemap dinámico App Router (5 URLs públicas)
     robots.ts                         ← robots dinámico App Router
-    auth/confirm/route.ts             ← Route Handler auxiliar (intercambio PKCE server-side; NO usar para password reset — ver decisión PKCE)
-    update-password/page.tsx          ← standalone (fuera de (auth)); intercambio PKCE browser-side + form nueva contraseña
+    auth/confirm/route.ts             ← Route Handler auxiliar (no se usa para password reset)
+    update-password/page.tsx          ← standalone (fuera de (auth)); verifyOtp({ token_hash, type:"recovery" }) browser-side + form nueva contraseña
     actions/
       auth.ts                         ← login (redirect por rol), logout, cierre por inactividad, requestPasswordReset, updatePassword
       contact.ts                      ← submitContactForm (Zod + reCAPTCHA + whatsapp requerido + round-robin asesores + CallMeBot)
