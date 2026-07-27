@@ -335,7 +335,9 @@ export type Database = {
         Row: {
           assigned_asesor_id: string | null
           created_at: string
-          email: string
+          email: string | null
+          event_date: string | null
+          guest_count: string | null
           id: string
           message: string
           name: string
@@ -347,7 +349,9 @@ export type Database = {
         Insert: {
           assigned_asesor_id?: string | null
           created_at?: string
-          email: string
+          email?: string | null
+          event_date?: string | null
+          guest_count?: string | null
           id?: string
           message: string
           name: string
@@ -359,7 +363,9 @@ export type Database = {
         Update: {
           assigned_asesor_id?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
+          event_date?: string | null
+          guest_count?: string | null
           id?: string
           message?: string
           name?: string
@@ -776,6 +782,7 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          callmebot_api_key: string | null
           cc: string | null
           created_at: string
           email: string
@@ -790,6 +797,7 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          callmebot_api_key?: string | null
           cc?: string | null
           created_at?: string
           email: string
@@ -804,6 +812,7 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          callmebot_api_key?: string | null
           cc?: string | null
           created_at?: string
           email?: string

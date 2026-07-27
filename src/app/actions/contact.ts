@@ -3,13 +3,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { sendWhatsAppNotification } from "@/lib/callmebot";
+import { sendWhatsAppNotification, sendWhatsAppToPhone } from "@/lib/callmebot";
 
 export type ContactState = { success?: boolean; error?: string } | null;
 
 const schema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
+  email: z.string().refine(
+    (v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    "Email inválido"
+  ),
   phone: z.string().optional(),
   whatsapp: z
     .string()
@@ -18,12 +21,38 @@ const schema = z.object({
       (v) => /^(\+?57)?3\d{9}$/.test(v),
       "Formato válido: +57 3XX XXX XXXX o 3XX XXX XXXX"
     ),
-  subject: z.string().optional(),
-  event_date: z.string().optional(),
-  guest_count: z.string().optional(),
+  subject: z.string().min(1, "Selecciona el tipo de evento"),
+  event_date: z.string().min(1, "La fecha estimada es requerida"),
+  guest_count: z.string().min(1, "El número de invitados es requerido"),
   message: z.string().min(5, "Cuéntanos un poco más sobre tu evento"),
   recaptchaToken: z.string(),
 });
+
+function buildWaMessage(params: {
+  name: string;
+  whatsapp: string;
+  email: string;
+  subject: string;
+  event_date: string;
+  guest_count: string;
+  message: string;
+  asesorName: string;
+}): string {
+  const lines: string[] = [
+    "📩 *Nuevo contacto - Hacienda El Encanto*",
+    `👤 Nombre: ${params.name}`,
+    `📱 WhatsApp: ${params.whatsapp}`,
+  ];
+  if (params.email) lines.push(`📧 Email: ${params.email}`);
+  lines.push(
+    `🎉 Tipo de evento: ${params.subject}`,
+    `📅 Fecha estimada: ${params.event_date}`,
+    `👥 Invitados: ${params.guest_count}`,
+    `💬 Mensaje: ${params.message}`,
+    `🤝 Asignado a: ${params.asesorName}`
+  );
+  return lines.join("\n");
+}
 
 export async function submitContactForm(
   _prevState: ContactState,
@@ -35,7 +64,7 @@ export async function submitContactForm(
     return { error: parsed.error.issues[0].message };
   }
 
-  const { recaptchaToken, event_date, guest_count, message, whatsapp, ...rest } =
+  const { recaptchaToken, phone, email, event_date, guest_count, subject, message, whatsapp, name } =
     parsed.data;
 
   // reCAPTCHA v3 — omitido en dev si no está configurado
@@ -55,13 +84,6 @@ export async function submitContactForm(
     }
   }
 
-  // Armar mensaje completo con campos extra del formulario del home
-  const parts: string[] = [];
-  if (event_date) parts.push(`Fecha estimada: ${event_date}`);
-  if (guest_count) parts.push(`Número de invitados: ${guest_count}`);
-  parts.push(message);
-  const fullMessage = parts.join("\n");
-
   // Round-robin: asignar al asesor activo con menos asignaciones
   const admin = createAdminClient();
 
@@ -73,7 +95,7 @@ export async function submitContactForm(
       .order("last_assigned_at", { ascending: true, nullsFirst: true }),
     admin
       .from("profiles")
-      .select("id, full_name, is_active")
+      .select("id, full_name, is_active, phone, callmebot_api_key")
       .in("role", ["asesor_comercial", "wedding_planner"]),
   ]);
 
@@ -82,18 +104,19 @@ export async function submitContactForm(
   );
   const selected = (assignments ?? []).find((a) => activeIds.has(a.asesor_id)) ?? null;
   const assignedAsesorId = selected?.asesor_id ?? null;
-  const asesorName =
-    (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId)?.full_name ??
-    "el equipo";
+  const assignedAsesor = (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId) ?? null;
+  const asesorName = assignedAsesor?.full_name ?? "el equipo";
 
   // Guardar en base de datos
   const supabase = await createClient();
   const { error } = await supabase.from("contact_messages").insert({
-    name: rest.name,
-    email: rest.email,
-    phone: rest.phone ?? null,
-    subject: rest.subject ?? null,
-    message: fullMessage,
+    name,
+    email: email || null,
+    phone: phone ?? null,
+    subject,
+    message,
+    event_date,
+    guest_count,
     whatsapp,
     assigned_asesor_id: assignedAsesorId,
   });
@@ -113,12 +136,16 @@ export async function submitContactForm(
       .eq("asesor_id", selected.asesor_id);
   }
 
-  // Notificación WhatsApp — fire and forget, nunca bloquea al usuario
-  const eventType = rest.subject || "evento";
-  const eventDate = event_date || "fecha por definir";
-  void sendWhatsAppNotification(
-    `📩 Nuevo contacto - Asignado a ${asesorName}: ${rest.name}, interesado en ${eventType} para ${eventDate}. WhatsApp cliente: ${whatsapp}`
-  );
+  // Construir mensaje completo con todos los campos
+  const waMsg = buildWaMessage({ name, whatsapp, email, subject, event_date, guest_count, message, asesorName });
+
+  // Notificación al número central — fire and forget
+  void sendWhatsAppNotification(waMsg);
+
+  // Notificación al asesor en su número personal si tiene CallMeBot configurado
+  if (assignedAsesor?.phone && assignedAsesor?.callmebot_api_key) {
+    void sendWhatsAppToPhone(assignedAsesor.phone, assignedAsesor.callmebot_api_key, waMsg);
+  }
 
   return { success: true };
 }

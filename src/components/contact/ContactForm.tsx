@@ -6,7 +6,6 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-
 const inputClass =
   "w-full border border-crema-medio bg-blanco px-4 py-3 text-negro text-sm placeholder:text-gris-claro focus:outline-none focus:border-dorado transition-colors duration-150";
 
@@ -69,7 +68,7 @@ export function ContactForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label htmlFor="contact-name" className={labelClass}>
-            Nombre
+            Nombre completo *
           </label>
           <input
             id="contact-name"
@@ -80,22 +79,6 @@ export function ContactForm() {
             className={inputClass}
           />
         </div>
-        <div>
-          <label htmlFor="contact-email" className={labelClass}>
-            Correo
-          </label>
-          <input
-            id="contact-email"
-            name="email"
-            type="email"
-            required
-            placeholder="tu@correo.com"
-            className={inputClass}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label htmlFor="contact-whatsapp" className={labelClass}>
             WhatsApp *
@@ -109,30 +92,80 @@ export function ContactForm() {
             className={inputClass}
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="contact-email" className={labelClass}>
+          Correo electrónico{" "}
+          <span className="normal-case text-gris-claro font-normal">(opcional)</span>
+        </label>
+        <input
+          id="contact-email"
+          name="email"
+          type="email"
+          placeholder="tu@correo.com"
+          className={inputClass}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label htmlFor="contact-subject" className={labelClass}>
-            Tipo de evento <span className="normal-case text-gris-claro">(opcional)</span>
+            Tipo de evento *
           </label>
-          <input
+          <select
             id="contact-subject"
             name="subject"
-            type="text"
-            placeholder="Boda, quinceaños, empresarial…"
+            required
+            className={inputClass}
+          >
+            <option value="">Selecciona…</option>
+            <option>Boda</option>
+            <option>Quince Años</option>
+            <option>Evento Empresarial</option>
+            <option>Revelación de Género</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="contact-event-date" className={labelClass}>
+            Fecha estimada *
+          </label>
+          <input
+            id="contact-event-date"
+            name="event_date"
+            type="date"
+            required
             className={inputClass}
           />
         </div>
       </div>
 
       <div>
+        <label htmlFor="contact-guest-count" className={labelClass}>
+          Número de invitados *
+        </label>
+        <input
+          id="contact-guest-count"
+          name="guest_count"
+          type="number"
+          required
+          placeholder="Ej: 150"
+          min="1"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
         <label htmlFor="contact-message" className={labelClass}>
-          Cuéntanos tu evento
+          Cuéntanos sobre tu evento *
         </label>
         <textarea
           id="contact-message"
           name="message"
           required
           rows={5}
-          placeholder="¿Cuántos invitados? ¿Qué fecha tienes en mente? ¿Qué necesitas?"
+          placeholder="¿Qué tienes en mente? Cuéntanos tu evento ideal…"
           className={`${inputClass} resize-none`}
         />
       </div>

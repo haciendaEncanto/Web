@@ -41,13 +41,15 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
               className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
               {images?.[e.key] ? (
-                <Image
-                  src={images[e.key] as string}
-                  alt={e.title}
-                  fill
-                  className="object-cover transition-transform duration-[600ms] group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 25vw"
-                />
+                <div className="absolute inset-0">
+                  <Image
+                    src={images[e.key] as string}
+                    alt={e.title}
+                    fill
+                    className="object-cover transition-transform duration-[600ms] group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                  />
+                </div>
               ) : (
                 <HeroLogoFallback variant="light" />
               )}
