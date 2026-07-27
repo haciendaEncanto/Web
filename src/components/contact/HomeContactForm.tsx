@@ -78,7 +78,7 @@ export function HomeContactForm() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={label}>Nombre completo</label>
+          <label className={label}>Nombre completo *</label>
           <input
             name="name"
             type="text"
@@ -88,9 +88,7 @@ export function HomeContactForm() {
           />
         </div>
         <div>
-          <label className={label}>
-            WhatsApp <span className="normal-case text-rojo">*</span>
-          </label>
+          <label className={label}>WhatsApp *</label>
           <input
             name="whatsapp"
             type="tel"
@@ -102,11 +100,13 @@ export function HomeContactForm() {
       </div>
 
       <div>
-        <label className={label}>Correo electrónico</label>
+        <label className={label}>
+          Correo electrónico{" "}
+          <span className="normal-case text-gris/60 font-normal">(opcional)</span>
+        </label>
         <input
           name="email"
           type="email"
-          required
           placeholder="tu@correo.com"
           className={input}
         />
@@ -114,8 +114,8 @@ export function HomeContactForm() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={label}>Tipo de evento</label>
-          <select name="subject" className={input}>
+          <label className={label}>Tipo de evento *</label>
+          <select name="subject" required className={input}>
             <option value="">Selecciona…</option>
             <option>Boda</option>
             <option>Quince Años</option>
@@ -125,16 +125,17 @@ export function HomeContactForm() {
           </select>
         </div>
         <div>
-          <label className={label}>Fecha estimada</label>
-          <input name="event_date" type="date" className={input} />
+          <label className={label}>Fecha estimada *</label>
+          <input name="event_date" type="date" required className={input} />
         </div>
       </div>
 
       <div>
-        <label className={label}>Número de invitados</label>
+        <label className={label}>Número de invitados *</label>
         <input
           name="guest_count"
           type="number"
+          required
           placeholder="Ej: 150"
           min="1"
           className={input}
@@ -142,7 +143,7 @@ export function HomeContactForm() {
       </div>
 
       <div>
-        <label className={label}>Cuéntanos sobre tu evento</label>
+        <label className={label}>Cuéntanos sobre tu evento *</label>
         <textarea
           name="message"
           required

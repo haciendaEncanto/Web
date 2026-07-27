@@ -26,6 +26,7 @@ import {
   Music2,
   Map,
   ScrollText,
+  Inbox,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -65,6 +66,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/usuarios", label: "Usuarios", icon: Shield },
       { href: "/admin/clientes", label: "Clientes", icon: Users },
+      { href: "/admin/leads", label: "Leads", icon: Inbox },
       { href: "/admin/contrato", label: "Contrato", icon: ScrollText },
       { href: "/editor/galeria", label: "Galería", icon: Image },
       { href: "/editor/videos", label: "Videos", icon: Video },
@@ -112,6 +114,7 @@ function getNavItems(role: string): NavItem[] {
   if (role === "gerente") {
     return [
       { href: "/portal/gerente", label: "Eventos", icon: CalendarDays },
+      { href: "/admin/leads", label: "Leads", icon: Inbox },
     ];
   }
   const base: NavItem[] = [

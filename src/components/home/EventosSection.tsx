@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
 import { PageTransitionLink } from "@/components/ui/PageTransitionLink";
 
@@ -41,12 +40,12 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
               className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
               {images?.[e.key] ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={images[e.key] as string}
                   alt={e.title}
-                  fill
-                  className="object-cover transition-transform duration-[600ms] group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 25vw"
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                  className="transition-transform duration-[600ms] scale-105 md:scale-100 md:group-hover:scale-105"
                 />
               ) : (
                 <HeroLogoFallback variant="light" />
