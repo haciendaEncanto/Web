@@ -45,7 +45,7 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
                   src={images[e.key] as string}
                   alt={e.title}
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                  className="transition-transform duration-[600ms] group-hover:scale-105"
+                  className="transition-transform duration-[600ms] scale-105 md:scale-100 md:group-hover:scale-105"
                 />
               ) : (
                 <HeroLogoFallback variant="light" />
