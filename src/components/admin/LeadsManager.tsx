@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
@@ -100,6 +100,10 @@ function StatusBadge({ status }: { status: ContactStatus | null | undefined }) {
   );
 }
 
+type DropPos = { top: number; right: number; openUp: boolean };
+
+const DROP_HEIGHT = ALL_STATUSES.length * 38 + 8; // altura aproximada del dropdown
+
 function StatusSelect({
   id,
   status,
@@ -110,7 +114,23 @@ function StatusSelect({
   onChange: (id: string, s: ContactStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [dropPos, setDropPos] = useState<DropPos | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const [, start] = useTransition();
+
+  function handleOpen() {
+    if (open) { setOpen(false); return; }
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < DROP_HEIGHT + 8;
+    setDropPos({
+      top: openUp ? rect.top - DROP_HEIGHT - 4 : rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+      openUp,
+    });
+    setOpen(true);
+  }
 
   function select(s: ContactStatus) {
     setOpen(false);
@@ -123,26 +143,31 @@ function StatusSelect({
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((p) => !p)}
+        ref={btnRef}
+        onClick={handleOpen}
         className="flex items-center gap-1 text-[0.72rem] text-gris border border-negro/10 rounded-lg px-2.5 py-1.5 hover:bg-negro/5 transition-colors"
       >
         {safeStatusLabel(status)} <ChevronDown size={11} />
       </button>
-      {open && (
+      {open && dropPos && createPortal(
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-1 z-20 bg-blanco border border-negro/10 rounded-xl shadow-lg py-1 min-w-[140px]">
+          <div className="fixed inset-0 z-[200]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[201] bg-blanco border border-negro/10 rounded-xl shadow-lg py-1 min-w-[140px]"
+            style={{ top: dropPos.top, right: dropPos.right }}
+          >
             {ALL_STATUSES.map((s) => (
               <button
                 key={s}
-                onClick={() => select(s)}
+                onClick={(e) => { e.stopPropagation(); select(s); }}
                 className={`w-full text-left px-3 py-2 text-[0.78rem] hover:bg-crema/60 transition-colors ${s === status ? "font-semibold text-negro" : "text-gris"}`}
               >
                 {STATUS_LABEL[s]}
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
