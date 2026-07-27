@@ -27,11 +27,11 @@ export default async function AsesorComercialPanel() {
   const contactsQuery = isAdmin
     ? supabase
         .from("contact_messages")
-        .select("id, name, email, phone, whatsapp, subject, message, status, created_at")
+        .select("id, name, email, phone, whatsapp, subject, event_date, guest_count, message, status, created_at")
         .order("created_at", { ascending: false })
     : supabase
         .from("contact_messages")
-        .select("id, name, email, phone, whatsapp, subject, message, status, created_at")
+        .select("id, name, email, phone, whatsapp, subject, event_date, guest_count, message, status, created_at")
         .eq("assigned_asesor_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -54,7 +54,8 @@ export default async function AsesorComercialPanel() {
               : "Contactos asignados a ti desde el formulario de contacto"}
           </p>
         </div>
-        <ContactosAsesorView initialContacts={contacts ?? []} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <ContactosAsesorView initialContacts={(contacts as any) ?? []} />
       </div>
 
       {/* Sección Eventos (pipeline ya convertido) */}

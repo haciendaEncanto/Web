@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MessageCircle, Phone, Calendar, Tag, ChevronDown } from "lucide-react";
+import { MessageCircle, Phone, Calendar, Tag, ChevronDown, Users } from "lucide-react";
 import { updateContactStatus } from "@/app/actions/contactos-asesor";
 
 type ContactStatus = "unread" | "read" | "replied" | "en_proceso";
@@ -9,10 +9,12 @@ type ContactStatus = "unread" | "read" | "replied" | "en_proceso";
 type ContactRow = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   whatsapp: string;
   subject: string | null;
+  event_date: string | null;
+  guest_count: string | null;
   message: string;
   status: ContactStatus;
   created_at: string;
@@ -181,6 +183,18 @@ export function ContactosAsesorView({ initialContacts }: { initialContacts: Cont
                         year: "numeric",
                       })}
                     </span>
+                    {c.event_date && (
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} />
+                        Fecha est.: {c.event_date}
+                      </span>
+                    )}
+                    {c.guest_count && (
+                      <span className="flex items-center gap-1">
+                        <Users size={11} />
+                        {c.guest_count} invitados
+                      </span>
+                    )}
                     {c.phone && (
                       <span className="flex items-center gap-1">
                         <Phone size={11} />
