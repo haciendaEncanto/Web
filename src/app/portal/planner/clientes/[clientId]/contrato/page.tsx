@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listDocumentosConTamano } from "@/app/actions/documentos";
 import { ContratoPlanner } from "@/components/portal/planner/ContratoPlanner";
+import { ContractItemsForm } from "@/components/portal/planner/ContractItemsForm";
+import { DEFAULT_CONTRACT_ITEMS, type ContractItems } from "@/lib/contract-items";
 
 export default async function ContratoPlannerPage({
   params,
@@ -32,7 +34,7 @@ export default async function ContratoPlannerPage({
 
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, valor_total, valor_anticipo, contract_locked")
+    .select("id, valor_total, valor_anticipo, contract_locked, contract_items, capilla")
     .eq("client_id", clientId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
@@ -102,6 +104,15 @@ export default async function ContratoPlannerPage({
           {profile.full_name ?? profile.email}
         </p>
       </div>
+
+      {booking && (
+        <ContractItemsForm
+          bookingId={booking.id}
+          initialItems={(booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS}
+          initialCapilla={booking.capilla ?? false}
+          isLocked={booking.contract_locked ?? false}
+        />
+      )}
 
       <ContratoPlanner
         clientId={clientId}
