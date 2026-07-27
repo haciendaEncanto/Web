@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { sendWhatsAppNotification, sendWhatsAppToPhone } from "@/lib/callmebot";
+import { sendWhatsAppNotification, sendWhatsAppToPhone, buildLeadMessage } from "@/lib/callmebot";
 
 export type ContactState = { success?: boolean; error?: string } | null;
 
@@ -27,32 +27,6 @@ const schema = z.object({
   message: z.string().min(5, "Cuéntanos un poco más sobre tu evento"),
   recaptchaToken: z.string(),
 });
-
-function buildWaMessage(params: {
-  name: string;
-  whatsapp: string;
-  email: string;
-  subject: string;
-  event_date: string;
-  guest_count: string;
-  message: string;
-  asesorName: string;
-}): string {
-  const lines: string[] = [
-    "📩 *Nuevo contacto - Hacienda El Encanto*",
-    `👤 Nombre: ${params.name}`,
-    `📱 WhatsApp: ${params.whatsapp}`,
-  ];
-  if (params.email) lines.push(`📧 Email: ${params.email}`);
-  lines.push(
-    `🎉 Tipo de evento: ${params.subject}`,
-    `📅 Fecha estimada: ${params.event_date}`,
-    `👥 Invitados: ${params.guest_count}`,
-    `💬 Mensaje: ${params.message}`,
-    `🤝 Asignado a: ${params.asesorName}`
-  );
-  return lines.join("\n");
-}
 
 export async function submitContactForm(
   _prevState: ContactState,
@@ -99,10 +73,24 @@ export async function submitContactForm(
       .in("role", ["asesor_comercial", "wedding_planner"]),
   ]);
 
-  const activeIds = new Set(
-    (asesorProfiles ?? []).filter((p) => p.is_active).map((p) => p.id)
+  // Round-robin: incluir asesores activos aunque no tengan fila en asesor_assignments
+  const activeAsesores = (asesorProfiles ?? []).filter((p) => p.is_active);
+  const assignmentMap = new Map(
+    (assignments ?? []).map((a) => [a.asesor_id, a])
   );
-  const selected = (assignments ?? []).find((a) => activeIds.has(a.asesor_id)) ?? null;
+  const virtualList = activeAsesores.map((p) => ({
+    asesor_id: p.id,
+    total_assignments: assignmentMap.get(p.id)?.total_assignments ?? 0,
+    last_assigned_at: assignmentMap.get(p.id)?.last_assigned_at ?? null,
+  }));
+  virtualList.sort((a, b) => {
+    if (a.total_assignments !== b.total_assignments)
+      return a.total_assignments - b.total_assignments;
+    if (a.last_assigned_at === null) return -1;
+    if (b.last_assigned_at === null) return 1;
+    return a.last_assigned_at < b.last_assigned_at ? -1 : 1;
+  });
+  const selected = virtualList[0] ?? null;
   const assignedAsesorId = selected?.asesor_id ?? null;
   const assignedAsesor = (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId) ?? null;
   const asesorName = assignedAsesor?.full_name ?? "el equipo";
@@ -125,19 +113,20 @@ export async function submitContactForm(
     return { error: "No pudimos enviar tu mensaje. Inténtalo de nuevo más tarde." };
   }
 
-  // Incrementar contador del asesor asignado
+  // Incrementar contador — upsert maneja tanto nuevo registro como actualización
   if (selected) {
-    await admin
-      .from("asesor_assignments")
-      .update({
+    await admin.from("asesor_assignments").upsert(
+      {
+        asesor_id: selected.asesor_id,
         total_assignments: selected.total_assignments + 1,
         last_assigned_at: new Date().toISOString(),
-      })
-      .eq("asesor_id", selected.asesor_id);
+      },
+      { onConflict: "asesor_id" }
+    );
   }
 
   // Construir mensaje completo con todos los campos
-  const waMsg = buildWaMessage({ name, whatsapp, email, subject, event_date, guest_count, message, asesorName });
+  const waMsg = buildLeadMessage({ name, whatsapp, email: email || null, subject, event_date, guest_count, message, asesorName });
 
   // Notificación al número central — fire and forget
   void sendWhatsAppNotification(waMsg);

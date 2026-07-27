@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   MessageCircle,
   ChevronDown,
@@ -13,9 +14,10 @@ import {
   User,
   Inbox,
   RefreshCw,
+  Send,
 } from "lucide-react";
 import { updateContactStatus } from "@/app/actions/contactos-asesor";
-import { reassignLead } from "@/app/actions/leads";
+import { reassignLead, resendLeadNotification } from "@/app/actions/leads";
 
 type ContactStatus = "unread" | "read" | "replied" | "en_proceso";
 
@@ -149,6 +151,8 @@ function DetailPanel({
   const [reassigning, startReassign] = useTransition();
   const [newAsesorId, setNewAsesorId] = useState(lead.assigned_asesor_id ?? "");
   const [reassignError, setReassignError] = useState<string | null>(null);
+  const [sending, startSend] = useTransition();
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
 
   function handleReassign() {
     const targetId = newAsesorId || null;
@@ -164,13 +168,21 @@ function DetailPanel({
     });
   }
 
+  function handleResend() {
+    setSendMsg(null);
+    startSend(async () => {
+      const { error } = await resendLeadNotification(lead.id);
+      setSendMsg(error ?? "✓ Enviado al número central");
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Overlay */}
       <div className="flex-1 bg-negro/30 backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Panel */}
-      <div className="w-full max-w-[480px] bg-blanco h-full overflow-y-auto shadow-2xl flex flex-col">
+      <div className="w-full max-w-[480px] bg-blanco h-full shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-negro/[0.07] shrink-0">
           <div>
@@ -193,7 +205,7 @@ function DetailPanel({
         </div>
 
         {/* Body */}
-        <div className="flex-1 px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Contacto */}
           <section className="space-y-2">
             <h4 className="text-[0.65rem] uppercase tracking-[2px] text-dorado font-medium">
@@ -317,8 +329,8 @@ function DetailPanel({
           </section>
         </div>
 
-        {/* Footer — acción principal */}
-        <div className="px-6 py-4 border-t border-negro/[0.07] shrink-0">
+        {/* Footer — acciones */}
+        <div className="px-6 py-4 border-t border-negro/[0.07] shrink-0 space-y-2">
           <a
             href={buildWALink(lead)}
             target="_blank"
@@ -328,6 +340,23 @@ function DetailPanel({
             <MessageCircle size={16} />
             Contactar por WhatsApp
           </a>
+          <button
+            onClick={handleResend}
+            disabled={sending}
+            className="flex items-center justify-center gap-2 w-full border border-negro/10 text-gris py-2.5 rounded-xl text-[0.82rem] font-medium hover:bg-negro/5 transition-colors disabled:opacity-50"
+          >
+            <Send size={14} className={sending ? "animate-pulse" : ""} />
+            {sending ? "Enviando…" : "Reenviar WhatsApp (central + asesor)"}
+          </button>
+          {sendMsg && (
+            <p
+              className={`text-[0.72rem] text-center ${
+                sendMsg.startsWith("✓") ? "text-verde-bosque" : "text-rojo"
+              }`}
+            >
+              {sendMsg}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -516,6 +545,7 @@ export function LeadsManager({
               Limpiar
             </button>
           )}
+
         </div>
         <p className="text-[0.72rem] text-gris/70">
           {filtered.length} de {leads.length} leads
@@ -692,16 +722,18 @@ export function LeadsManager({
         </>
       )}
 
-      {/* Detail panel */}
-      {selected && (
-        <DetailPanel
-          lead={selected}
-          asesores={asesores}
-          onClose={() => setSelected(null)}
-          onStatusChange={handleStatusChange}
-          onReassign={handleReassign}
-        />
-      )}
+      {/* Detail panel — via portal para evitar que fixed quede atrapado en un ancestro con transform/backdrop-filter */}
+      {selected &&
+        createPortal(
+          <DetailPanel
+            lead={selected}
+            asesores={asesores}
+            onClose={() => setSelected(null)}
+            onStatusChange={handleStatusChange}
+            onReassign={handleReassign}
+          />,
+          document.body
+        )}
     </>
   );
 }
