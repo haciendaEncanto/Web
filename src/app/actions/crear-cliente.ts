@@ -227,16 +227,8 @@ export async function createClientAction(
 
     createdBookingId = booking.id;
 
-    // 7 — Inicializar orden de servicio
-    //     initialize_service_order acepta service_role (auth.uid() NULL)
-    const { error: orderError } = await admin.rpc("initialize_service_order", {
-      p_booking_id: createdBookingId,
-    });
-
-    if (orderError) {
-      throw new Error(`Error inicializando orden: ${orderError.message}`);
-    }
-
+    // La orden de servicio se inicializa cuando el cliente aprueba el contrato
+    // (aprobarContrato SA), no al crear el cliente.
     return { success: true, bookingId: createdBookingId };
   } catch (err) {
     // Rollback en orden inverso
