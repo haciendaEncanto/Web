@@ -79,7 +79,11 @@ export default async function LeadsPage() {
           Todos los contactos recibidos desde el formulario público
         </p>
       </div>
-      <LeadsManager initialLeads={leads} asesores={asesores ?? []} />
+      <LeadsManager
+        initialLeads={leads}
+        asesores={asesores ?? []}
+        isAdmin={profile.role === "admin"}
+      />
     </div>
   );
 }

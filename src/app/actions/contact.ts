@@ -99,10 +99,24 @@ export async function submitContactForm(
       .in("role", ["asesor_comercial", "wedding_planner"]),
   ]);
 
-  const activeIds = new Set(
-    (asesorProfiles ?? []).filter((p) => p.is_active).map((p) => p.id)
+  // Round-robin: incluir asesores activos aunque no tengan fila en asesor_assignments
+  const activeAsesores = (asesorProfiles ?? []).filter((p) => p.is_active);
+  const assignmentMap = new Map(
+    (assignments ?? []).map((a) => [a.asesor_id, a])
   );
-  const selected = (assignments ?? []).find((a) => activeIds.has(a.asesor_id)) ?? null;
+  const virtualList = activeAsesores.map((p) => ({
+    asesor_id: p.id,
+    total_assignments: assignmentMap.get(p.id)?.total_assignments ?? 0,
+    last_assigned_at: assignmentMap.get(p.id)?.last_assigned_at ?? null,
+  }));
+  virtualList.sort((a, b) => {
+    if (a.total_assignments !== b.total_assignments)
+      return a.total_assignments - b.total_assignments;
+    if (a.last_assigned_at === null) return -1;
+    if (b.last_assigned_at === null) return 1;
+    return a.last_assigned_at < b.last_assigned_at ? -1 : 1;
+  });
+  const selected = virtualList[0] ?? null;
   const assignedAsesorId = selected?.asesor_id ?? null;
   const assignedAsesor = (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId) ?? null;
   const asesorName = assignedAsesor?.full_name ?? "el equipo";
@@ -125,15 +139,16 @@ export async function submitContactForm(
     return { error: "No pudimos enviar tu mensaje. Inténtalo de nuevo más tarde." };
   }
 
-  // Incrementar contador del asesor asignado
+  // Incrementar contador — upsert maneja tanto nuevo registro como actualización
   if (selected) {
-    await admin
-      .from("asesor_assignments")
-      .update({
+    await admin.from("asesor_assignments").upsert(
+      {
+        asesor_id: selected.asesor_id,
         total_assignments: selected.total_assignments + 1,
         last_assigned_at: new Date().toISOString(),
-      })
-      .eq("asesor_id", selected.asesor_id);
+      },
+      { onConflict: "asesor_id" }
+    );
   }
 
   // Construir mensaje completo con todos los campos
