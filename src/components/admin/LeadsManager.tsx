@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
@@ -56,36 +56,53 @@ const STATUS_STYLE: Record<ContactStatus, string> = {
 
 const ALL_STATUSES: ContactStatus[] = ["unread", "read", "en_proceso", "replied"];
 
-function normalizeWA(raw: string): string {
+function normalizeWA(raw: string | null | undefined): string {
+  if (!raw) return "";
   const digits = raw.replace(/\D/g, "");
   return digits.startsWith("57") ? digits : `57${digits}`;
 }
 
 function buildWALink(lead: LeadRow): string {
   const phone = normalizeWA(lead.whatsapp);
+  if (!phone) return "#";
   const eventType = lead.subject || "tu evento";
   const datePart = lead.event_date ? ` el ${lead.event_date}` : "";
-  const text = `Hola ${lead.name}, soy del equipo de Hacienda El Encanto. Vi tu consulta sobre ${eventType}${datePart}. ¿En qué te puedo ayudar?`;
+  const text = `Hola ${lead.name ?? ""}, soy del equipo de Hacienda El Encanto. Vi tu consulta sobre ${eventType}${datePart}. ¿En qué te puedo ayudar?`;
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-CO", {
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("es-CO", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-function StatusBadge({ status }: { status: ContactStatus }) {
+function safeStatusStyle(status: string | null | undefined): string {
+  return STATUS_STYLE[(status ?? "unread") as ContactStatus] ?? STATUS_STYLE.unread;
+}
+
+function safeStatusLabel(status: string | null | undefined): string {
+  return STATUS_LABEL[(status ?? "unread") as ContactStatus] ?? STATUS_LABEL.unread;
+}
+
+function StatusBadge({ status }: { status: ContactStatus | null | undefined }) {
   return (
     <span
-      className={`text-[0.63rem] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${STATUS_STYLE[status]}`}
+      className={`text-[0.63rem] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${safeStatusStyle(status)}`}
     >
-      {STATUS_LABEL[status]}
+      {safeStatusLabel(status)}
     </span>
   );
 }
+
+type DropPos = { top: number; right: number; openUp: boolean };
+
+const DROP_HEIGHT = ALL_STATUSES.length * 38 + 8; // altura aproximada del dropdown
 
 function StatusSelect({
   id,
@@ -97,7 +114,23 @@ function StatusSelect({
   onChange: (id: string, s: ContactStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [dropPos, setDropPos] = useState<DropPos | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const [, start] = useTransition();
+
+  function handleOpen() {
+    if (open) { setOpen(false); return; }
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < DROP_HEIGHT + 8;
+    setDropPos({
+      top: openUp ? rect.top - DROP_HEIGHT - 4 : rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+      openUp,
+    });
+    setOpen(true);
+  }
 
   function select(s: ContactStatus) {
     setOpen(false);
@@ -110,26 +143,31 @@ function StatusSelect({
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((p) => !p)}
+        ref={btnRef}
+        onClick={handleOpen}
         className="flex items-center gap-1 text-[0.72rem] text-gris border border-negro/10 rounded-lg px-2.5 py-1.5 hover:bg-negro/5 transition-colors"
       >
-        {STATUS_LABEL[status]} <ChevronDown size={11} />
+        {safeStatusLabel(status)} <ChevronDown size={11} />
       </button>
-      {open && (
+      {open && dropPos && createPortal(
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-1 z-20 bg-blanco border border-negro/10 rounded-xl shadow-lg py-1 min-w-[140px]">
+          <div className="fixed inset-0 z-[200]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[201] bg-blanco border border-negro/10 rounded-xl shadow-lg py-1 min-w-[140px]"
+            style={{ top: dropPos.top, right: dropPos.right }}
+          >
             {ALL_STATUSES.map((s) => (
               <button
                 key={s}
-                onClick={() => select(s)}
+                onClick={(e) => { e.stopPropagation(); select(s); }}
                 className={`w-full text-left px-3 py-2 text-[0.78rem] hover:bg-crema/60 transition-colors ${s === status ? "font-semibold text-negro" : "text-gris"}`}
               >
                 {STATUS_LABEL[s]}
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -148,6 +186,7 @@ function DetailPanel({
   onStatusChange: (id: string, s: ContactStatus) => void;
   onReassign: (leadId: string, asesorId: string | null, name: string | null) => void;
 }) {
+  console.log("[leads] DetailPanel render:", { id: lead.id, name: lead.name, status: lead.status, whatsapp: lead.whatsapp });
   const [reassigning, startReassign] = useTransition();
   const [newAsesorId, setNewAsesorId] = useState(lead.assigned_asesor_id ?? "");
   const [reassignError, setReassignError] = useState<string | null>(null);
@@ -599,7 +638,10 @@ export function LeadsManager({
                   {filtered.map((l) => (
                     <tr
                       key={l.id}
-                      onClick={() => setSelected(l)}
+                      onClick={() => {
+                        console.log("[leads] click tr:", { id: l.id, name: l.name, status: l.status, whatsapp: l.whatsapp, message: l.message?.slice(0, 60) });
+                        setSelected(l);
+                      }}
                       className="hover:bg-crema/40 cursor-pointer transition-colors group"
                     >
                       <td className="px-4 py-3 text-gris whitespace-nowrap">
@@ -662,7 +704,10 @@ export function LeadsManager({
             {filtered.map((l) => (
               <div
                 key={l.id}
-                onClick={() => setSelected(l)}
+                onClick={() => {
+                  console.log("[leads] click card:", { id: l.id, name: l.name, status: l.status, whatsapp: l.whatsapp, message: l.message?.slice(0, 60) });
+                  setSelected(l);
+                }}
                 className={`bg-blanco rounded-2xl border p-4 cursor-pointer transition-colors ${
                   l.status === "unread"
                     ? "border-rojo/20 shadow-sm"
