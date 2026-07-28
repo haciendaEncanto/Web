@@ -68,8 +68,8 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   headerLine: {
-    borderBottomWidth: 0.75,
-    borderBottomColor: NEGRO,
+    borderBottomWidth: 1,
+    borderBottomColor: "#D63B2A",
     borderBottomStyle: "solid",
     width: "100%",
     marginTop: 6,
@@ -271,6 +271,12 @@ function fmtDate(d: string | null) {
   return `${parseInt(day)} de ${MONTHS[parseInt(m) - 1]} de ${y}`;
 }
 
+function fmtDateFile(d: string | null) {
+  if (!d) return "Fecha";
+  const [y, m, day] = d.split("-");
+  return `${day}-${m}-${y}`;
+}
+
 function fmtPhone(n: string): string {
   const clean = n.replace(/\D/g, "");
   if (clean.length === 10) return `+57 ${clean.slice(0, 3)} ${clean.slice(3, 7)} ${clean.slice(7)}`;
@@ -369,7 +375,7 @@ export function ContratoPDF({
 
   return (
     <Document
-      title={`Contrato de Servicios v${version} — ${clientName}`}
+      title={`${EVENT_LABEL[eventType] ?? eventType} ${fmtDateFile(eventDate)} ${clientName}`}
       author={h.nombre}
       subject="Contrato de prestación de servicios"
     >
