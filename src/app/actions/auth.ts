@@ -12,6 +12,9 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MINUTES = 15;
+
 const registerSchema = z
   .object({
     full_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -38,10 +41,41 @@ export async function login(
     return { error: parsed.error.issues[0].message };
   }
 
+  const email = parsed.data.email.toLowerCase();
+  const admin = createAdminClient();
+  const windowStart = new Date(Date.now() - LOGIN_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+  // Contar intentos fallidos recientes para este email
+  const { count: recentFailures } = await admin
+    .from("login_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("email", email)
+    .gte("attempted_at", windowStart);
+
+  const failures = recentFailures ?? 0;
+
+  if (failures >= LOGIN_MAX_ATTEMPTS) {
+    return {
+      error: `Demasiados intentos fallidos. Espera ${LOGIN_WINDOW_MINUTES} minutos e intenta nuevamente.`,
+    };
+  }
+
+  // Delay progresivo: 1s, 2s, 4s, 8s tras el 1.°, 2.°, 3.° y 4.° fallo
+  if (failures > 0) {
+    const delayMs = Math.min(Math.pow(2, failures - 1), 16) * 1000;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+
   const supabase = await createClient();
   const { error, data } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
+    // Registrar intento fallido y limpiar intentos expirados
+    await admin.from("login_attempts").insert({ email });
+    void admin
+      .from("login_attempts")
+      .delete()
+      .lt("attempted_at", windowStart);
     return { error: "Credenciales inválidas. Verifica tu email y contraseña." };
   }
 
@@ -116,15 +150,21 @@ export async function logout() {
 
 export type ResetPasswordState = { error?: string; success?: boolean } | null;
 
+const resetPasswordSchema = z.object({
+  email: z.string().email("Ingresa un correo electrónico válido"),
+});
+
 export async function requestPasswordReset(
   _prev: ResetPasswordState,
   formData: FormData
 ): Promise<ResetPasswordState> {
-  const email = (formData.get("email") as string)?.trim();
-  if (!email || !email.includes("@")) return { error: "Ingresa un correo electrónico válido" };
+  const parsed = resetPasswordSchema.safeParse({
+    email: (formData.get("email") as string)?.trim(),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: "https://www.hacienda-encanto.com/update-password",
   });
 
