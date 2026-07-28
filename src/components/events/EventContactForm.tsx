@@ -64,24 +64,33 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Nombre completo</label>
+          <label className={labelCls}>Nombre completo *</label>
           <input name="name" type="text" required placeholder="Tu nombre" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Teléfono / WhatsApp</label>
-          <input name="phone" type="tel" placeholder="+57" className={inputCls} />
+          <label className={labelCls}>WhatsApp *</label>
+          <input
+            name="whatsapp"
+            type="tel"
+            required
+            placeholder="+57 3XX XXX XXXX"
+            className={inputCls}
+          />
         </div>
       </div>
 
       <div>
-        <label className={labelCls}>Correo electrónico</label>
-        <input name="email" type="email" required placeholder="tu@correo.com" className={inputCls} />
+        <label className={labelCls}>
+          Correo electrónico{" "}
+          <span className="normal-case text-gris/60 font-normal">(opcional)</span>
+        </label>
+        <input name="email" type="email" placeholder="tu@correo.com" className={inputCls} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Tipo de evento</label>
-          <select name="subject" defaultValue={defaultEventType} className={inputCls}>
+          <label className={labelCls}>Tipo de evento *</label>
+          <select name="subject" required defaultValue={defaultEventType} className={inputCls}>
             <option value="">Selecciona…</option>
             <option value="Boda">Boda</option>
             <option value="Quince Años">Quince Años</option>
@@ -91,16 +100,17 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
           </select>
         </div>
         <div>
-          <label className={labelCls}>Fecha estimada</label>
-          <input name="event_date" type="date" className={inputCls} />
+          <label className={labelCls}>Fecha estimada *</label>
+          <input name="event_date" type="date" required className={inputCls} />
         </div>
       </div>
 
       <div>
-        <label className={labelCls}>Número de invitados</label>
+        <label className={labelCls}>Número de invitados *</label>
         <input
           name="guest_count"
           type="number"
+          required
           placeholder="Ej: 150"
           min="1"
           className={inputCls}
@@ -108,7 +118,7 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
       </div>
 
       <div>
-        <label className={labelCls}>Cuéntanos sobre tu evento</label>
+        <label className={labelCls}>Cuéntanos sobre tu evento *</label>
         <textarea
           name="message"
           required
@@ -129,6 +139,18 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
         pendingLabel="Enviando…"
         className="w-full text-center bg-rojo text-blanco px-9 py-[14px] rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
       />
+
+      <p className="text-[0.65rem] text-gris/50 text-center leading-relaxed">
+        Protegido por reCAPTCHA —{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Política de privacidad
+        </a>{" "}
+        y{" "}
+        <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gris">
+          Términos de servicio
+        </a>{" "}
+        de Google.
+      </p>
     </form>
   );
 }
