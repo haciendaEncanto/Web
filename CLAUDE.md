@@ -50,9 +50,10 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 | Badge reCAPTCHA oculto | `.grecaptcha-badge { visibility: hidden }` en globals.css. Texto legal "Protegido por reCAPTCHA — Política de privacidad y Términos de servicio de Google" en ambos formularios de contacto |
 | SEO | `src/app/sitemap.ts` + `src/app/robots.ts` nativos de App Router. Disallow: /portal/ /admin/ /editor/ /login /api/. No usar next-sitemap — no funciona en Vercel con App Router. |
 | Gestión de contraseñas | /reset-password: formulario email → resetPasswordForEmail. /update-password: intercambia código PKCE client-side y muestra form nueva contraseña. Admin puede cambiar contraseña de cualquier usuario desde /admin/usuarios y /admin/clientes/[id] vía CambiarPasswordButton + cambiarPassword SA. |
-| Módulo de contrato | ContractItemsForm: todos los ítems opcionales con toggles Sí/No (DJ/Maestro=sino-fixed-1 muestra "1", Gaseosa/Cóctel muestran "ILIMITADO", resto sino/cantidad/texto). Generación PDF via SA generarContratoPDF: nombre `{TipoEvento} {DD-MM-YYYY} {NombreCliente}`, upload directo a Storage server-side (sin signed URL — el PDF se genera en el servidor). ContratoPDF: página única, header/footer fijos (fixed=true), tabla 4 columnas solo ítems activos, cláusulas 1-2 en párrafo introductorio, cláusulas 3-12 texto corrido. Datos hacienda y cláusulas editables desde site_content (claves hacienda_* y contrato_clausula_1..12). Flujo aprobación: aprobarContrato bloquea contrato + inicializa orden de servicio + notifica planners. solicitarAjustesContrato notifica staff. Vista cliente muestra contrato con botón Aprobar / Solicitar ajustes. |
+| Módulo de contrato | ContractItemsForm: todos los ítems opcionales con toggles Sí/No (DJ/Maestro=sino-fixed-1 muestra "1", Gaseosa/Cóctel muestran "ILIMITADO", resto sino/cantidad/texto). Generación PDF via SA generarContratoPDF: nombre `{TipoEvento} {DD-MM-YYYY} {NombreCliente}`, upload directo a Storage server-side (sin signed URL — el PDF se genera en el servidor). ContratoPDF: página única, header/footer fijos (fixed=true), tabla 4 columnas solo ítems activos, cláusulas 1-2 en párrafo introductorio, cláusulas 3-12 texto corrido. Datos hacienda y cláusulas editables desde site_content (claves hacienda_* y contrato_clausula_1..12). Flujo aprobación: aprobarContrato bloquea contrato + inicializa orden de servicio + notifica planners. solicitarAjustesContrato notifica staff. Vista cliente muestra contrato con botón Aprobar / Solicitar ajustes. Variables dinámicas en cláusulas: `{{fecha_evento}}`, `{{hora_inicio}}`, `{{hora_fin}}`, `{{num_invitados}}`, `{{cliente_direccion}}`, `{{cliente_telefono}}`, `{{cliente_email}}`. Prereqs para generar: CC, dirección, teléfono, email del cliente — validación consolidada en SA. Botón "Eliminar historial" en ContratoPlanner (solo cuando contract_locked=false) borra docs Storage + BD con modal de confirmación. |
 | Tabs ficha cliente planner | /portal/planner/clientes/[clientId]/ tiene tabs de navegación: Contrato / Actividades / Invitados / Documentos / Pagos / Playlist. Planner accede a todos los módulos del cliente desde una ficha unificada con tabs. |
 | Onboarding clientes (actualizado) | createClientAction YA NO inicializa la orden de servicio — solo crea Auth + profile + booking. La orden se inicializa dentro de aprobarContrato cuando el cliente aprueba. Botón "Crear cliente →" (antes "Crear cliente y generar orden →"). fetchClientBookingRows en /planner/clientes siempre con restrictToUpcoming:false (gestión, no agenda). |
+| Auditoría de seguridad | HTTP Security Headers en next.config.ts (X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy, CSP con SUPABASE_HOST). Rate limiting login: tabla `login_attempts` (PostgreSQL, RLS false), ventana 15 min, máx 5 fallos, delay progresivo `Math.pow(2, failures-1)*1000ms`. Zod en `requestPasswordReset`. 7 vectores auditados; hallazgos críticos corregidos. |
 
 ### Decisiones de arquitectura
 
@@ -127,7 +128,15 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - Cláusulas: 12 claves `contrato_clausula_1..12` en `site_content`. Firma: `firma_representante` (URL de imagen en Storage). Editables desde `/editor/contenido`.
 - `contract_locked: boolean` en bookings — cuando el cliente aprueba, se fija a `true`. El planner no puede editar ítems mientras esté bloqueado.
 - `aprobarContrato(bookingId)`: verifica ownership (cliente solo aprueba su propio booking) → lock → `initialize_service_order(booking_id)` → notifica planners/admins. En `contrato-aprobacion.ts`.
-- `/portal/planner/clientes/[clientId]/contrato/page.tsx`: muestra prereqs (CC, dirección, valor_total, valor_anticipo) antes de permitir generar. `ContractItemsForm` deshabilitado cuando `contract_locked=true`.
+- `/portal/planner/clientes/[clientId]/contrato/page.tsx`: muestra prereqs (CC, dirección, teléfono, email, valor_total, valor_anticipo) antes de permitir generar. `ContractItemsForm` deshabilitado cuando `contract_locked=true`.
+- Variables dinámicas en cláusulas: `renderTemplate(text, templateVars)` en `ContratoPDF.tsx` parsea `{{varName}}` y devuelve `ReactNode[]` mezclando strings y `<Text>` en bold. `templateVars` tiene `fecha_evento`, `hora_inicio`, `hora_fin`, `tipo_evento`, `num_invitados`, `cliente_direccion`, `cliente_telefono`, `cliente_email`. **CRÍTICO**: cláusulas 3-12 deben renderizar `{renderTemplate(c.text, templateVars)}`, no `{c.text}` plano.
+- `eliminarHistorialContratos(clientId, bookingId)` SA en `generar-contrato.ts`: verifica `contract_locked=false`, borra archivos de Storage y registros en BD de tipo "contrato", revalida paths. `ContratoPlanner.tsx` muestra botón solo cuando no está bloqueado.
+
+**Seguridad HTTP**
+- `next.config.ts` exporta `headers()` async con `source: "/(.*)"` aplicando headers a todas las rutas: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`, `Content-Security-Policy`.
+- CSP: `default-src 'self'`, `script-src 'self' 'unsafe-eval' 'unsafe-inline' google.com gstatic.com`, `img-src 'self' data: blob: SUPABASE_HOST`, `font-src 'self' data:` (fuentes self-hosteadas via next/font), `media-src 'self' blob: SUPABASE_HOST`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`. `'unsafe-inline'` y `'unsafe-eval'` requeridos por Next.js App Router.
+- Rate limiting login: tabla `login_attempts` (PostgreSQL + RLS `USING (false)` — solo service_role puede escribir). Ventana 15 min, máx 5 fallos, delay progresivo `Math.min(2^(failures-1), 16) * 1000ms`. Limpia intentos expirados en background tras cada fallo.
+- `requestPasswordReset` validado con `resetPasswordSchema` Zod (`.string().email()`).
 
 **Restricción de visibilidad por rol**
 - `UPCOMING_EVENT_WINDOW_DAYS = 15` en `src/lib/event-window.ts` (único lugar que calcula la ventana).
@@ -146,18 +155,17 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a Vercel. Último deploy de producción: READY.
+El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a Vercel. Todos los módulos de código completados. Último estado: 2026-07-28.
 
-### Pendiente
+### Pendiente (no depende de código)
 
-1. **Sitemap — verificar indexación en GSC** — `src/app/sitemap.ts` corregido: URL raíz con trailing slash (`https://www.hacienda-encanto.com/`), `lastModified` fijo `2026-07-24`. Build genera `○ /sitemap.xml` estático. Acceder a `https://www.hacienda-encanto.com/sitemap.xml` para confirmar que responde; luego solicitar reindexación en Google Search Console.
-2. **Verificar flujo de recuperación de contraseña en producción** — `/update-password` usa `verifyOtp({ token_hash, type: "recovery" })` (template de Supabase envía `?token_hash=XXXX&type=recovery` vía `{{ .ConfirmationURL }}`). Pendiente: probar con email real en producción.
-3. **CallMeBot — registrar número central** — `CALLMEBOT_API_KEY_CENTRAL` está vacío en `.env.local` y en Vercel → el sistema usa el fallback (`CALLMEBOT_PHONE` / `CALLMEBOT_API_KEY`, que sí funciona). Para activar el número central: desde ese WhatsApp enviar mensaje al bot `+1 (347) 798-2047` con el texto `I allow callmebot.com to send me messages`, obtener el API key y configurarlo en `.env.local` y en Vercel → Environment Variables como `CALLMEBOT_API_KEY_CENTRAL`.
-4. **Cláusulas del contrato — cargar texto en site_content** — las claves `contrato_clausula_1..12` y `firma_representante` aún están vacías en producción. El planner/admin debe cargar el texto legal desde `/editor/contenido` y subir la imagen de firma.
-5. **Contrato — datos hacienda en site_content** — las 8 claves `hacienda_*` usan los valores hardcoded de `HACIENDA_INFO` como fallback. Verificar o cargar desde `/editor/contenido` si hay diferencias.
-6. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
-7. **Fotos galería empresarial y revelación** — pendientes del cliente.
-8. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
+Todo el código está completo y en producción. Los ítems restantes son operativos o de contenido:
+
+1. **Verificar Supabase Dashboard** — 4 puntos: (a) Rate Limits configurados adecuadamente, (b) JWT expiry en 3600s, (c) bucket `documents` privado (no public), (d) RLS habilitado en todas las tablas (revisar especialmente `login_attempts`).
+2. **Videos y fotos empresarial / revelación** — pendientes del cliente. Subir desde `/editor/videos` y `/editor/galeria` cuando los entreguen.
+3. **Tour virtual 360°** — ir a la hacienda con el OPPO, grabar y procesar en Kuula. `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` desde `/editor/contenido` cuando exista.
+4. **Registrar asesores en CallMeBot** — cuando Jonny Delgado y David Castillo estén disponibles: desde su WhatsApp enviar `I allow callmebot.com to send me messages` al `+1 (347) 798-2047`, obtener API key, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel → Environment Variables.
+5. **Pruebas con usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor comercial) deben recorrer el flujo completo: crear cliente → generar contrato → cliente aprueba → orden de servicio → documentos → pagos.
 
 ### Archivos clave
 
@@ -185,7 +193,7 @@ src/
       documentos.ts                   ← requestDocumentoUpload/confirmDocumentoUpload (devuelve {id,created_at}), deleteDocumento, listDocumentosConTamano
       playlist.ts                     ← savePlaylist (upsert onConflict booking_id,section; notifica admin/planner)
       admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword (roles equipo, nunca "client")
-      admin/generar-contrato.ts       ← generarContratoPDF: renderToBuffer + upload Storage server-side, nombre {Tipo} {DD-MM-YYYY} {Nombre}
+      admin/generar-contrato.ts       ← generarContratoPDF: renderToBuffer + upload Storage server-side, nombre {Tipo} {DD-MM-YYYY} {Nombre}. eliminarHistorialContratos: borra docs Storage + BD (solo contract_locked=false)
       editor/galeria.ts               ← requestGaleriaUpload/confirmGaleriaUpload, updateGaleriaImage, reorderGaleriaImages
       editor/videos.ts                ← requestVideoUpload/confirmVideoUpload, activateVideo, deactivateVideo, deleteVideo
       editor/imagenes-sitio.ts        ← requestSiteImageUpload/confirmSiteImageUpload (upsert site_content), deleteSiteImage
@@ -257,11 +265,12 @@ src/
     contract-items.ts                 ← ContractItems interface, DEFAULT_CONTRACT_ITEMS, VARIABLE_ITEM_LABELS/TYPES/ORDER, HACIENDA_INFO, resolveHaciendaData, CLAUSULA_KEYS, FIRMA_KEY
   proxy.ts                            ← Middleware Next.js 16 (función exportada como "proxy")
   types/database.ts                   ← Tipos generados Supabase (regenerar tras cada migración)
+next.config.ts                        ← HTTP security headers (CSP, X-Frame-Options, etc.) vía async headers()
 public/
   logo-principal-fondo-claro.svg
   trebol-original.svg                 ← Favicon
   placeholder-avatar.svg
   placeholder-evento.svg              ← Placeholder de marca local (nunca dependencias externas)
 supabase/migrations/
-  (última aplicada: 20260725000003_migrate_users_new_domain.sql — ver git log para historial completo)
+  (última aplicada: 20260728000004_login_attempts.sql — ver git log para historial completo)
 ```
