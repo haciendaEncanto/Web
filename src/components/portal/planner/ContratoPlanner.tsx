@@ -36,14 +36,28 @@ function formatBytes(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function DownloadBtn({ id }: { id: string }) {
+function DownloadBtn({ id, title }: { id: string; title: string }) {
   const [isPending, startTransition] = useTransition();
   return (
     <button
       onClick={() =>
         startTransition(async () => {
           const res = await getDocumentoDownloadUrl(id);
-          if (res.url) window.open(res.url, "_blank", "noopener,noreferrer");
+          if (!res.url) return;
+          try {
+            const blob = await fetch(res.url).then((r) => r.blob());
+            const href = URL.createObjectURL(blob);
+            const a = Object.assign(document.createElement("a"), {
+              href,
+              download: `${title}.pdf`,
+            });
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(href);
+          } catch {
+            window.open(res.url, "_blank", "noopener,noreferrer");
+          }
         })
       }
       disabled={isPending}
@@ -219,7 +233,7 @@ export function ContratoPlanner({
                     </p>
                   </div>
                 </div>
-                <DownloadBtn id={c.id} />
+                <DownloadBtn id={c.id} title={c.title} />
               </div>
             ))}
           </div>

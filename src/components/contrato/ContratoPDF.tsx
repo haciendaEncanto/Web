@@ -81,8 +81,8 @@ const s = StyleSheet.create({
     bottom: 10,
     left: 50,
     right: 50,
-    borderTopWidth: 0.5,
-    borderTopColor: LINEA,
+    borderTopWidth: 1,
+    borderTopColor: "#D63B2A",
     borderTopStyle: "solid",
     paddingTop: 5,
     alignItems: "center",
@@ -162,7 +162,7 @@ const s = StyleSheet.create({
     borderRightWidth: 0.75,
     borderRightColor: NEGRO,
     borderRightStyle: "solid",
-    textAlign: "center",
+    textAlign: "left",
   },
   tQty: {
     fontFamily: "Helvetica-Bold",
@@ -175,10 +175,12 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   tQtyLast: {
-    borderRightWidth: 0,
+    borderRightWidth: 1,
+    borderRightColor: LINEA,
+    borderRightStyle: "solid",
   },
-  wItem: { width: "38%" },
-  wQty:  { width: "12%" },
+  wItem: { width: "35%" },
+  wQty:  { width: "15%" },
 
   // ── Nota de capilla (solo cuando capilla=true) ───────────────────────
   capillaNote: {
