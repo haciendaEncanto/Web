@@ -359,7 +359,7 @@ function buildItemRows(items: ContractItems, capilla: boolean | null): ItemRow[]
 
 // ── Componente ──────────────────────────────────────────────────────────
 export function ContratoPDF({
-  clientName, clientCc,
+  clientName, clientCc, clientPhone, clientAddress, clientEmail,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
   valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
   contractItems, clauses, firmaUrl, logoUrl, version, otroSi,
@@ -388,11 +388,14 @@ export function ContratoPDF({
 
   // Variables dinámicas compartidas entre cláusulas
   const templateVars: Record<string, string> = {
-    fecha_evento:  fmtDate(eventDate),
-    hora_inicio:   fmtTime(eventStartTime),
-    hora_fin:      fmtTime(eventEndTime),
-    tipo_evento:   (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
-    num_invitados: String(guestCount),
+    fecha_evento:       fmtDate(eventDate),
+    hora_inicio:        fmtTime(eventStartTime),
+    hora_fin:           fmtTime(eventEndTime),
+    tipo_evento:        (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
+    num_invitados:      String(guestCount),
+    cliente_direccion:  clientAddress || "—",
+    cliente_telefono:   clientPhone ? fmtPhone(clientPhone) : "—",
+    cliente_email:      clientEmail || "—",
   };
 
   // Cláusulas 3–12: array para poder renderizar el título en bold
