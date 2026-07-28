@@ -105,17 +105,11 @@ export async function generarContratoPDF(
   const nameStr   = sanitizeName(profile.full_name ?? profile.email);
   const pdfTitle  = `${tipoLabel} ${dateStr} ${nameStr}`;
 
-  // Convertir logo SVG → PNG para embeber en el PDF
+  // Leer PNG pre-generado del logo (public/logo-hacienda.png)
   let logoDataUri: string | null = null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const sharp = require("sharp") as (input: Buffer) => {
-      resize(opts: { width: number }): { png(): { toBuffer(): Promise<Buffer> } };
-    };
-    const svgPath = path.join(process.cwd(), "public", "logo-principal-fondo-claro.svg");
-    const svgBuf = fs.readFileSync(svgPath);
-    const pngBuf = await sharp(svgBuf).resize({ width: 640 }).png().toBuffer();
-    logoDataUri = `data:image/png;base64,${pngBuf.toString("base64")}`;
+    const logoPng = fs.readFileSync(path.join(process.cwd(), "public", "logo-hacienda.png"));
+    logoDataUri = `data:image/png;base64,${logoPng.toString("base64")}`;
   } catch {
     // Logo no disponible, el PDF usará fallback de texto
   }

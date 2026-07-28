@@ -454,13 +454,11 @@ export function ContratoPDF({
           </Text>
         )}
 
-        {/* ── Valores ─── */}
-        <Text style={s.body}>{valorParts.join("  ·  ")}</Text>
-
-        {/* ── Cláusulas 3–12 en texto corrido ─── */}
-        {clauseBlock.trim() ? (
-          <Text style={[s.body, { marginTop: 4 }]}>{clauseBlock}</Text>
-        ) : null}
+        {/* ── Valores + Cláusulas 3–12: bloque continuo sin saltos ─── */}
+        <Text style={s.body}>
+          {valorParts.join("  ·  ")}
+          {clauseBlock.trim() ? "  " + clauseBlock : ""}
+        </Text>
 
         {/* ── Otro Sí ─── */}
         {otroSi ? (
