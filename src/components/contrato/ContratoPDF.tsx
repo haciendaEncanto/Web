@@ -11,7 +11,6 @@ import {
   VARIABLE_ITEM_LABELS,
   VARIABLE_ITEM_TYPES,
   VARIABLE_ITEM_ORDER,
-  FIXED_ITEMS,
   type ContractItems,
   type HaciendaData,
 } from "@/lib/contract-items";
@@ -136,7 +135,7 @@ export function ContratoPDF({
     `llamará el CONTRATANTE, hemos acordado celebrar el presente contrato contenido ` +
     `dentro de las siguientes cláusulas:`;
 
-  type ItemRow = { label: string; value: string; fixed?: true };
+  type ItemRow = { label: string; value: string };
 
   const variableRows: ItemRow[] = VARIABLE_ITEM_ORDER.map((key) => ({
     label: VARIABLE_ITEM_LABELS[key],
@@ -148,11 +147,7 @@ export function ContratoPDF({
     value: capilla === true ? "Sí" : capilla === false ? "No" : "Sin definir",
   };
 
-  const allRows: ItemRow[] = [
-    ...variableRows,
-    capillaRow,
-    ...FIXED_ITEMS.map((f): ItemRow => ({ label: f.label, value: f.value, fixed: true })),
-  ];
+  const allRows: ItemRow[] = [...variableRows, capillaRow];
 
   return (
     <Document
@@ -250,9 +245,6 @@ export function ContratoPDF({
               <View key={i} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>
                 <View style={s.colItem}>
                   <Text style={s.tableCell}>{row.label}</Text>
-                  {"fixed" in row && row.fixed && (
-                    <Text style={s.fixedBadge}>Incluido</Text>
-                  )}
                 </View>
                 <Text style={[s.tableCell, s.colValue]}>{row.value}</Text>
               </View>

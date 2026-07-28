@@ -92,7 +92,7 @@ export default async function ContratoPlannerPage({
       {booking && (
         <ContractItemsForm
           bookingId={booking.id}
-          initialItems={(booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS}
+          initialItems={{ ...DEFAULT_CONTRACT_ITEMS, ...((booking.contract_items as Partial<ContractItems>) ?? {}) }}
           initialCapilla={booking.capilla ?? false}
           isLocked={booking.contract_locked ?? false}
         />

@@ -85,6 +85,23 @@ export async function generarContratoPDF(
     .eq("type", "contrato");
   const version = (count ?? 0) + 1;
 
+  // Nombre del archivo: {TipoEvento} {DD-MM-YYYY} {NombreCliente}
+  const EVENT_LABEL_FILENAME: Record<string, string> = {
+    boda: "Boda", quince: "Quinceañera", empresarial: "Empresarial", revelacion: "Revelacion",
+  };
+  function fmtDateDDMMYYYY(d: string | null) {
+    if (!d) return "Fecha";
+    const [y, m, day] = d.split("-");
+    return `${day}-${m}-${y}`;
+  }
+  function sanitizeName(s: string) {
+    return s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\s-]/g, "").trim();
+  }
+  const tipoLabel = EVENT_LABEL_FILENAME[booking.event_type ?? ""] ?? "Evento";
+  const dateStr   = fmtDateDDMMYYYY(booking.event_date);
+  const nameStr   = sanitizeName(profile.full_name ?? profile.email);
+  const pdfTitle  = `${tipoLabel} ${dateStr} ${nameStr}`;
+
   // Generar PDF
   const generatedAt = new Date().toLocaleDateString("es-CO", {
     day: "2-digit", month: "long", year: "numeric",
@@ -125,12 +142,11 @@ export async function generarContratoPDF(
   if (uploadErr) return { error: `Error al subir el PDF: ${uploadErr.message}` };
 
   // Insertar en documents
-  const title = `Contrato de servicios v${version} — ${new Date().toLocaleDateString("es-CO")}`;
   const { data: inserted, error: dbErr } = await admin
     .from("documents")
     .insert({
       booking_id: booking.id,
-      title,
+      title: pdfTitle,
       file_url: storagePath,
       type: "contrato",
       created_by: userId,
