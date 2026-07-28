@@ -44,7 +44,7 @@ const s = StyleSheet.create({
     color: NEGRO,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 50,
-    paddingTop: 160,
+    paddingTop: 90,
     paddingBottom: 58,
   },
 
@@ -56,10 +56,10 @@ const s = StyleSheet.create({
     right: 50,
     alignItems: "center",
   },
-  // SVG viewBox 640×170, al ancho total del contenido (512pt) → altura 136pt
+  // ratio SVG 640:170 — altura 65pt → ancho proporcional 245pt, centrado
   headerLogo: {
-    width: 512,
-    height: 136,
+    width: 245,
+    height: 65,
   },
   headerLogoFallback: {
     fontFamily: "Helvetica-Bold",
@@ -162,6 +162,7 @@ const s = StyleSheet.create({
     borderRightWidth: 0.75,
     borderRightColor: NEGRO,
     borderRightStyle: "solid",
+    textAlign: "center",
   },
   tQty: {
     fontFamily: "Helvetica-Bold",
@@ -351,12 +352,12 @@ export function ContratoPDF({
   if (fechaTercerAbono)  valorParts.push(`Saldo: ${fmtDate(fechaTercerAbono)}`);
   valorParts.push(`Cuenta Davivienda No. ${h.cuenta_davivienda} a nombre de ${h.nombre}.`);
 
-  // Cláusulas 3–12 como texto corrido
-  let clauseBlock = "";
+  // Cláusulas 3–12: array para poder renderizar el título en bold
+  const clauseItems: { title: string; text: string }[] = [];
   for (let i = 0; i < clauses.slice(2).length; i++) {
     const text = clauses[i + 2];
     if (!text) continue;
-    clauseBlock += `CLAUSULA ${ORDINALS[i + 2]}: ${text}  `;
+    clauseItems.push({ title: `CLAUSULA ${ORDINALS[i + 2]}: `, text });
   }
 
   // Texto de cláusula 2 (default si vacía en site_content)
@@ -454,10 +455,16 @@ export function ContratoPDF({
           </Text>
         )}
 
-        {/* ── Valores + Cláusulas 3–12: bloque continuo sin saltos ─── */}
+        {/* ── Valores + Cláusulas 3–12: bloque continuo, títulos en bold ─── */}
         <Text style={s.body}>
           {valorParts.join("  ·  ")}
-          {clauseBlock.trim() ? "  " + clauseBlock : ""}
+          {clauseItems.map((c, i) => (
+            <Text key={i}>
+              {"  "}
+              <Text style={s.bold}>{c.title}</Text>
+              {c.text}
+            </Text>
+          ))}
         </Text>
 
         {/* ── Otro Sí ─── */}
