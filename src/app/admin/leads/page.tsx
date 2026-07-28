@@ -42,7 +42,7 @@ export default async function LeadsPage() {
       admin
         .from("profiles")
         .select("id, full_name, email, phone")
-        .eq("role", "asesor_comercial")
+        .in("role", ["asesor_comercial", "wedding_planner"])
         .eq("is_active", true)
         .order("full_name"),
       admin
@@ -97,11 +97,11 @@ export default async function LeadsPage() {
       <div className="space-y-4 max-w-3xl">
         <div>
           <h2 className="font-serif text-[1.9rem] md:text-[2.3rem] text-negro leading-tight tracking-[-0.03em]">
-            Asesores <span className="text-dorado">comerciales</span>
+            Asesores & <span className="text-dorado">Planners</span>
           </h2>
           <p className="text-gris text-[0.88rem] mt-1">
-            El formulario de contacto del sitio asigna cada lead al asesor con menos
-            conversaciones (round-robin). Asegúrate de que cada asesor tenga su número de
+            El formulario de contacto asigna cada lead al asesor o planner con menos
+            conversaciones (round-robin). Asegúrate de que cada uno tenga su número de
             WhatsApp registrado.
           </p>
         </div>
