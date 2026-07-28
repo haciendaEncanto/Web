@@ -3,9 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FileText, Download, Loader2, CheckCircle2, AlertTriangle, Lock, ScrollText,
+  FileText, Download, Loader2, CheckCircle2, AlertTriangle, Lock, ScrollText, Trash2,
 } from "lucide-react";
-import { generarContratoPDF } from "@/app/actions/admin/generar-contrato";
+import {
+  generarContratoPDF,
+  eliminarHistorialContratos,
+} from "@/app/actions/admin/generar-contrato";
 import { getDocumentoDownloadUrl } from "@/app/actions/documentos";
 import type { DocumentoConSize } from "@/app/actions/documentos";
 
@@ -83,9 +86,25 @@ export function ContratoPlanner({
   const [generating, setGenerating] = useState(false);
   const [err, setErr] = useState("");
   const [generated, setGenerated] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const allPrereqsMet = prereqs.every((p) => p.ok);
   const canGenerate = allPrereqsMet && !isLocked && !!bookingId;
+
+  async function handleEliminar() {
+    if (!bookingId) return;
+    setDeleting(true);
+    try {
+      const res = await eliminarHistorialContratos(clientId, bookingId);
+      if (res.error) { setErr(res.error); setShowDeleteModal(false); return; }
+      setContratos([]);
+      setShowDeleteModal(false);
+      router.refresh();
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function handleGenerar() {
     if (!canGenerate) return;
@@ -204,16 +223,56 @@ export function ContratoPlanner({
         </p>
       )}
 
+      {/* Modal confirmación eliminar */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-negro/50">
+          <div className="bg-blanco rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="font-serif text-[1.1rem] text-negro mb-2">¿Eliminar historial?</h3>
+            <p className="text-[0.82rem] text-gris mb-6">
+              Se borrarán permanentemente todos los contratos generados para{" "}
+              <span className="text-negro font-medium">{clientName}</span>.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-[0.82rem] text-negro rounded-xl border border-negro/15 hover:bg-negro/5 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEliminar}
+                disabled={deleting}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-rojo text-blanco text-[0.82rem] font-medium rounded-xl hover:bg-rojo/90 transition-colors disabled:opacity-50"
+              >
+                {deleting && <Loader2 size={12} className="animate-spin" />}
+                {deleting ? "Eliminando…" : "Eliminar todo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Historial de contratos generados */}
       {contratos.length > 0 && (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-negro/5 bg-crema/30">
+          <div className="px-5 py-3.5 border-b border-negro/5 bg-crema/30 flex items-center justify-between">
             <h3 className="font-serif text-[0.9rem] text-negro">
               Versiones generadas{" "}
               <span className="text-gris text-[0.78rem] font-normal">
                 ({contratos.length})
               </span>
             </h3>
+            {!isLocked && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.75rem] text-rojo/70 rounded-lg border border-rojo/20 hover:bg-rojo/5 transition-colors"
+              >
+                <Trash2 size={11} />
+                Eliminar historial
+              </button>
+            )}
           </div>
           <div className="divide-y divide-negro/4">
             {contratos.map((c, i) => (

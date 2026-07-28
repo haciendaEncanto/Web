@@ -489,7 +489,7 @@ export function ContratoPDF({
             <Text key={i}>
               {"  "}
               <Text style={s.bold}>{c.title}</Text>
-              {c.text}
+              {renderTemplate(c.text, templateVars)}
             </Text>
           ))}
         </Text>

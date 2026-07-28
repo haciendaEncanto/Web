@@ -46,8 +46,24 @@ export async function generarContratoPDF(
     .single();
   if (!profile) return { error: "Cliente no encontrado" };
 
-  if (!profile.cc) return { error: "El cliente no tiene CC registrada. Edita su perfil primero." };
-  if (!profile.address) return { error: "El cliente no tiene dirección registrada." };
+  // Validar datos obligatorios del cliente
+  const missingFields: string[] = [];
+  if (!profile.cc)      missingFields.push("Cédula (CC)");
+  if (!profile.address) missingFields.push("Dirección");
+  if (!profile.phone)   missingFields.push("Teléfono");
+  if (!profile.email)   missingFields.push("Correo electrónico");
+  if (missingFields.length > 0) {
+    return {
+      error: `Faltan datos obligatorios del cliente: ${missingFields.join(", ")}. Completa esta información antes de generar el contrato.`,
+    };
+  }
+
+  console.log("[generarContratoPDF] datos cliente →", {
+    phone: profile.phone,
+    address: profile.address,
+    email: profile.email,
+    cc: profile.cc,
+  });
 
   // Fetch booking activo
   const { data: booking } = await admin
@@ -122,7 +138,7 @@ export async function generarContratoPDF(
   const pdfBuffer = await renderToBuffer(
     React.createElement(ContratoPDF, {
       clientName: profile.full_name ?? profile.email,
-      clientCc: profile.cc,
+      clientCc: profile.cc!,
       clientPhone: profile.phone ?? "",
       clientAddress: profile.address ?? "",
       clientEmail: profile.email,
@@ -184,4 +200,47 @@ export async function generarContratoPDF(
   revalidatePath(`/portal/planner/clientes/${clientId}/documentos`);
   revalidatePath(`/admin/clientes/${clientId}/documentos`);
   return { documentId: inserted.id, title: pdfTitle };
+}
+
+export async function eliminarHistorialContratos(
+  clientId: string,
+  bookingId: string,
+): Promise<{ error?: string }> {
+  const { error: authErr } = await verifyPlanner();
+  if (authErr) return { error: authErr };
+
+  const admin = createAdminClient();
+
+  const { data: booking } = await admin
+    .from("bookings")
+    .select("contract_locked")
+    .eq("id", bookingId)
+    .single();
+
+  if (booking?.contract_locked) {
+    return { error: "El contrato está bloqueado y no se puede eliminar el historial." };
+  }
+
+  const { data: docs } = await admin
+    .from("documents")
+    .select("id, file_url")
+    .eq("booking_id", bookingId)
+    .eq("type", "contrato");
+
+  if (!docs || docs.length === 0) return {};
+
+  const paths = docs.map((d) => d.file_url).filter((p): p is string => !!p);
+  if (paths.length > 0) {
+    await admin.storage.from("documents").remove(paths);
+  }
+
+  await admin
+    .from("documents")
+    .delete()
+    .eq("booking_id", bookingId)
+    .eq("type", "contrato");
+
+  revalidatePath(`/portal/planner/clientes/${clientId}/contrato`);
+  revalidatePath(`/admin/clientes/${clientId}/documentos`);
+  return {};
 }
