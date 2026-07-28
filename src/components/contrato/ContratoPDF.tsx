@@ -386,6 +386,15 @@ export function ContratoPDF({
   if (fechaTercerAbono)  valorParts.push(`Saldo: ${fmtDate(fechaTercerAbono)}`);
   valorParts.push(`Cuenta Davivienda No. ${h.cuenta_davivienda} a nombre de ${h.nombre}.`);
 
+  // Variables dinámicas compartidas entre cláusulas
+  const templateVars: Record<string, string> = {
+    fecha_evento:  fmtDate(eventDate),
+    hora_inicio:   fmtTime(eventStartTime),
+    hora_fin:      fmtTime(eventEndTime),
+    tipo_evento:   (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
+    num_invitados: String(guestCount),
+  };
+
   // Cláusulas 3–12: array para poder renderizar el título en bold
   const clauseItems: { title: string; text: string }[] = [];
   for (let i = 0; i < clauses.slice(2).length; i++) {
@@ -393,11 +402,6 @@ export function ContratoPDF({
     if (!text) continue;
     clauseItems.push({ title: `CLAUSULA ${ORDINALS[i + 2]}: `, text });
   }
-
-  // Texto de cláusula 2 (default si vacía en site_content)
-  const clause2Text = clauses[1]
-    ? clauses[1]
-    : "EL CONTRATISTA se compromete a proporcionar la nómina de empleados Full Dotación y a hacer entrega del salón bajo acta en perfecto estado con todos los ítems especificados en la cotización anexa,";
 
   return (
     <Document
@@ -442,20 +446,10 @@ export function ContratoPDF({
           <Text style={s.bold}>{"CONTRATANTE"}</Text>
           {", hemos acordado celebrar el presente contrato contenido dentro de las siguientes cláusulas: "}
           <Text style={s.bold}>{"CLAUSULA PRIMERA – OBJETO: "}</Text>
-          {renderTemplate(clauses[0] ?? "", {
-            fecha_evento:  fmtDate(eventDate),
-            hora_inicio:   fmtTime(eventStartTime),
-            hora_fin:      fmtTime(eventEndTime),
-            tipo_evento:   (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
-            num_invitados: String(guestCount),
-          })}
+          {renderTemplate(clauses[0] ?? "", templateVars)}
           {" "}
           <Text style={s.bold}>{"CLAUSULA SEGUNDA: "}</Text>
-          {"OBLIGACIONES DEL CONTRATISTA: " +
-            clause2Text +
-            " todo con una capacidad para " +
-            guestCount +
-            " personas, los alcances y particularidades de este contrato se describen a continuación:"}
+          {renderTemplate(clauses[1] ?? "", templateVars)}
         </Text>
 
         {/* ── Tabla de ítems (4 columnas) ─── */}
