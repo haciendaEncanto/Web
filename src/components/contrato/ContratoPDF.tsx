@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Document,
   Page,
@@ -268,13 +269,22 @@ export interface ContractPDFData {
 function fmtDate(d: string | null) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
-  return `${parseInt(day)} de ${MONTHS[parseInt(m) - 1]} de ${y}`;
+  return `${parseInt(day)} del mes de ${MONTHS[parseInt(m) - 1]} del ${y}`;
 }
 
 function fmtDateFile(d: string | null) {
   if (!d) return "Fecha";
   const [y, m, day] = d.split("-");
   return `${day}-${m}-${y}`;
+}
+
+function fmtTime(t: string): string {
+  if (!t) return "—";
+  const [h, min] = t.split(":");
+  const hours = parseInt(h, 10);
+  const ampm = hours >= 12 ? "P.M." : "A.M.";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${min} ${ampm}`;
 }
 
 function fmtPhone(n: string): string {
@@ -288,6 +298,22 @@ function fmtMoney(n: number | null) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", maximumFractionDigits: 0,
   }).format(n);
+}
+
+// Reemplaza {{variable}} con valores en negrilla, texto plano lo demás
+function renderTemplate(template: string, vars: Record<string, string>) {
+  const result: ReactNode[] = [];
+  const regex = /\{\{(\w+)\}\}/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) result.push(template.slice(lastIndex, match.index));
+    result.push(<Text key={key++} style={s.bold}>{vars[match[1]] ?? `[${match[1]}]`}</Text>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < template.length) result.push(template.slice(lastIndex));
+  return result;
 }
 
 type ItemRow = { label: string; value: string };
@@ -399,35 +425,31 @@ export function ContratoPDF({
         {/* ── Intro + Cláusulas 1 y 2 (texto corrido) ─── */}
         <Text style={s.body}>
           {"Entre los suscritos a saber "}
-          <Text style={s.bold}>{h.representante}</Text>
-          {" mayor de edad y vecino de Bogotá, identificada con C.C " +
-            h.cc_representante +
-            ", como representante legal de la "}
+          <Text style={s.bold}>{h.representante.toUpperCase()}</Text>
+          {" mayor de edad y vecino de Bogotá, identificada con C.C "}
+          <Text style={s.bold}>{h.cc_representante}</Text>
+          {", como representante legal de la "}
           <Text style={s.bold}>{h.nombre}</Text>
-          {" NIT " +
-            h.nit +
-            ", parte que en lo sucesivo y que para efectos del siguiente contrato se denominará "}
+          {" NIT "}
+          <Text style={s.bold}>{h.nit}</Text>
+          {", parte que en lo sucesivo y que para efectos del siguiente contrato se denominará "}
           <Text style={s.bold}>{"EL CONTRATISTA"}</Text>
           {" por una parte; y por la otra "}
-          <Text style={s.bold}>{clientName}</Text>
+          <Text style={s.bold}>{clientName.toUpperCase()}</Text>
           {" mayor de edad, identificado(a) con CC "}
           <Text style={s.bold}>{clientCc}</Text>
           {", quien de ahora en adelante se llamará el "}
           <Text style={s.bold}>{"CONTRATANTE"}</Text>
           {", hemos acordado celebrar el presente contrato contenido dentro de las siguientes cláusulas: "}
           <Text style={s.bold}>{"CLAUSULA PRIMERA – OBJETO: "}</Text>
-          {"El objeto del presente contrato es que "}
-          <Text style={s.bold}>{"EL CONTRATISTA"}</Text>
-          {" se compromete a prestar sus servicios para un evento de tipo "}
-          <Text style={s.bold}>{EVENT_LABEL[eventType] ?? eventType}</Text>
-          {", para el día " +
-            fmtDate(eventDate) +
-            ", en un horario sugerido de: " +
-            eventStartTime +
-            " hasta las " +
-            eventEndTime +
-            ". " +
-            (clauses[0] ? clauses[0] + " " : "")}
+          {renderTemplate(clauses[0] ?? "", {
+            fecha_evento:  fmtDate(eventDate),
+            hora_inicio:   fmtTime(eventStartTime),
+            hora_fin:      fmtTime(eventEndTime),
+            tipo_evento:   (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
+            num_invitados: String(guestCount),
+          })}
+          {" "}
           <Text style={s.bold}>{"CLAUSULA SEGUNDA: "}</Text>
           {"OBLIGACIONES DEL CONTRATISTA: " +
             clause2Text +
