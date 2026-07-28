@@ -85,7 +85,7 @@ export function ContratoPlanner({
       setOtroSi("");
       const newDoc: DocumentoConSize = {
         id: res.documentId!,
-        title: `Contrato de servicios v${contratos.length + 1} — ${new Date().toLocaleDateString("es-CO")}`,
+        title: res.title ?? `Contrato v${contratos.length + 1} — ${new Date().toLocaleDateString("es-CO")}`,
         type: "contrato",
         created_at: new Date().toISOString(),
         size: null,
@@ -201,7 +201,7 @@ export function ContratoPlanner({
               </span>
             </h3>
           </div>
-          <div className="divide-y divide-negro/[0.04]">
+          <div className="divide-y divide-negro/4">
             {contratos.map((c, i) => (
               <div key={c.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-crema/20 transition-colors">
                 <div className="flex items-center gap-3">

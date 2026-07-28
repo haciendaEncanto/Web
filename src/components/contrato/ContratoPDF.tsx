@@ -40,12 +40,12 @@ const MONTHS = [
 const s = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
-    fontSize: 9.5,
+    fontSize: 11,
     color: NEGRO,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 50,
-    paddingTop: 68,
-    paddingBottom: 44,
+    paddingTop: 116,
+    paddingBottom: 58,
   },
 
   // ── Header (repetido en cada página) ────────────────────────────────
@@ -54,63 +54,67 @@ const s = StyleSheet.create({
     top: 10,
     left: 50,
     right: 50,
+    alignItems: "center",
   },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+  headerLogo: {
+    width: 264,
+    height: 70,
+  },
+  headerLogoFallback: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 7.5,
+    color: GRIS,
+    textAlign: "center",
     marginBottom: 4,
   },
-  haciendaName: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 11,
-  },
-  haciendaContact: {
-    fontSize: 7,
-    color: GRIS,
-    textAlign: "right",
-    lineHeight: 1.5,
-  },
-  headerBorder: {
-    borderBottomWidth: 1,
+  headerLine: {
+    borderBottomWidth: 0.75,
     borderBottomColor: NEGRO,
     borderBottomStyle: "solid",
+    width: "100%",
+    marginTop: 6,
   },
 
   // ── Footer (repetido en cada página) ────────────────────────────────
   footer: {
     position: "absolute",
-    bottom: 12,
+    bottom: 10,
     left: 50,
     right: 50,
     borderTopWidth: 0.5,
     borderTopColor: LINEA,
     borderTopStyle: "solid",
-    paddingTop: 4,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    paddingTop: 5,
+    alignItems: "center",
   },
   footerText: {
-    fontSize: 6.5,
+    fontSize: 7.5,
     color: GRIS,
+    textAlign: "center",
+    lineHeight: 1.55,
   },
 
   // ── Título ───────────────────────────────────────────────────────────
   title: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 10.5,
+    fontSize: 12.5,
     textAlign: "center",
-    marginTop: 2,
-    marginBottom: 10,
-    letterSpacing: 0.2,
+    marginTop: 4,
+    marginBottom: 12,
+    letterSpacing: 0.3,
   },
 
   // ── Cuerpo ───────────────────────────────────────────────────────────
   body: {
-    fontSize: 9.5,
+    fontSize: 11,
     lineHeight: 1.65,
     textAlign: "justify",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   bold: {
     fontFamily: "Helvetica-Bold",
@@ -118,8 +122,8 @@ const s = StyleSheet.create({
 
   // ── Tabla de ítems (4 columnas) ────────────────────────────────────
   table: {
-    marginTop: 6,
-    marginBottom: 6,
+    marginTop: 8,
+    marginBottom: 8,
     borderTopWidth: 0.75,
     borderTopColor: NEGRO,
     borderTopStyle: "solid",
@@ -142,7 +146,7 @@ const s = StyleSheet.create({
   },
   tHBase: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8,
+    fontSize: 8.5,
     color: "#FFFFFF",
     paddingVertical: 4,
     paddingHorizontal: 5,
@@ -150,14 +154,14 @@ const s = StyleSheet.create({
     borderRightColor: "#444444",
     borderRightStyle: "solid",
     textAlign: "center",
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   tHLast: {
     borderRightWidth: 0,
   },
   tItem: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8.5,
+    fontSize: 9,
     paddingVertical: 3,
     paddingHorizontal: 5,
     borderRightWidth: 0.75,
@@ -166,7 +170,7 @@ const s = StyleSheet.create({
   },
   tQty: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8.5,
+    fontSize: 9,
     paddingVertical: 3,
     paddingHorizontal: 5,
     borderRightWidth: 0.75,
@@ -183,7 +187,7 @@ const s = StyleSheet.create({
   // ── Firmas ───────────────────────────────────────────────────────────
   firmasRow: {
     flexDirection: "row",
-    marginTop: 28,
+    marginTop: 30,
     gap: 24,
   },
   firmaBox: {
@@ -191,16 +195,16 @@ const s = StyleSheet.create({
   },
   firmaRole: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 9,
-    marginBottom: 22,
+    fontSize: 10,
+    marginBottom: 24,
   },
   firmaImgWrap: {
-    height: 44,
+    height: 46,
     marginBottom: 2,
   },
   firmaImg: {
-    width: 88,
-    height: 42,
+    width: 90,
+    height: 44,
     objectFit: "contain",
   },
   firmaLine: {
@@ -212,14 +216,14 @@ const s = StyleSheet.create({
   },
   firmaName: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 9,
+    fontSize: 10,
   },
   firmaCC: {
-    fontSize: 8.5,
+    fontSize: 9.5,
   },
   firmaRoleLabel: {
     fontFamily: "Helvetica-Bold",
-    fontSize: 8.5,
+    fontSize: 9.5,
     marginTop: 1,
   },
 });
@@ -244,6 +248,7 @@ export interface ContractPDFData {
   contractItems:      ContractItems;
   clauses:            string[];
   firmaUrl:           string | null;
+  logoUrl?:           string | null;
   version:            number;
   generatedAt:        string;
   otroSi?:            string;
@@ -310,7 +315,7 @@ export function ContratoPDF({
   clientName, clientCc,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
   valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
-  contractItems, clauses, firmaUrl, version, otroSi,
+  contractItems, clauses, firmaUrl, logoUrl, version, otroSi,
   haciendaData,
 }: ContractPDFData) {
   const h: HaciendaData = haciendaData ?? { ...HACIENDA_INFO };
@@ -357,13 +362,17 @@ export function ContratoPDF({
 
         {/* ── Header fijo ─── */}
         <View style={s.header} fixed>
-          <View style={s.headerRow}>
-            <Text style={s.haciendaName}>{h.nombre}</Text>
-            <Text style={s.haciendaContact}>
-              {`www.hacienda-encanto.com\nDirección ${h.direccion}\nWhatsapp ${h.whatsapp}`}
-            </Text>
-          </View>
-          <View style={s.headerBorder} />
+          {logoUrl ? (
+            <Image src={logoUrl} style={s.headerLogo} />
+          ) : (
+            <>
+              <Text style={s.headerLogoFallback}>{h.nombre}</Text>
+              <Text style={s.headerSubtitle}>
+                {`www.hacienda-encanto.com  ·  ${h.direccion}  ·  Whatsapp ${h.whatsapp}`}
+              </Text>
+            </>
+          )}
+          <View style={s.headerLine} />
         </View>
 
         {/* ── Título ─── */}
@@ -448,7 +457,7 @@ export function ContratoPDF({
         ) : null}
 
         {/* ── Párrafo de constancia ─── */}
-        <Text style={[s.body, { marginTop: 10 }]}>
+        <Text style={[s.body, { marginTop: 12 }]}>
           {`Para constancia de este, se firman dos copias del mismo tenor en Bogotá, a los ${nowDay} días del mes de ${nowMon} de ${nowYr}.`}
         </Text>
 
@@ -476,16 +485,9 @@ export function ContratoPDF({
 
         {/* ── Footer fijo ─── */}
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>{`${h.nombre}  ·  NIT ${h.nit}`}</Text>
           <Text style={s.footerText}>
-            {`www.hacienda-encanto.com  ·  Whatsapp ${h.whatsapp}`}
+            {`www.hacienda-encanto.com\nDirección ${h.direccion}\nWhatsapp ${h.whatsapp}`}
           </Text>
-          <Text
-            style={s.footerText}
-            render={({ pageNumber, totalPages }) =>
-              `Pág. ${pageNumber} / ${totalPages}`
-            }
-          />
         </View>
 
       </Page>

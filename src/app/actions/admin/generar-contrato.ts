@@ -1,5 +1,7 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import React from "react";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +32,7 @@ async function verifyPlanner() {
 export async function generarContratoPDF(
   clientId: string,
   otroSi?: string,
-): Promise<{ documentId?: string; error?: string }> {
+): Promise<{ documentId?: string; title?: string; error?: string }> {
   const { error: authErr, userId } = await verifyPlanner();
   if (authErr) return { error: authErr };
 
@@ -103,6 +105,21 @@ export async function generarContratoPDF(
   const nameStr   = sanitizeName(profile.full_name ?? profile.email);
   const pdfTitle  = `${tipoLabel} ${dateStr} ${nameStr}`;
 
+  // Convertir logo SVG → PNG para embeber en el PDF
+  let logoDataUri: string | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sharp = require("sharp") as (input: Buffer) => {
+      resize(opts: { width: number }): { png(): { toBuffer(): Promise<Buffer> } };
+    };
+    const svgPath = path.join(process.cwd(), "public", "logo-principal-fondo-claro.svg");
+    const svgBuf = fs.readFileSync(svgPath);
+    const pngBuf = await sharp(svgBuf).resize({ width: 640 }).png().toBuffer();
+    logoDataUri = `data:image/png;base64,${pngBuf.toString("base64")}`;
+  } catch {
+    // Logo no disponible, el PDF usará fallback de texto
+  }
+
   // Generar PDF
   const generatedAt = new Date().toLocaleDateString("es-CO", {
     day: "2-digit", month: "long", year: "numeric",
@@ -128,6 +145,7 @@ export async function generarContratoPDF(
       contractItems: (booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS,
       clauses,
       firmaUrl,
+      logoUrl: logoDataUri,
       version,
       generatedAt,
       otroSi: otroSi?.trim() || undefined,
@@ -171,5 +189,5 @@ export async function generarContratoPDF(
   revalidatePath("/portal/documentos");
   revalidatePath(`/portal/planner/clientes/${clientId}/documentos`);
   revalidatePath(`/admin/clientes/${clientId}/documentos`);
-  return { documentId: inserted.id };
+  return { documentId: inserted.id, title: pdfTitle };
 }
