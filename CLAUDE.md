@@ -30,7 +30,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 | Esquema BD | 8 roles, tablas playlists/guest_tables/calendar_events/service_order_sections/service_order_items/salon_maps |
 | Portal base | PortalShell + PortalSidebar + PortalHeader, redirect por rol, dashboard cliente con CountdownTimer |
 | Orden de servicio | Vista cliente (barra progreso, aprobar) + vista planner (form completo, inicializar). Modelo dos actores: filled_by planner/client. Música en orden en solo lectura desde tabla playlists |
-| Onboarding clientes | /portal/planner/nuevo-cliente: Auth→profile→booking→initialize_service_order con rollback, validación solapamiento de horario |
+| Onboarding clientes | /portal/planner/nuevo-cliente: Auth→profile→booking con rollback y validación solapamiento de horario. La orden de servicio ya NO se inicializa aquí — se difiere a la aprobación del contrato. |
 | Admin + Editor | /admin (solo admin), /editor (admin+editor), roles editor y gerente, RLS is_editor() |
 | Actividades | /portal/actividades (timeline cliente) + /portal/planner/clientes/[id]/actividades (CRUD inline planner) |
 | Uploads → signed URL | Videos/galería/docs suben directo a Supabase Storage vía signed URL (nunca por Vercel — límite 4.5MB body) |
@@ -46,10 +46,13 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 | Optimismo en UI | DocumentosPlanner, PagosPlanner, ActividadesPlanner, SalonMapasManager usan useState(initialX) + Server Action devuelve registro creado |
 | Imágenes del sitio | /editor/imagenes-sitio: 8 imágenes editables del Home guardadas en site_content, upload signed URL |
 | Fotos perfil/testimonios | avatar_url desde /portal/perfil (cliente) y /admin/usuarios (equipo). testimonials.photo_url editable desde /editor/testimonios |
-| Flujo contacto WhatsApp | Campo whatsapp requerido en formularios. Round-robin de asesores vía asesor_assignments. Notificación CallMeBot (fire & forget). Panel /portal/asesor-comercial con lista de contactos asignados, cambio de estado, botón wa.me prellenado |
+| Flujo contacto WhatsApp | Campo whatsapp requerido en formularios. Round-robin de asesores vía asesor_assignments (corregido para incluir todos los asesores activos). Notificación CallMeBot (fire & forget). Panel /portal/asesor-comercial con lista de contactos asignados, panel de detalle por lead, cambio de estado con dropdown (fix en último lead de la lista), botón wa.me con mensaje completo (nombre + evento + fecha + teléfono) |
 | Badge reCAPTCHA oculto | `.grecaptcha-badge { visibility: hidden }` en globals.css. Texto legal "Protegido por reCAPTCHA — Política de privacidad y Términos de servicio de Google" en ambos formularios de contacto |
 | SEO | `src/app/sitemap.ts` + `src/app/robots.ts` nativos de App Router. Disallow: /portal/ /admin/ /editor/ /login /api/. No usar next-sitemap — no funciona en Vercel con App Router. |
 | Gestión de contraseñas | /reset-password: formulario email → resetPasswordForEmail. /update-password: intercambia código PKCE client-side y muestra form nueva contraseña. Admin puede cambiar contraseña de cualquier usuario desde /admin/usuarios y /admin/clientes/[id] vía CambiarPasswordButton + cambiarPassword SA. |
+| Módulo de contrato | ContractItemsForm: todos los ítems opcionales con toggles Sí/No (DJ/Maestro=sino-fixed-1 muestra "1", Gaseosa/Cóctel muestran "ILIMITADO", resto sino/cantidad/texto). Generación PDF via SA generarContratoPDF: nombre `{TipoEvento} {DD-MM-YYYY} {NombreCliente}`, upload directo a Storage server-side (sin signed URL — el PDF se genera en el servidor). ContratoPDF: página única, header/footer fijos (fixed=true), tabla 4 columnas solo ítems activos, cláusulas 1-2 en párrafo introductorio, cláusulas 3-12 texto corrido. Datos hacienda y cláusulas editables desde site_content (claves hacienda_* y contrato_clausula_1..12). Flujo aprobación: aprobarContrato bloquea contrato + inicializa orden de servicio + notifica planners. solicitarAjustesContrato notifica staff. Vista cliente muestra contrato con botón Aprobar / Solicitar ajustes. |
+| Tabs ficha cliente planner | /portal/planner/clientes/[clientId]/ tiene tabs de navegación: Contrato / Actividades / Invitados / Documentos / Pagos / Playlist. Planner accede a todos los módulos del cliente desde una ficha unificada con tabs. |
+| Onboarding clientes (actualizado) | createClientAction YA NO inicializa la orden de servicio — solo crea Auth + profile + booking. La orden se inicializa dentro de aprobarContrato cuando el cliente aprueba. Botón "Crear cliente →" (antes "Crear cliente y generar orden →"). fetchClientBookingRows en /planner/clientes siempre con restrictToUpcoming:false (gestión, no agenda). |
 
 ### Decisiones de arquitectura
 
@@ -114,6 +117,18 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - `profiles.phone`: privado — solo seleccionado en `/admin/usuarios` (admin query). UsuariosManager CrearModal y EditarModal incluyen campo phone etiquetado "(privado)". La RLS ya impide que clientes y anónimos lean perfiles ajenos (select: `auth.uid() = id OR is_staff_or_admin()`).
 - **Badge reCAPTCHA**: `.grecaptcha-badge { visibility: hidden !important; }` en `globals.css`. Legalmente permitido si el formulario muestra texto de atribución con links a `policies.google.com/privacy` y `policies.google.com/terms`. Ambos formularios (`ContactForm`, `HomeContactForm`) incluyen este texto.
 
+**Módulo de contrato**
+- `ContractItems` JSONB en `bookings.contract_items`. Al cargar, siempre mergear con DEFAULT_CONTRACT_ITEMS: `{ ...DEFAULT_CONTRACT_ITEMS, ...booking.contract_items }` para retrocompatibilidad cuando se agregan campos nuevos.
+- `ContractFieldType`: `"sino-fixed-1"` (boolean, muestra "1" fijo en PDF), `"sino"` (boolean, muestra "Sí" o "(ILIMITADO)" para gaseosa_agua/coctel), `"cantidad"` (string numérico, se oculta si ≤ 0), `"texto"` (string libre, se oculta si vacío). `VARIABLE_ITEM_TYPES` y `VARIABLE_ITEM_ORDER` en `lib/contract-items.ts`.
+- **`ContratoPDF` — una sola `<Page>`**: nunca usar dos `<Page>` en el Document — generaba página en blanco. El contenido fluye automáticamente entre páginas. Header y footer con `fixed` repiten en cada página.
+- **PDF generado server-side**: `renderToBuffer` en SA → upload directo a Supabase Storage con `admin.storage.upload()`. No usa signed URL porque el archivo se crea en el servidor, no en el cliente.
+- `sanitizeName` en `generar-contrato.ts`: usa `normalize("NFD").replace(/[̀-ͯ]/g, "")` con escape Unicode explícito — caracteres literales en el rango pueden corromperse según encoding del archivo.
+- Datos editables hacienda: 8 claves `hacienda_*` en `site_content` (nombre, representante, cc_representante, nit, dirección, whatsapp, email, cuenta_davivienda). `resolveHaciendaData(contentMap)` combina site_content con `HACIENDA_INFO` como fallback.
+- Cláusulas: 12 claves `contrato_clausula_1..12` en `site_content`. Firma: `firma_representante` (URL de imagen en Storage). Editables desde `/editor/contenido`.
+- `contract_locked: boolean` en bookings — cuando el cliente aprueba, se fija a `true`. El planner no puede editar ítems mientras esté bloqueado.
+- `aprobarContrato(bookingId)`: verifica ownership (cliente solo aprueba su propio booking) → lock → `initialize_service_order(booking_id)` → notifica planners/admins. En `contrato-aprobacion.ts`.
+- `/portal/planner/clientes/[clientId]/contrato/page.tsx`: muestra prereqs (CC, dirección, valor_total, valor_anticipo) antes de permitir generar. `ContractItemsForm` deshabilitado cuando `contract_locked=true`.
+
 **Restricción de visibilidad por rol**
 - `UPCOMING_EVENT_WINDOW_DAYS = 15` en `src/lib/event-window.ts` (único lugar que calcula la ventana).
 - Admin y gerente: sin restricción de fecha. Resto (planner, staff, asesores): solo próximos 15 días (`options.restrictToUpcoming`).
@@ -138,9 +153,11 @@ El sitio está live en **https://www.hacienda-encanto.com**. Dominio conectado a
 1. **Sitemap — verificar indexación en GSC** — `src/app/sitemap.ts` corregido: URL raíz con trailing slash (`https://www.hacienda-encanto.com/`), `lastModified` fijo `2026-07-24`. Build genera `○ /sitemap.xml` estático. Acceder a `https://www.hacienda-encanto.com/sitemap.xml` para confirmar que responde; luego solicitar reindexación en Google Search Console.
 2. **Verificar flujo de recuperación de contraseña en producción** — `/update-password` usa `verifyOtp({ token_hash, type: "recovery" })` (template de Supabase envía `?token_hash=XXXX&type=recovery` vía `{{ .ConfirmationURL }}`). Pendiente: probar con email real en producción.
 3. **CallMeBot — registrar número central** — `CALLMEBOT_API_KEY_CENTRAL` está vacío en `.env.local` y en Vercel → el sistema usa el fallback (`CALLMEBOT_PHONE` / `CALLMEBOT_API_KEY`, que sí funciona). Para activar el número central: desde ese WhatsApp enviar mensaje al bot `+1 (347) 798-2047` con el texto `I allow callmebot.com to send me messages`, obtener el API key y configurarlo en `.env.local` y en Vercel → Environment Variables como `CALLMEBOT_API_KEY_CENTRAL`.
-4. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
-5. **Fotos galería empresarial y revelación** — pendientes del cliente.
-6. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
+4. **Cláusulas del contrato — cargar texto en site_content** — las claves `contrato_clausula_1..12` y `firma_representante` aún están vacías en producción. El planner/admin debe cargar el texto legal desde `/editor/contenido` y subir la imagen de firma.
+5. **Contrato — datos hacienda en site_content** — las 8 claves `hacienda_*` usan los valores hardcoded de `HACIENDA_INFO` como fallback. Verificar o cargar desde `/editor/contenido` si hay diferencias.
+6. **Videos empresarial y revelación** — pendientes del cliente. Subir desde `/editor/videos`.
+7. **Fotos galería empresarial y revelación** — pendientes del cliente.
+8. **Tour virtual 360°** — pendiente contratación (Matterport/Kuula). `Vista360.tsx` integrado, botón apunta a `#`. Solo cargar URL en `site_content` cuando exista.
 
 ### Archivos clave
 
@@ -157,7 +174,9 @@ src/
       auth.ts                         ← login (redirect por rol), logout, cierre por inactividad, requestPasswordReset, updatePassword
       contact.ts                      ← submitContactForm (Zod + reCAPTCHA + whatsapp requerido + round-robin asesores + CallMeBot)
       contactos-asesor.ts             ← updateContactStatus (asesor actualiza estado de sus contactos)
-      crear-cliente.ts                ← createClientAction: onboarding completo con rollback y overlap check
+      crear-cliente.ts                ← createClientAction: Auth+profile+booking con rollback y overlap check (SIN inicializar orden de servicio)
+      contrato-aprobacion.ts          ← aprobarContrato (lock + initialize_service_order + notifica), solicitarAjustesContrato
+      contrato-items.ts               ← saveContractItems (guarda JSONB en bookings.contract_items)
       orden-servicio.ts               ← savePlannerItems, approveServiceOrder, initServiceOrder
       actividades.ts                  ← createActivity/updateActivity (devuelven ActividadRow), deleteActivity
       invitados.ts                    ← requestGuestListUpload/confirmGuestListUpload, deleteGuestList, getGuestListDownloadUrl
@@ -166,6 +185,7 @@ src/
       documentos.ts                   ← requestDocumentoUpload/confirmDocumentoUpload (devuelve {id,created_at}), deleteDocumento, listDocumentosConTamano
       playlist.ts                     ← savePlaylist (upsert onConflict booking_id,section; notifica admin/planner)
       admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword (roles equipo, nunca "client")
+      admin/generar-contrato.ts       ← generarContratoPDF: renderToBuffer + upload Storage server-side, nombre {Tipo} {DD-MM-YYYY} {Nombre}
       editor/galeria.ts               ← requestGaleriaUpload/confirmGaleriaUpload, updateGaleriaImage, reorderGaleriaImages
       editor/videos.ts                ← requestVideoUpload/confirmVideoUpload, activateVideo, deactivateVideo, deleteVideo
       editor/imagenes-sitio.ts        ← requestSiteImageUpload/confirmSiteImageUpload (upsert site_content), deleteSiteImage
@@ -185,7 +205,9 @@ src/
       planner/page.tsx
       planner/nuevo-cliente/page.tsx
       planner/orden-servicio/[bookingId]/page.tsx
-      planner/clientes/page.tsx       ← ClientesTable (tabs Activos/Cumplidos/Cancelados)
+      planner/clientes/page.tsx       ← ClientesTable (tabs Activos/Cumplidos/Cancelados), restrictToUpcoming:false siempre
+      planner/clientes/[clientId]/layout.tsx (o page con tabs) ← tabs: Contrato/Actividades/Invitados/Documentos/Pagos/Playlist
+      planner/clientes/[clientId]/contrato/page.tsx            ← prereqs + ContractItemsForm + ContratoPlanner (generar/listar PDFs)
       planner/clientes/[clientId]/actividades|invitados|documentos|pagos|playlist/page.tsx
       planner/salon-mapas/page.tsx
       asesor-comercial/page.tsx       ← ContactosAsesorView (contactos asignados) + EventosManager 15 días
@@ -212,8 +234,11 @@ src/
       InvitadosClienteView.tsx|InvitadosReadOnly.tsx
       orden-servicio/OrdenServicioView.tsx|PlannerOrdenForm.tsx
       planner/ActividadesPlanner.tsx|ClienteEditForm.tsx|SalonMapasManager.tsx|DocumentosPlanner.tsx|PagosPlanner.tsx
-    asesor/ContactosAsesorView.tsx    ← lista contactos asignados, cambio estado, botón wa.me prellenado
+    asesor/ContactosAsesorView.tsx    ← lista contactos asignados + panel de detalle por lead, cambio estado optimista, botón wa.me completo
     admin/UsuariosManager.tsx|EventosManager.tsx|KpiCard.tsx|CambiarPasswordButton.tsx  ← botón+modal reutilizable para cambio de contraseña por admin
+    contrato/ContratoPDF.tsx          ← PDF react-pdf: Document+Page única, header/footer fixed, tabla 4 cols, cláusulas texto corrido
+    portal/planner/ContractItemsForm.tsx  ← toggles Sí/No + cantidades + texto libre; deshabilitado cuando contract_locked
+    portal/planner/ContratoPlanner.tsx    ← prereqs checklist + botón generar + lista PDFs generados
     clientes/ClientesTable.tsx        ← Compartido admin/planner, prop basePath: "planner"|"admin"
     editor/GaleriaManager.tsx|VideosManager.tsx|ImagenesSitioManager.tsx|TestimoniosManager.tsx|PaquetesManager.tsx|ContenidoManager.tsx
     ui/SliderGaleria.tsx|WhatsAppIcon.tsx|CopyButton.tsx|SubmitButton.tsx|HeroLogoFallback.tsx
@@ -229,6 +254,7 @@ src/
     guest-count.ts                    ← GUEST_COUNT_OPTIONS (30–150 de 10 en 10)
     salon-map-capacities.ts           ← SALON_MAP_CAPACITIES (nunca en "use server")
     callmebot.ts                      ← sendWhatsAppNotification (fire & forget; número central si CALLMEBOT_API_KEY_CENTRAL está configurada)
+    contract-items.ts                 ← ContractItems interface, DEFAULT_CONTRACT_ITEMS, VARIABLE_ITEM_LABELS/TYPES/ORDER, HACIENDA_INFO, resolveHaciendaData, CLAUSULA_KEYS, FIRMA_KEY
   proxy.ts                            ← Middleware Next.js 16 (función exportada como "proxy")
   types/database.ts                   ← Tipos generados Supabase (regenerar tras cada migración)
 public/
