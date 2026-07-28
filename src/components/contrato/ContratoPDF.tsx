@@ -44,7 +44,7 @@ const s = StyleSheet.create({
     color: NEGRO,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 50,
-    paddingTop: 116,
+    paddingTop: 160,
     paddingBottom: 58,
   },
 
@@ -56,19 +56,14 @@ const s = StyleSheet.create({
     right: 50,
     alignItems: "center",
   },
+  // SVG viewBox 640×170, al ancho total del contenido (512pt) → altura 136pt
   headerLogo: {
-    width: 264,
-    height: 70,
+    width: 512,
+    height: 136,
   },
   headerLogoFallback: {
     fontFamily: "Helvetica-Bold",
     fontSize: 13,
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 7.5,
-    color: GRIS,
     textAlign: "center",
     marginBottom: 4,
   },
@@ -184,6 +179,17 @@ const s = StyleSheet.create({
   wItem: { width: "38%" },
   wQty:  { width: "12%" },
 
+  // ── Nota de capilla (solo cuando capilla=true) ───────────────────────
+  capillaNote: {
+    fontFamily: "Helvetica-BoldOblique",
+    fontSize: 11,
+    textDecoration: "underline",
+    textAlign: "justify",
+    lineHeight: 1.65,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+
   // ── Firmas ───────────────────────────────────────────────────────────
   firmasRow: {
     flexDirection: "row",
@@ -260,6 +266,12 @@ function fmtDate(d: string | null) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
   return `${parseInt(day)} de ${MONTHS[parseInt(m) - 1]} de ${y}`;
+}
+
+function fmtPhone(n: string): string {
+  const clean = n.replace(/\D/g, "");
+  if (clean.length === 10) return `+57 ${clean.slice(0, 3)} ${clean.slice(3, 7)} ${clean.slice(7)}`;
+  return n;
 }
 
 function fmtMoney(n: number | null) {
@@ -365,12 +377,7 @@ export function ContratoPDF({
           {logoUrl ? (
             <Image src={logoUrl} style={s.headerLogo} />
           ) : (
-            <>
-              <Text style={s.headerLogoFallback}>{h.nombre}</Text>
-              <Text style={s.headerSubtitle}>
-                {`www.hacienda-encanto.com  ·  ${h.direccion}  ·  Whatsapp ${h.whatsapp}`}
-              </Text>
-            </>
+            <Text style={s.headerLogoFallback}>{h.nombre}</Text>
           )}
           <View style={s.headerLine} />
         </View>
@@ -440,6 +447,13 @@ export function ContratoPDF({
           ))}
         </View>
 
+        {/* ── Nota de capilla (solo cuando capilla=true) ─── */}
+        {capilla === true && (
+          <Text style={s.capillaNote}>
+            {"CAPILLA, montaje interno ó externo: interno capilla decorada con telas en el techo y cortinas en las paredes, silletería tifanny, alfombra roja, reclinatorio, diván, mesa sacerdote, arreglos decorativos, canastilla para pétalos, almohada para argollas, atril. Externo, zonas verdes, altar con telas, silletería tifanny, alfombra roja, reclinatorio, diván, mesa sacerdote, arreglos decorativos, canastilla para pétalos, almohada para argollas, atril."}
+          </Text>
+        )}
+
         {/* ── Valores ─── */}
         <Text style={s.body}>{valorParts.join("  ·  ")}</Text>
 
@@ -486,7 +500,7 @@ export function ContratoPDF({
         {/* ── Footer fijo ─── */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {`www.hacienda-encanto.com\nDirección ${h.direccion}\nWhatsapp ${h.whatsapp}`}
+            {`www.hacienda-encanto.com\nDirección ${h.direccion}\nWhatsapp ${fmtPhone(h.whatsapp)}`}
           </Text>
         </View>
 
