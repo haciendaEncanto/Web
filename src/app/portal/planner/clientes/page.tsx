@@ -21,9 +21,9 @@ export default async function ClientesPage() {
     redirect("/portal");
   }
 
-  const rows = await fetchClientBookingRows(supabase, {
-    restrictToUpcoming: profile.role !== "admin",
-  });
+  // La lista de clientes del planner no restringe por fecha — el planner
+  // gestiona clientes a lo largo de todo el ciclo de vida del evento.
+  const rows = await fetchClientBookingRows(supabase, { restrictToUpcoming: false });
 
   return (
     <div className="space-y-6">

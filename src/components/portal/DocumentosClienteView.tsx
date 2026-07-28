@@ -23,7 +23,7 @@ function formatDate(d: string) {
   });
 }
 
-function DownloadButton({ id }: { id: string }) {
+function DownloadButton({ id, title }: { id: string; title: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +32,20 @@ function DownloadButton({ id }: { id: string }) {
       setError(null);
       const res = await getDocumentoDownloadUrl(id);
       if (res.error || !res.url) { setError(res.error ?? "No se pudo generar el enlace"); return; }
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      try {
+        const blob = await fetch(res.url).then((r) => r.blob());
+        const href = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement("a"), {
+          href,
+          download: `${title}.pdf`,
+        });
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(href);
+      } catch {
+        window.open(res.url, "_blank", "noopener,noreferrer");
+      }
     });
   }
 
@@ -252,7 +265,7 @@ export function DocumentosClienteView({ documentos, bookingId, isLocked = false 
                   <td className="px-4 py-4 text-[0.82rem] text-gris">{formatBytes(d.size)}</td>
                   <td className="px-4 py-4">
                     <div className="flex justify-end">
-                      <DownloadButton id={d.id} />
+                      <DownloadButton id={d.id} title={d.title} />
                     </div>
                   </td>
                 </tr>

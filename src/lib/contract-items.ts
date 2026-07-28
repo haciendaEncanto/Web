@@ -5,6 +5,12 @@ export interface ContractItems {
   // Sí/No con cantidad fija implícita (DJ=1, Maestro=1)
   dj:                  boolean;
   maestro_ceremonias:  boolean;
+  // Sí/No — infraestructura
+  sonido:              boolean;
+  luces:               boolean;
+  pista_baile:         boolean;
+  gaseosa_agua:        boolean;
+  coctel:              boolean;
   // Sí/No simple
   barman:              boolean;
   aseo:                boolean;
@@ -25,9 +31,15 @@ export interface ContractItems {
   tarjetas_invitacion: string;
 }
 
+// Todos los booleanos inician en false — el planner activa los que aplican
 export const DEFAULT_CONTRACT_ITEMS: ContractItems = {
-  dj:                  true,
-  maestro_ceremonias:  true,
+  dj:                  false,
+  maestro_ceremonias:  false,
+  sonido:              false,
+  luces:               false,
+  pista_baile:         false,
+  gaseosa_agua:        false,
+  coctel:              false,
   barman:              false,
   aseo:                false,
   planner:             false,
@@ -48,24 +60,22 @@ export const DEFAULT_CONTRACT_ITEMS: ContractItems = {
 // Orden de visualización en formulario y PDF
 export const VARIABLE_ITEM_ORDER: (keyof ContractItems)[] = [
   "dj", "maestro_ceremonias",
+  "sonido", "luces", "pista_baile",
+  "gaseosa_agua", "coctel",
   "barman", "aseo", "planner", "estacion_cafe", "kit_boda", "mobiliario",
   "menu", "pastel", "mesa_dulces", "canelazo", "champana", "whisky",
   "meseros", "menaje", "tarjetas_invitacion",
-];
-
-// Ítems fijos — siempre aparecen, no editables
-export const FIXED_ITEMS: { label: string; value: string }[] = [
-  { label: "Sonido",          value: "Sí" },
-  { label: "Luces",           value: "Sí" },
-  { label: "Pista de baile",  value: "Sí" },
-  { label: "Gaseosa y Agua",  value: "Ilimitado" },
-  { label: "Cóctel",          value: "Ilimitado" },
 ];
 
 // Etiquetas de los ítems variables
 export const VARIABLE_ITEM_LABELS: Record<keyof ContractItems, string> = {
   dj:                  "DJ",
   maestro_ceremonias:  "Maestro de ceremonias",
+  sonido:              "Sonido",
+  luces:               "Luces",
+  pista_baile:         "Pista de baile",
+  gaseosa_agua:        "Gaseosa y Agua",
+  coctel:              "Cóctel",
   barman:              "Barman",
   aseo:                "Aseo",
   planner:             "Planner",
@@ -93,6 +103,11 @@ export type ContractFieldType = "sino-fixed-1" | "sino" | "cantidad" | "texto";
 export const VARIABLE_ITEM_TYPES: Record<keyof ContractItems, ContractFieldType> = {
   dj:                  "sino-fixed-1",
   maestro_ceremonias:  "sino-fixed-1",
+  sonido:              "sino",
+  luces:               "sino",
+  pista_baile:         "sino",
+  gaseosa_agua:        "sino",
+  coctel:              "sino",
   barman:              "sino",
   aseo:                "sino",
   planner:             "sino",

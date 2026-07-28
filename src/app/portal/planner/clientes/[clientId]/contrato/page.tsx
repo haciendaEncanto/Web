@@ -62,6 +62,16 @@ export default async function ContratoPlannerPage({
       hint: "Edita el perfil del cliente y agrega su dirección.",
     },
     {
+      ok: !!profile.phone,
+      label: "Teléfono del cliente registrado",
+      hint: "Edita el perfil del cliente y agrega su número de teléfono.",
+    },
+    {
+      ok: !!profile.email,
+      label: "Correo electrónico del cliente registrado",
+      hint: "El cliente necesita un correo electrónico asociado.",
+    },
+    {
       ok: !!booking,
       label: "Evento activo asignado",
       hint: "El cliente necesita un evento activo (no cancelado).",
@@ -92,7 +102,7 @@ export default async function ContratoPlannerPage({
       {booking && (
         <ContractItemsForm
           bookingId={booking.id}
-          initialItems={(booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS}
+          initialItems={{ ...DEFAULT_CONTRACT_ITEMS, ...((booking.contract_items as Partial<ContractItems>) ?? {}) }}
           initialCapilla={booking.capilla ?? false}
           isLocked={booking.contract_locked ?? false}
         />

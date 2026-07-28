@@ -1,5 +1,7 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import React from "react";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +32,7 @@ async function verifyPlanner() {
 export async function generarContratoPDF(
   clientId: string,
   otroSi?: string,
-): Promise<{ documentId?: string; error?: string }> {
+): Promise<{ documentId?: string; title?: string; error?: string }> {
   const { error: authErr, userId } = await verifyPlanner();
   if (authErr) return { error: authErr };
 
@@ -44,8 +46,24 @@ export async function generarContratoPDF(
     .single();
   if (!profile) return { error: "Cliente no encontrado" };
 
-  if (!profile.cc) return { error: "El cliente no tiene CC registrada. Edita su perfil primero." };
-  if (!profile.address) return { error: "El cliente no tiene dirección registrada." };
+  // Validar datos obligatorios del cliente
+  const missingFields: string[] = [];
+  if (!profile.cc)      missingFields.push("Cédula (CC)");
+  if (!profile.address) missingFields.push("Dirección");
+  if (!profile.phone)   missingFields.push("Teléfono");
+  if (!profile.email)   missingFields.push("Correo electrónico");
+  if (missingFields.length > 0) {
+    return {
+      error: `Faltan datos obligatorios del cliente: ${missingFields.join(", ")}. Completa esta información antes de generar el contrato.`,
+    };
+  }
+
+  console.log("[generarContratoPDF] datos cliente →", {
+    phone: profile.phone,
+    address: profile.address,
+    email: profile.email,
+    cc: profile.cc,
+  });
 
   // Fetch booking activo
   const { data: booking } = await admin
@@ -85,6 +103,33 @@ export async function generarContratoPDF(
     .eq("type", "contrato");
   const version = (count ?? 0) + 1;
 
+  // Nombre del archivo: {TipoEvento} {DD-MM-YYYY} {NombreCliente}
+  const EVENT_LABEL_FILENAME: Record<string, string> = {
+    boda: "Boda", quince: "Quinceañera", empresarial: "Empresarial", revelacion: "Revelacion",
+  };
+  function fmtDateDDMMYYYY(d: string | null) {
+    if (!d) return "Fecha";
+    const [y, m, day] = d.split("-");
+    return `${day}-${m}-${y}`;
+  }
+  function sanitizeName(n: string) {
+    // ̀-ͯ = combining diacritical marks (removes accents after NFD decompose)
+    return n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\s-]/g, "").trim();
+  }
+  const tipoLabel = EVENT_LABEL_FILENAME[booking.event_type ?? ""] ?? "Evento";
+  const dateStr   = fmtDateDDMMYYYY(booking.event_date);
+  const nameStr   = sanitizeName(profile.full_name ?? profile.email);
+  const pdfTitle  = `${tipoLabel} ${dateStr} ${nameStr}`;
+
+  // Leer PNG pre-generado del logo (public/logo-hacienda.png)
+  let logoDataUri: string | null = null;
+  try {
+    const logoPng = fs.readFileSync(path.join(process.cwd(), "public", "logo-hacienda.png"));
+    logoDataUri = `data:image/png;base64,${logoPng.toString("base64")}`;
+  } catch {
+    // Logo no disponible, el PDF usará fallback de texto
+  }
+
   // Generar PDF
   const generatedAt = new Date().toLocaleDateString("es-CO", {
     day: "2-digit", month: "long", year: "numeric",
@@ -93,7 +138,7 @@ export async function generarContratoPDF(
   const pdfBuffer = await renderToBuffer(
     React.createElement(ContratoPDF, {
       clientName: profile.full_name ?? profile.email,
-      clientCc: profile.cc,
+      clientCc: profile.cc!,
       clientPhone: profile.phone ?? "",
       clientAddress: profile.address ?? "",
       clientEmail: profile.email,
@@ -110,6 +155,7 @@ export async function generarContratoPDF(
       contractItems: (booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS,
       clauses,
       firmaUrl,
+      logoUrl: logoDataUri,
       version,
       generatedAt,
       otroSi: otroSi?.trim() || undefined,
@@ -125,12 +171,11 @@ export async function generarContratoPDF(
   if (uploadErr) return { error: `Error al subir el PDF: ${uploadErr.message}` };
 
   // Insertar en documents
-  const title = `Contrato de servicios v${version} — ${new Date().toLocaleDateString("es-CO")}`;
   const { data: inserted, error: dbErr } = await admin
     .from("documents")
     .insert({
       booking_id: booking.id,
-      title,
+      title: pdfTitle,
       file_url: storagePath,
       type: "contrato",
       created_by: userId,
@@ -154,5 +199,48 @@ export async function generarContratoPDF(
   revalidatePath("/portal/documentos");
   revalidatePath(`/portal/planner/clientes/${clientId}/documentos`);
   revalidatePath(`/admin/clientes/${clientId}/documentos`);
-  return { documentId: inserted.id };
+  return { documentId: inserted.id, title: pdfTitle };
+}
+
+export async function eliminarHistorialContratos(
+  clientId: string,
+  bookingId: string,
+): Promise<{ error?: string }> {
+  const { error: authErr } = await verifyPlanner();
+  if (authErr) return { error: authErr };
+
+  const admin = createAdminClient();
+
+  const { data: booking } = await admin
+    .from("bookings")
+    .select("contract_locked")
+    .eq("id", bookingId)
+    .single();
+
+  if (booking?.contract_locked) {
+    return { error: "El contrato está bloqueado y no se puede eliminar el historial." };
+  }
+
+  const { data: docs } = await admin
+    .from("documents")
+    .select("id, file_url")
+    .eq("booking_id", bookingId)
+    .eq("type", "contrato");
+
+  if (!docs || docs.length === 0) return {};
+
+  const paths = docs.map((d) => d.file_url).filter((p): p is string => !!p);
+  if (paths.length > 0) {
+    await admin.storage.from("documents").remove(paths);
+  }
+
+  await admin
+    .from("documents")
+    .delete()
+    .eq("booking_id", bookingId)
+    .eq("type", "contrato");
+
+  revalidatePath(`/portal/planner/clientes/${clientId}/contrato`);
+  revalidatePath(`/admin/clientes/${clientId}/documentos`);
+  return {};
 }

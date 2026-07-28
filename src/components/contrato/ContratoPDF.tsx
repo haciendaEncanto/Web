@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Document,
   Page,
@@ -11,313 +12,530 @@ import {
   VARIABLE_ITEM_LABELS,
   VARIABLE_ITEM_TYPES,
   VARIABLE_ITEM_ORDER,
-  FIXED_ITEMS,
+  DEFAULT_CONTRACT_ITEMS,
   type ContractItems,
   type HaciendaData,
 } from "@/lib/contract-items";
 
-const DORADO = "#C8A24B";
 const NEGRO = "#0F0F0F";
-const GRIS = "#6B6B6B";
-const GRIS_CLARO = "#E8E4DC";
-const BLANCO = "#FFFFFF";
+const GRIS  = "#666666";
+const LINEA = "#CCCCCC";
+
+const ORDINALS = [
+  "PRIMERA", "SEGUNDA", "TERCERA", "CUARTA", "QUINTA", "SEXTA",
+  "SÉPTIMA", "OCTAVA", "NOVENA", "DÉCIMA", "DÉCIMA PRIMERA", "DÉCIMA SEGUNDA",
+];
+
+const EVENT_LABEL: Record<string, string> = {
+  boda:        "Boda",
+  quince:      "Quinceañera",
+  empresarial: "Evento Empresarial",
+  revelacion:  "Revelación de Género",
+};
+
+const MONTHS = [
+  "enero","febrero","marzo","abril","mayo","junio",
+  "julio","agosto","septiembre","octubre","noviembre","diciembre",
+];
 
 const s = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
-    fontSize: 9,
+    fontSize: 11,
     color: NEGRO,
-    backgroundColor: BLANCO,
-    paddingHorizontal: 48,
-    paddingVertical: 44,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 50,
+    paddingTop: 90,
+    paddingBottom: 58,
   },
-  header: { marginBottom: 18, borderBottom: `1.5px solid ${DORADO}`, paddingBottom: 14 },
-  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  haciendaName: { fontFamily: "Times-Roman", fontSize: 13, color: DORADO, letterSpacing: 0.5 },
-  headerMeta: { fontSize: 7.5, color: GRIS, marginTop: 2 },
-  contractTitle: { fontFamily: "Times-Roman", fontSize: 11, color: NEGRO, marginTop: 12, textAlign: "center", letterSpacing: 0.3 },
-  versionBadge: { fontSize: 7, color: GRIS, textAlign: "center", marginTop: 2 },
-  section: { marginBottom: 14 },
-  sectionTitle: { fontFamily: "Times-Roman", fontSize: 10, color: DORADO, marginBottom: 6, paddingBottom: 3, borderBottom: `0.5px solid ${DORADO}` },
-  intro: { fontSize: 8.5, color: NEGRO, lineHeight: 1.65, marginBottom: 14 },
-  grid2: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: "50%", marginBottom: 5 },
-  label: { fontSize: 7, color: GRIS, marginBottom: 1.5 },
-  value: { fontSize: 8.5, color: NEGRO },
-  table: { width: "100%", marginTop: 4 },
-  tableHeader: { flexDirection: "row", backgroundColor: NEGRO, paddingVertical: 4, paddingHorizontal: 6 },
-  tableHeaderText: { color: BLANCO, fontSize: 7.5, fontFamily: "Helvetica-Bold" },
-  colItem: { width: "65%" },
-  colValue: { width: "35%", textAlign: "right" },
-  tableRow: { flexDirection: "row", paddingVertical: 4, paddingHorizontal: 6, borderBottom: `0.3px solid ${GRIS_CLARO}` },
-  tableRowAlt: { backgroundColor: "#FAFAF8" },
-  tableCell: { fontSize: 8.5 },
-  fixedBadge: { fontSize: 6.5, color: GRIS, fontStyle: "italic" },
-  clausulaNum: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginBottom: 2 },
-  clausulaText: { fontSize: 8, color: "#333333", lineHeight: 1.6 },
-  clausulaWrap: { marginBottom: 10 },
-  firmasRow: { flexDirection: "row", marginTop: 32, gap: 24 },
-  firmaBox: { flex: 1, alignItems: "center" },
-  firmaLine: { width: "80%", borderBottom: `0.75px solid ${NEGRO}`, marginBottom: 4 },
-  firmaLabel: { fontSize: 7.5, color: GRIS, textAlign: "center" },
-  firmaName: { fontSize: 7.5, color: NEGRO, textAlign: "center", marginTop: 1 },
-  firmaImg: { width: 90, height: 36, objectFit: "contain", marginBottom: 4 },
-  firmaBlank: { height: 36, marginBottom: 4 },
-  footer: { position: "absolute", bottom: 24, left: 48, right: 48, borderTop: `0.5px solid ${GRIS_CLARO}`, paddingTop: 6, flexDirection: "row", justifyContent: "space-between" },
-  footerText: { fontSize: 6.5, color: GRIS },
+
+  // ── Header (repetido en cada página) ────────────────────────────────
+  header: {
+    position: "absolute",
+    top: 10,
+    left: 50,
+    right: 50,
+    alignItems: "center",
+  },
+  // ratio SVG 640:170 — altura 65pt → ancho proporcional 245pt, centrado
+  headerLogo: {
+    width: 245,
+    height: 65,
+  },
+  headerLogoFallback: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  headerLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#D63B2A",
+    borderBottomStyle: "solid",
+    width: "100%",
+    marginTop: 6,
+  },
+
+  // ── Footer (repetido en cada página) ────────────────────────────────
+  footer: {
+    position: "absolute",
+    bottom: 10,
+    left: 50,
+    right: 50,
+    borderTopWidth: 1,
+    borderTopColor: "#D63B2A",
+    borderTopStyle: "solid",
+    paddingTop: 5,
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 7.5,
+    color: GRIS,
+    textAlign: "center",
+    lineHeight: 1.55,
+  },
+
+  // ── Título ───────────────────────────────────────────────────────────
+  title: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 12.5,
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
+
+  // ── Cuerpo ───────────────────────────────────────────────────────────
+  body: {
+    fontSize: 11,
+    lineHeight: 1.65,
+    textAlign: "justify",
+    marginBottom: 8,
+  },
+  bold: {
+    fontFamily: "Helvetica-Bold",
+  },
+
+  // ── Tabla de ítems (4 columnas) ────────────────────────────────────
+  table: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderTopWidth: 0.75,
+    borderTopColor: NEGRO,
+    borderTopStyle: "solid",
+    borderLeftWidth: 0.75,
+    borderLeftColor: NEGRO,
+    borderLeftStyle: "solid",
+  },
+  tHead: {
+    flexDirection: "row",
+    backgroundColor: NEGRO,
+  },
+  tRow: {
+    flexDirection: "row",
+    borderBottomWidth: 0.5,
+    borderBottomColor: NEGRO,
+    borderBottomStyle: "solid",
+  },
+  tRowAlt: {
+    backgroundColor: "#F6F5F1",
+  },
+  tHBase: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    color: "#FFFFFF",
+    paddingVertical: 4,
+    paddingHorizontal: 5,
+    borderRightWidth: 0.5,
+    borderRightColor: "#444444",
+    borderRightStyle: "solid",
+    textAlign: "center",
+    letterSpacing: 0.4,
+  },
+  tHLast: {
+    borderRightWidth: 0,
+  },
+  tItem: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    borderRightWidth: 0.75,
+    borderRightColor: NEGRO,
+    borderRightStyle: "solid",
+    textAlign: "left",
+  },
+  tQty: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    borderRightWidth: 0.75,
+    borderRightColor: NEGRO,
+    borderRightStyle: "solid",
+    textAlign: "center",
+  },
+  tQtyLast: {
+    borderRightWidth: 1,
+    borderRightColor: LINEA,
+    borderRightStyle: "solid",
+  },
+  wItem: { width: "35%" },
+  wQty:  { width: "15%" },
+
+  // ── Nota de capilla (solo cuando capilla=true) ───────────────────────
+  capillaNote: {
+    fontFamily: "Helvetica-BoldOblique",
+    fontSize: 11,
+    textDecoration: "underline",
+    textAlign: "justify",
+    lineHeight: 1.65,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+
+  // ── Firmas ───────────────────────────────────────────────────────────
+  firmasRow: {
+    flexDirection: "row",
+    marginTop: 30,
+    gap: 24,
+  },
+  firmaBox: {
+    flex: 1,
+  },
+  firmaRole: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    marginBottom: 24,
+  },
+  firmaImgWrap: {
+    height: 46,
+    marginBottom: 2,
+  },
+  firmaImg: {
+    width: 90,
+    height: 44,
+    objectFit: "contain",
+  },
+  firmaLine: {
+    borderBottomWidth: 0.75,
+    borderBottomColor: NEGRO,
+    borderBottomStyle: "solid",
+    width: "85%",
+    marginBottom: 3,
+  },
+  firmaName: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+  },
+  firmaCC: {
+    fontSize: 9.5,
+  },
+  firmaRoleLabel: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9.5,
+    marginTop: 1,
+  },
 });
 
+// ── Tipos públicos ──────────────────────────────────────────────────────
 export interface ContractPDFData {
-  clientName: string;
-  clientCc: string;
-  clientPhone: string;
-  clientAddress: string;
-  clientEmail: string;
-  eventType: string;
-  eventDate: string;
-  eventStartTime: string;
-  eventEndTime: string;
-  guestCount: number;
-  capilla: boolean | null;
-  valorTotal: number | null;
-  valorAnticipo: number | null;
-  fechaSegundoAbono: string | null;
-  fechaTercerAbono: string | null;
-  contractItems: ContractItems;
-  clauses: string[];
-  firmaUrl: string | null;
-  version: number;
-  generatedAt: string;
-  otroSi?: string;
-  haciendaData?: HaciendaData;
+  clientName:         string;
+  clientCc:           string;
+  clientPhone:        string;
+  clientAddress:      string;
+  clientEmail:        string;
+  eventType:          string;
+  eventDate:          string;
+  eventStartTime:     string;
+  eventEndTime:       string;
+  guestCount:         number;
+  capilla:            boolean | null;
+  valorTotal:         number | null;
+  valorAnticipo:      number | null;
+  fechaSegundoAbono:  string | null;
+  fechaTercerAbono:   string | null;
+  contractItems:      ContractItems;
+  clauses:            string[];
+  firmaUrl:           string | null;
+  logoUrl?:           string | null;
+  version:            number;
+  generatedAt:        string;
+  otroSi?:            string;
+  haciendaData?:      HaciendaData;
 }
 
-function fmt(n: number | null) {
-  if (n === null || n === undefined) return "—";
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-}
-
+// ── Helpers ────────────────────────────────────────────────────────────
 function fmtDate(d: string | null) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
-  const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  return `${parseInt(day)} de ${months[parseInt(m) - 1]} de ${y}`;
+  return `${parseInt(day)} del mes de ${MONTHS[parseInt(m) - 1]} del ${y}`;
 }
 
-const EVENT_LABEL: Record<string, string> = {
-  boda: "Boda",
-  quince: "Quinceañera",
-  empresarial: "Evento Empresarial",
-  revelacion: "Revelación de Género",
-};
-
-function itemDisplayValue(key: keyof ContractItems, val: boolean | string): string {
-  const type = VARIABLE_ITEM_TYPES[key];
-  if (type === "sino-fixed-1") return (val as boolean) ? "1" : "No";
-  if (type === "sino") return (val as boolean) ? "Sí" : "No";
-  return (val as string) || "0";
+function fmtDateFile(d: string | null) {
+  if (!d) return "Fecha";
+  const [y, m, day] = d.split("-");
+  return `${day}-${m}-${y}`;
 }
 
+function fmtTime(t: string): string {
+  if (!t) return "—";
+  const [h, min] = t.split(":");
+  const hours = parseInt(h, 10);
+  const ampm = hours >= 12 ? "P.M." : "A.M.";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${min} ${ampm}`;
+}
+
+function fmtPhone(n: string): string {
+  const clean = n.replace(/\D/g, "");
+  if (clean.length === 10) return `+57 ${clean.slice(0, 3)} ${clean.slice(3, 7)} ${clean.slice(7)}`;
+  return n;
+}
+
+function fmtMoney(n: number | null) {
+  if (!n) return "—";
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency", currency: "COP", maximumFractionDigits: 0,
+  }).format(n);
+}
+
+// Reemplaza {{variable}} con valores en negrilla, texto plano lo demás
+function renderTemplate(template: string, vars: Record<string, string>) {
+  const result: ReactNode[] = [];
+  const regex = /\{\{(\w+)\}\}/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) result.push(template.slice(lastIndex, match.index));
+    result.push(<Text key={key++} style={s.bold}>{vars[match[1]] ?? `[${match[1]}]`}</Text>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < template.length) result.push(template.slice(lastIndex));
+  return result;
+}
+
+type ItemRow = { label: string; value: string };
+
+function buildItemRows(items: ContractItems, capilla: boolean | null): ItemRow[] {
+  const rows: ItemRow[] = [];
+  const merged = { ...DEFAULT_CONTRACT_ITEMS, ...items };
+
+  for (const key of VARIABLE_ITEM_ORDER) {
+    const val  = merged[key as keyof ContractItems];
+    const type = VARIABLE_ITEM_TYPES[key as keyof ContractItems];
+
+    if (type === "sino-fixed-1" || type === "sino") {
+      if (!val) continue;
+    } else if (type === "cantidad") {
+      if (!val || parseInt(val as string, 10) <= 0) continue;
+    } else {
+      if (!val || !(val as string).trim()) continue;
+    }
+
+    let displayVal: string;
+    if (type === "sino-fixed-1") {
+      displayVal = "1";
+    } else if (type === "sino") {
+      const k = key as keyof ContractItems;
+      displayVal = (k === "gaseosa_agua" || k === "coctel") ? "(ILIMITADO)" : "Sí";
+    } else {
+      displayVal = String(val);
+    }
+
+    rows.push({
+      label: VARIABLE_ITEM_LABELS[key as keyof ContractItems].toUpperCase(),
+      value: displayVal,
+    });
+  }
+
+  if (capilla === true) {
+    rows.push({ label: "CAPILLA", value: "Sí" });
+  }
+
+  return rows;
+}
+
+// ── Componente ──────────────────────────────────────────────────────────
 export function ContratoPDF({
   clientName, clientCc, clientPhone, clientAddress, clientEmail,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
   valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
-  contractItems, clauses, firmaUrl, version, generatedAt, otroSi,
+  contractItems, clauses, firmaUrl, logoUrl, version, otroSi,
   haciendaData,
 }: ContractPDFData) {
   const h: HaciendaData = haciendaData ?? { ...HACIENDA_INFO };
 
-  const introText =
-    `Entre los suscritos a saber ${h.representante} mayor de edad y vecino de Bogotá, ` +
-    `identificada con C.C ${h.cc_representante}, como representante legal de la ` +
-    `${h.nombre} NIT ${h.nit}, parte que en lo sucesivo y que para efectos del siguiente ` +
-    `contrato se denominará EL CONTRATISTA por una parte; y por la otra ${clientName} ` +
-    `mayor de edad, identificado(a) con CC ${clientCc}, quien de ahora en adelante se ` +
-    `llamará el CONTRATANTE, hemos acordado celebrar el presente contrato contenido ` +
-    `dentro de las siguientes cláusulas:`;
+  const itemRows = buildItemRows(contractItems, capilla);
+  const pairs: [ItemRow, ItemRow | null][] = [];
+  for (let i = 0; i < itemRows.length; i += 2) {
+    pairs.push([itemRows[i], itemRows[i + 1] ?? null]);
+  }
 
-  type ItemRow = { label: string; value: string; fixed?: true };
+  const now    = new Date();
+  const nowDay = now.getDate();
+  const nowMon = MONTHS[now.getMonth()];
+  const nowYr  = now.getFullYear();
 
-  const variableRows: ItemRow[] = VARIABLE_ITEM_ORDER.map((key) => ({
-    label: VARIABLE_ITEM_LABELS[key],
-    value: itemDisplayValue(key, contractItems[key] as boolean | string),
-  }));
+  // Línea de valores concatenada
+  const valorParts: string[] = [];
+  if (valorTotal)        valorParts.push(`Valor total del evento: ${fmtMoney(valorTotal)}`);
+  if (valorAnticipo)     valorParts.push(`Primer anticipo: ${fmtMoney(valorAnticipo)}`);
+  if (fechaSegundoAbono) valorParts.push(`Fecha 2.° abono: ${fmtDate(fechaSegundoAbono)}`);
+  if (fechaTercerAbono)  valorParts.push(`Saldo: ${fmtDate(fechaTercerAbono)}`);
+  valorParts.push(`Cuenta Davivienda No. ${h.cuenta_davivienda} a nombre de ${h.nombre}.`);
 
-  const capillaRow: ItemRow = {
-    label: "Capilla",
-    value: capilla === true ? "Sí" : capilla === false ? "No" : "Sin definir",
+  // Variables dinámicas compartidas entre cláusulas
+  const templateVars: Record<string, string> = {
+    fecha_evento:       fmtDate(eventDate),
+    hora_inicio:        fmtTime(eventStartTime),
+    hora_fin:           fmtTime(eventEndTime),
+    tipo_evento:        (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
+    num_invitados:      String(guestCount),
+    cliente_direccion:  clientAddress || "—",
+    cliente_telefono:   clientPhone ? fmtPhone(clientPhone) : "—",
+    cliente_email:      clientEmail || "—",
   };
 
-  const allRows: ItemRow[] = [
-    ...variableRows,
-    capillaRow,
-    ...FIXED_ITEMS.map((f): ItemRow => ({ label: f.label, value: f.value, fixed: true })),
-  ];
+  // Cláusulas 3–12: array para poder renderizar el título en bold
+  const clauseItems: { title: string; text: string }[] = [];
+  for (let i = 0; i < clauses.slice(2).length; i++) {
+    const text = clauses[i + 2];
+    if (!text) continue;
+    clauseItems.push({ title: `CLAUSULA ${ORDINALS[i + 2]}: `, text });
+  }
 
   return (
     <Document
-      title={`Contrato de Servicios v${version} — ${clientName}`}
+      title={`${EVENT_LABEL[eventType] ?? eventType} ${fmtDateFile(eventDate)} ${clientName}`}
       author={h.nombre}
-      subject="Contrato de servicios para evento"
+      subject="Contrato de prestación de servicios"
     >
       <Page size="LETTER" style={s.page}>
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <View style={s.headerTop}>
-            <View>
-              <Text style={s.haciendaName}>{h.nombre}</Text>
-              <Text style={s.headerMeta}>NIT: {h.nit} · {h.direccion}</Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={s.headerMeta}>Generado: {generatedAt}</Text>
-            </View>
-          </View>
-          <Text style={s.contractTitle}>CONTRATO DE SERVICIOS PARA EVENTO</Text>
-          <Text style={s.versionBadge}>Versión {version}</Text>
-        </View>
 
-        {/* ── Párrafo entre las partes ── */}
-        <Text style={s.intro}>{introText}</Text>
-
-        {/* ── Datos del evento ── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>DATOS DEL EVENTO</Text>
-          <View style={s.grid2}>
-            <View style={s.cell}>
-              <Text style={s.label}>Tipo de evento</Text>
-              <Text style={s.value}>{EVENT_LABEL[eventType] ?? eventType}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Fecha</Text>
-              <Text style={s.value}>{fmtDate(eventDate)}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Horario</Text>
-              <Text style={s.value}>{eventStartTime} – {eventEndTime}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Número de invitados</Text>
-              <Text style={s.value}>{guestCount}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Nombre del cliente</Text>
-              <Text style={s.value}>{clientName}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>CC / NIT del cliente</Text>
-              <Text style={s.value}>{clientCc}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Valores ── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>VALORES Y PLAN DE PAGO</Text>
-          <View style={s.grid2}>
-            <View style={s.cell}>
-              <Text style={s.label}>Valor total del evento</Text>
-              <Text style={[s.value, { fontFamily: "Helvetica-Bold" }]}>{fmt(valorTotal)}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Primer anticipo</Text>
-              <Text style={s.value}>{fmt(valorAnticipo)}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Fecha 2.° abono</Text>
-              <Text style={s.value}>{fmtDate(fechaSegundoAbono)}</Text>
-            </View>
-            <View style={s.cell}>
-              <Text style={s.label}>Fecha 3.° abono / saldo</Text>
-              <Text style={s.value}>{fmtDate(fechaTercerAbono)}</Text>
-            </View>
-          </View>
-          <View style={{ marginTop: 5 }}>
-            <Text style={[s.value, { fontSize: 7.5, color: GRIS }]}>
-              Cuenta Davivienda: {h.cuenta_davivienda} a nombre de {h.nombre}
-            </Text>
-          </View>
-        </View>
-
-        {/* ── Ítems ── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>SERVICIOS E ÍTEMS INCLUIDOS</Text>
-          <View style={s.table}>
-            <View style={s.tableHeader}>
-              <Text style={[s.tableHeaderText, s.colItem]}>Ítem</Text>
-              <Text style={[s.tableHeaderText, s.colValue]}>Cantidad / Valor</Text>
-            </View>
-            {allRows.map((row, i) => (
-              <View key={i} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>
-                <View style={s.colItem}>
-                  <Text style={s.tableCell}>{row.label}</Text>
-                  {"fixed" in row && row.fixed && (
-                    <Text style={s.fixedBadge}>Incluido</Text>
-                  )}
-                </View>
-                <Text style={[s.tableCell, s.colValue]}>{row.value}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={s.footer} fixed>
-          <Text style={s.footerText}>{h.nombre} · NIT {h.nit}</Text>
-          <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
-        </View>
-      </Page>
-
-      {/* ── Página 2: Cláusulas + Firmas ── */}
-      <Page size="LETTER" style={s.page}>
-        <View style={[s.header, { marginBottom: 14 }]}>
-          <Text style={[s.haciendaName, { fontSize: 10 }]}>{h.nombre} — Contrato de Servicios v{version}</Text>
-          <Text style={[s.versionBadge, { textAlign: "left", marginTop: 0 }]}>Continuación — Cláusulas</Text>
-        </View>
-
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>CLÁUSULAS Y CONDICIONES</Text>
-          {clauses.map((text, i) =>
-            text ? (
-              <View key={i} style={s.clausulaWrap}>
-                <Text style={s.clausulaNum}>CLÁUSULA {i + 1}</Text>
-                <Text style={s.clausulaText}>{text}</Text>
-              </View>
-            ) : null
+        {/* ── Header fijo ─── */}
+        <View style={s.header} fixed>
+          {logoUrl ? (
+            <Image src={logoUrl} style={s.headerLogo} />
+          ) : (
+            <Text style={s.headerLogoFallback}>{h.nombre}</Text>
           )}
+          <View style={s.headerLine} />
         </View>
 
-        {otroSi && (
-          <View style={[s.section, { marginTop: 6 }]}>
-            <Text style={s.sectionTitle}>OTRO SÍ</Text>
-            <Text style={s.clausulaText}>{otroSi}</Text>
+        {/* ── Título ─── */}
+        <Text style={s.title}>
+          {"CONTRATO DE PRESTACIÓN DE SERVICIOS Y SUMINISTROS"}
+        </Text>
+
+        {/* ── Intro + Cláusulas 1 y 2 (texto corrido) ─── */}
+        <Text style={s.body}>
+          {"Entre los suscritos a saber "}
+          <Text style={s.bold}>{h.representante.toUpperCase()}</Text>
+          {" mayor de edad y vecino de Bogotá, identificada con C.C "}
+          <Text style={s.bold}>{h.cc_representante}</Text>
+          {", como representante legal de la "}
+          <Text style={s.bold}>{h.nombre}</Text>
+          {" NIT "}
+          <Text style={s.bold}>{h.nit}</Text>
+          {", parte que en lo sucesivo y que para efectos del siguiente contrato se denominará "}
+          <Text style={s.bold}>{"EL CONTRATISTA"}</Text>
+          {" por una parte; y por la otra "}
+          <Text style={s.bold}>{clientName.toUpperCase()}</Text>
+          {" mayor de edad, identificado(a) con CC "}
+          <Text style={s.bold}>{clientCc}</Text>
+          {", quien de ahora en adelante se llamará el "}
+          <Text style={s.bold}>{"CONTRATANTE"}</Text>
+          {", hemos acordado celebrar el presente contrato contenido dentro de las siguientes cláusulas: "}
+          <Text style={s.bold}>{"CLAUSULA PRIMERA – OBJETO: "}</Text>
+          {renderTemplate(clauses[0] ?? "", templateVars)}
+          {" "}
+          <Text style={s.bold}>{"CLAUSULA SEGUNDA: "}</Text>
+          {renderTemplate(clauses[1] ?? "", templateVars)}
+        </Text>
+
+        {/* ── Tabla de ítems (4 columnas) ─── */}
+        <View style={s.table}>
+          <View style={s.tHead}>
+            <Text style={[s.tHBase, s.wItem]}>{"ÍTEM"}</Text>
+            <Text style={[s.tHBase, s.wQty]}>{"CANTIDAD"}</Text>
+            <Text style={[s.tHBase, s.wItem]}>{"ÍTEM"}</Text>
+            <Text style={[s.tHBase, s.wQty, s.tHLast]}>{"CANTIDAD"}</Text>
           </View>
+          {pairs.map(([left, right], i) => (
+            <View key={i} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]}>
+              <Text style={[s.tItem, s.wItem]}>{left.label}</Text>
+              <Text style={[s.tQty, s.wQty]}>{left.value}</Text>
+              <Text style={[s.tItem, s.wItem]}>{right ? right.label : ""}</Text>
+              <Text style={[s.tQty, s.wQty, s.tQtyLast]}>
+                {right ? right.value : ""}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Nota de capilla (solo cuando capilla=true) ─── */}
+        {capilla === true && (
+          <Text style={s.capillaNote}>
+            {"CAPILLA, montaje interno ó externo: interno capilla decorada con telas en el techo y cortinas en las paredes, silletería tifanny, alfombra roja, reclinatorio, diván, mesa sacerdote, arreglos decorativos, canastilla para pétalos, almohada para argollas, atril. Externo, zonas verdes, altar con telas, silletería tifanny, alfombra roja, reclinatorio, diván, mesa sacerdote, arreglos decorativos, canastilla para pétalos, almohada para argollas, atril."}
+          </Text>
         )}
 
-        {/* ── Firmas ── */}
+        {/* ── Valores + Cláusulas 3–12: bloque continuo, títulos en bold ─── */}
+        <Text style={s.body}>
+          {valorParts.join("  ·  ")}
+          {clauseItems.map((c, i) => (
+            <Text key={i}>
+              {"  "}
+              <Text style={s.bold}>{c.title}</Text>
+              {renderTemplate(c.text, templateVars)}
+            </Text>
+          ))}
+        </Text>
+
+        {/* ── Otro Sí ─── */}
+        {otroSi ? (
+          <Text style={s.body}>
+            <Text style={s.bold}>{"OTRO SÍ: "}</Text>
+            {otroSi}
+          </Text>
+        ) : null}
+
+        {/* ── Párrafo de constancia ─── */}
+        <Text style={[s.body, { marginTop: 12 }]}>
+          {`Para constancia de este, se firman dos copias del mismo tenor en Bogotá, a los ${nowDay} días del mes de ${nowMon} de ${nowYr}.`}
+        </Text>
+
+        {/* ── Bloque de firmas ─── */}
         <View style={s.firmasRow}>
           <View style={s.firmaBox}>
-            {firmaUrl ? (
-              <Image src={firmaUrl} style={s.firmaImg} />
-            ) : (
-              <View style={s.firmaBlank} />
-            )}
+            <Text style={s.firmaRole}>{"EL CONTRATISTA"}</Text>
+            <View style={s.firmaImgWrap}>
+              {firmaUrl ? <Image src={firmaUrl} style={s.firmaImg} /> : null}
+            </View>
             <View style={s.firmaLine} />
-            <Text style={s.firmaLabel}>Por la Hacienda El Encanto</Text>
             <Text style={s.firmaName}>{h.representante}</Text>
-            <Text style={[s.firmaLabel, { marginTop: 1 }]}>CC {h.cc_representante}</Text>
+            <Text style={s.firmaCC}>{"C.C " + h.cc_representante}</Text>
+            <Text style={s.firmaRoleLabel}>{"CONTRATISTA"}</Text>
           </View>
           <View style={s.firmaBox}>
-            <View style={s.firmaBlank} />
+            <Text style={s.firmaRole}>{"EL CONTRATANTE"}</Text>
+            <View style={s.firmaImgWrap} />
             <View style={s.firmaLine} />
-            <Text style={s.firmaLabel}>El Contratado</Text>
             <Text style={s.firmaName}>{clientName}</Text>
-            <Text style={[s.firmaLabel, { marginTop: 1 }]}>CC {clientCc}</Text>
+            <Text style={s.firmaCC}>{"C.C " + clientCc}</Text>
+            <Text style={s.firmaRoleLabel}>{"CONTRATANTE"}</Text>
           </View>
         </View>
 
+        {/* ── Footer fijo ─── */}
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>{h.nombre} · NIT {h.nit}</Text>
-          <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
+          <Text style={s.footerText}>
+            {`www.hacienda-encanto.com\nDirección ${h.direccion}\nWhatsapp ${fmtPhone(h.whatsapp)}`}
+          </Text>
         </View>
+
       </Page>
     </Document>
   );

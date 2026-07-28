@@ -12,8 +12,15 @@ interface Props {
   isLocked: boolean;
 }
 
-type BoolKey = "barman" | "aseo" | "planner" | "estacion_cafe" | "kit_boda" | "mobiliario";
+type BoolKey =
+  | "dj" | "maestro_ceremonias"
+  | "sonido" | "luces" | "pista_baile" | "gaseosa_agua" | "coctel"
+  | "barman" | "aseo" | "planner" | "estacion_cafe" | "kit_boda" | "mobiliario";
+
 const BOOL_ITEMS: BoolKey[] = [
+  "dj", "maestro_ceremonias",
+  "sonido", "luces", "pista_baile",
+  "gaseosa_agua", "coctel",
   "barman", "aseo", "planner", "estacion_cafe", "kit_boda", "mobiliario",
 ];
 
@@ -21,9 +28,6 @@ type CantidadKey = "menu" | "pastel" | "mesa_dulces" | "canelazo" | "champana" |
 const CANTIDAD_ITEMS: CantidadKey[] = [
   "menu", "pastel", "mesa_dulces", "canelazo", "champana", "whisky", "meseros", "menaje",
 ];
-
-const FIXED_SI = ["DJ", "Maestro de ceremonias", "Sonido", "Luces", "Pista de baile"];
-const FIXED_ILIMITADO = ["Gaseosa y Agua", "Cóctel"];
 
 function Checkmark() {
   return (
@@ -112,41 +116,10 @@ export function ContractItemsForm({
       </div>
 
       <div className="p-5 space-y-6">
-        {/* ─── Siempre incluidos ─── */}
+        {/* ─── Servicios (Sí/No) ─── */}
         <div>
           <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
-            Siempre incluidos
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {FIXED_SI.map((label) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-verde-bosque/[0.07] text-verde-bosque border border-verde-bosque/15 rounded-full text-[0.72rem]"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-verde-bosque/60 shrink-0" />
-                {label}
-                <span className="text-verde-bosque/60 ml-0.5">— Sí</span>
-              </span>
-            ))}
-            {FIXED_ILIMITADO.map((label) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-verde-bosque/[0.07] text-verde-bosque border border-verde-bosque/15 rounded-full text-[0.72rem]"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-verde-bosque/60 shrink-0" />
-                {label}
-                <span className="text-verde-bosque/60 ml-0.5">— Ilimitado</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-t border-negro/[0.05]" />
-
-        {/* ─── Servicios adicionales (Sí/No) ─── */}
-        <div>
-          <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
-            Servicios adicionales
+            Servicios
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {BOOL_ITEMS.map((key) => (
