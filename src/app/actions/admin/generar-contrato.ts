@@ -94,8 +94,9 @@ export async function generarContratoPDF(
     const [y, m, day] = d.split("-");
     return `${day}-${m}-${y}`;
   }
-  function sanitizeName(s: string) {
-    return s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\s-]/g, "").trim();
+  function sanitizeName(n: string) {
+    // ̀-ͯ = combining diacritical marks (removes accents after NFD decompose)
+    return n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\s-]/g, "").trim();
   }
   const tipoLabel = EVENT_LABEL_FILENAME[booking.event_type ?? ""] ?? "Evento";
   const dateStr   = fmtDateDDMMYYYY(booking.event_date);
