@@ -11,20 +11,18 @@ const EVENT_LABEL: Record<string, string> = {
   revelacion: "Revelación de Género",
 };
 
-type EstadoFiltro = "todos" | "en_proceso" | "realizados" | "cancelados";
+type EstadoFiltro = "todos" | "en_proceso" | "realizados";
 
 const TABS: { value: EstadoFiltro; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "en_proceso", label: "En proceso" },
   { value: "realizados", label: "Realizados" },
-  { value: "cancelados", label: "Cancelados" },
 ];
 
 function matchesTab(status: string | null, tab: EstadoFiltro): boolean {
   if (tab === "todos") return true;
   if (tab === "en_proceso") return status === "pending" || status === "confirmed";
-  if (tab === "realizados") return status === "completed";
-  return status === "cancelled";
+  return status === "completed";
 }
 
 function formatDate(d: string | null) {

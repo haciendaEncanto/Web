@@ -34,7 +34,7 @@ export default async function ClientesPage() {
             <span className="text-dorado">Clientes</span>
           </h2>
           <p className="text-gris text-[0.88rem] mt-1">
-            Todos los clientes — activos, cumplidos y cancelados
+            Todos los clientes — activos y cumplidos
           </p>
         </div>
         <Link

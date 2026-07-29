@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { CalendarDays, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { KpiCard } from "@/components/admin/KpiCard";
@@ -71,7 +71,6 @@ export default async function AdminDashboardPage() {
       (r) => r.status !== "cancelled" && r.event_date && r.event_date >= monthStart && r.event_date < nextMonthStart,
     ).length,
     realizados: allBookingRows.filter((r) => r.status === "completed").length,
-    cancelados: allBookingRows.filter((r) => r.status === "cancelled").length,
   };
 
   return (
@@ -85,14 +84,12 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <KpiCard label="Eventos activos" value={counts.activos} icon={CalendarDays}
           sub="en proceso" />
         <KpiCard label="Este mes" value={counts.esteMes} icon={Clock}
           sub="mes en curso" />
         <KpiCard label="Realizados" value={counts.realizados} icon={CheckCircle2}
-          sub="histórico" />
-        <KpiCard label="Cancelados" value={counts.cancelados} icon={XCircle}
           sub="histórico" />
       </div>
 

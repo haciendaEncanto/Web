@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Pencil, ClipboardList, Users, CalendarDays, Eye, FileText, CreditCard, Music2, Map, ScrollText } from "lucide-react";
-import { CancelEventButton } from "@/components/portal/CancelEventButton";
 import { getClientSegment, type ClientBookingRow, type ClientSegment } from "@/lib/clientes";
 
 const EVENT_LABEL: Record<string, string> = {
@@ -16,7 +15,6 @@ const EVENT_LABEL: Record<string, string> = {
 const TABS: { value: ClientSegment; label: string }[] = [
   { value: "activos", label: "Activos" },
   { value: "cumplidos", label: "Cumplidos" },
-  { value: "cancelados", label: "Cancelados" },
 ];
 
 function formatDate(d: string | null) {
@@ -93,10 +91,9 @@ export function ClientesTable({
     ...b,
     segment: getClientSegment(b.status, b.profiles?.is_active ?? true),
   }));
-  const counts: Record<ClientSegment, number> = {
+  const counts: Partial<Record<ClientSegment, number>> = {
     activos: withSegment.filter((b) => b.segment === "activos").length,
     cumplidos: withSegment.filter((b) => b.segment === "cumplidos").length,
-    cancelados: withSegment.filter((b) => b.segment === "cancelados").length,
   };
   const filtered = withSegment.filter((b) => b.segment === tab);
 
@@ -274,9 +271,6 @@ export function ClientesTable({
                             >
                               <CalendarDays size={15} />
                             </Link>
-                            {b.segment !== "cancelados" && (
-                              <CancelEventButton clientId={b.client_id} bookingId={b.id} clientName={name} />
-                            )}
                           </div>
                         </td>
                       )}
