@@ -31,6 +31,8 @@ async function callMeBot(phone: string, apiKey: string, message: string, label: 
   url.searchParams.set("phone", phone);
   url.searchParams.set("text", message);
   url.searchParams.set("apikey", apiKey);
+  const maskedUrl = url.toString().replace(/apikey=[^&]+/, `apikey=${apiKey.slice(0, 4)}***`);
+  console.log(`[callmebot] ${label} → ${maskedUrl}`);
   try {
     const res = await fetch(url.toString());
     const body = await res.text();
@@ -52,10 +54,12 @@ export async function sendWhatsAppNotification(message: string): Promise<void> {
     ? process.env.CALLMEBOT_API_KEY_CENTRAL!
     : process.env.CALLMEBOT_API_KEY;
 
-  console.log("[callmebot] vars:", {
-    hasCentral: !!hasCentral,
+  console.log("[callmebot] env:", {
+    CALLMEBOT_PHONE_CENTRAL: process.env.CALLMEBOT_PHONE_CENTRAL ? "configurada" : "NO configurada",
+    CALLMEBOT_API_KEY_CENTRAL: process.env.CALLMEBOT_API_KEY_CENTRAL ? "configurada" : "NO configurada",
+    usandoCentral: !!hasCentral,
     phone: phone ? `${phone.slice(0, 4)}***${phone.slice(-3)}` : "MISSING",
-    apiKey: apiKey ? `${apiKey.slice(0, 3)}***` : "MISSING",
+    apiKey: apiKey ? `${apiKey.slice(0, 4)}***` : "MISSING",
   });
 
   if (!phone || !apiKey) {

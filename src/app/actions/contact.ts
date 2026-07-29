@@ -75,6 +75,12 @@ export async function submitContactForm(
 
   // Round-robin: incluir asesores activos aunque no tengan fila en asesor_assignments
   const activeAsesores = (asesorProfiles ?? []).filter((p) => p.is_active);
+  console.log(
+    "[round-robin] perfiles encontrados:",
+    (asesorProfiles ?? []).map((p) => `${p.full_name}(is_active=${p.is_active})`)
+  );
+  console.log("[round-robin] activos:", activeAsesores.length);
+
   const assignmentMap = new Map(
     (assignments ?? []).map((a) => [a.asesor_id, a])
   );
@@ -83,17 +89,29 @@ export async function submitContactForm(
     total_assignments: assignmentMap.get(p.id)?.total_assignments ?? 0,
     last_assigned_at: assignmentMap.get(p.id)?.last_assigned_at ?? null,
   }));
+  // Comparador válido: null === null → 0 (empate), null antes que fecha
   virtualList.sort((a, b) => {
     if (a.total_assignments !== b.total_assignments)
       return a.total_assignments - b.total_assignments;
+    if (a.last_assigned_at === null && b.last_assigned_at === null) return 0;
     if (a.last_assigned_at === null) return -1;
     if (b.last_assigned_at === null) return 1;
     return a.last_assigned_at < b.last_assigned_at ? -1 : 1;
   });
+
+  console.log(
+    "[round-robin] orden:",
+    virtualList.map((v) => {
+      const p = (asesorProfiles ?? []).find((x) => x.id === v.asesor_id);
+      return `${p?.full_name}(total=${v.total_assignments},last=${v.last_assigned_at ?? "null"})`;
+    })
+  );
+
   const selected = virtualList[0] ?? null;
   const assignedAsesorId = selected?.asesor_id ?? null;
   const assignedAsesor = (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId) ?? null;
   const asesorName = assignedAsesor?.full_name ?? "el equipo";
+  console.log("[round-robin] seleccionado:", asesorName);
 
   // Guardar en base de datos
   const supabase = await createClient();
