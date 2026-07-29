@@ -829,4 +829,4 @@ Aplicados a todas las rutas (`source: "/(.*)"`)：
 
 ---
 
-*Documento generado el 2026-07-29. Para dudas técnicas contactar al desarrollador.*
+*Documento generado el 2026-07-29. Para dudas técnicas contactar al Ing. Jeisson Rincón.*

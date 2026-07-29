@@ -15,69 +15,69 @@ import {
 import * as fs from 'fs'
 import * as path from 'path'
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
-const C = {
-  rojo:   '#D63B2A',
-  dorado: '#C9A84C',
-  crema:  '#F5F0E8',
-  negro:  '#1A1A1A',
-  gris:   '#F3F3F3',
-  grisB:  '#E4E4E4',
-  grisT:  '#555555',
-  white:  '#FFFFFF',
-  celdaA: '#FBF8F2',
+// ─── Grayscale palette ────────────────────────────────────────────────────────
+const G = {
+  black:   '#000000',
+  dark:    '#222222',
+  medium:  '#555555',
+  border:  '#BBBBBB',
+  bgLight: '#EEEEEE',   // table header, code bg
+  bgRow:   '#F6F6F6',   // alternating rows
+  white:   '#FFFFFF',
 }
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 const ROOT = process.cwd()
-const LOGO = path.join(ROOT, 'public', 'logo-hacienda.png')
 const MD   = path.join(ROOT, 'docs', 'documentacion-tecnica.md')
 const OUT  = path.join(ROOT, 'docs', 'documentacion-tecnica.pdf')
+
+// Logo como data URI — evita problemas de resolución de rutas en Windows
+const logoBuffer = fs.readFileSync(path.join(ROOT, 'public', 'logo-hacienda.png'))
+const LOGO_SRC = `data:image/png;base64,${logoBuffer.toString('base64')}`
+
+const MARGIN = 50
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   // Cover
   coverPage: {
-    backgroundColor: C.crema,
+    backgroundColor: G.white,
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 60,
+    paddingTop: 80,
   },
-  coverLogo:    { width: 200, marginBottom: 30 },
-  coverLineDor: { width: '75%', height: 2.5, backgroundColor: C.dorado, marginBottom: 28 },
-  coverTitle:   {
-    fontFamily: 'Helvetica-Bold', fontSize: 30,
-    color: C.negro, textAlign: 'center', marginBottom: 14,
+  coverLogo:      { width: 180, marginBottom: 28 },
+  coverSepLine:   { width: '60%', height: 1, backgroundColor: G.border, marginBottom: 28 },
+  coverTitle:     {
+    fontFamily: 'Helvetica-Bold', fontSize: 24,
+    color: G.black, textAlign: 'center', marginBottom: 12,
+    letterSpacing: 1,
   },
-  coverSub: {
-    fontFamily: 'Helvetica', fontSize: 16,
-    color: C.grisT, textAlign: 'center', marginBottom: 10,
+  coverSubtitle:  {
+    fontFamily: 'Helvetica', fontSize: 13,
+    color: G.medium, textAlign: 'center', marginBottom: 32,
   },
-  coverDate: {
-    fontFamily: 'Helvetica', fontSize: 11,
-    color: C.grisT, textAlign: 'center', marginBottom: 36,
+  coverSepLine2:  { width: '50%', height: 1, backgroundColor: G.border, marginBottom: 32 },
+  coverMetaLabel: {
+    fontFamily: 'Helvetica-Bold', fontSize: 9,
+    color: G.medium, textAlign: 'center', marginBottom: 4,
   },
-  coverDesc: {
+  coverMetaValue: {
     fontFamily: 'Helvetica', fontSize: 10,
-    color: C.grisT, textAlign: 'center', lineHeight: 1.6,
-    paddingHorizontal: 40,
-  },
-  coverLineRojo: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: 10, backgroundColor: C.rojo,
+    color: G.dark, textAlign: 'center', marginBottom: 10,
   },
 
   // Content page
   page: {
-    backgroundColor: C.white,
-    paddingTop: 88,
-    paddingBottom: 68,
-    paddingLeft: 50,
-    paddingRight: 50,
+    backgroundColor: G.white,
+    paddingTop: 80,
+    paddingBottom: 60,
+    paddingLeft: MARGIN,
+    paddingRight: MARGIN,
     fontFamily: 'Helvetica',
-    fontSize: 10,
-    color: C.negro,
+    fontSize: 9,
+    color: G.dark,
     lineHeight: 1.45,
   },
 
@@ -85,91 +85,118 @@ const S = StyleSheet.create({
   hdr: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
-    height: 70,
+    height: 62,
     paddingTop: 18,
-    paddingHorizontal: 50,
+    paddingHorizontal: MARGIN,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: C.white,
+    backgroundColor: G.white,
   },
-  hdrLogo:  { width: 88, height: 27 },
-  hdrTitle: { fontFamily: 'Helvetica', fontSize: 8, color: C.grisT },
-  hdrLine: {
-    position: 'absolute', bottom: 0, left: 50, right: 50,
-    height: 1.5, backgroundColor: C.rojo,
+  hdrLogo:  { width: 80, height: 24 },
+  hdrTitle: { fontFamily: 'Helvetica', fontSize: 8, color: G.medium },
+  hdrLine:  {
+    position: 'absolute', bottom: 0, left: MARGIN, right: MARGIN,
+    height: 0.8, backgroundColor: G.border,
   },
 
   // Fixed footer
   ftr: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    height: 50,
-    paddingHorizontal: 50,
+    height: 42,
+    paddingHorizontal: MARGIN,
     paddingBottom: 14,
     justifyContent: 'flex-end',
     alignItems: 'center',
-    backgroundColor: C.white,
+    backgroundColor: G.white,
   },
-  ftrLine: { width: '100%', height: 1.5, backgroundColor: C.dorado, marginBottom: 7 },
-  ftrText: { fontFamily: 'Helvetica', fontSize: 8, color: C.grisT, textAlign: 'center' },
+  ftrLine: { width: '100%', height: 0.8, backgroundColor: G.border, marginBottom: 8 },
+  ftrText: { fontFamily: 'Helvetica', fontSize: 8, color: G.medium, textAlign: 'center' },
 
   // Headings
-  h2wrap: { marginTop: 22, marginBottom: 8 },
-  h2:     { fontFamily: 'Helvetica-Bold', fontSize: 15, color: C.rojo },
-  h2line: { height: 1.5, backgroundColor: C.rojo, marginTop: 3 },
+  h2wrap: { marginTop: 20, marginBottom: 8 },
+  h2:     { fontFamily: 'Helvetica-Bold', fontSize: 14, color: G.black },
+  h2line: { height: 0.8, backgroundColor: G.border, marginTop: 4 },
   h3:     {
-    fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.dorado,
+    fontFamily: 'Helvetica-Bold', fontSize: 11, color: G.dark,
     marginTop: 14, marginBottom: 5,
   },
-  h4wrap: { flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 4 },
-  h4bar:  { width: 3.5, height: 13, backgroundColor: C.dorado, marginRight: 6 },
-  h4:     { fontFamily: 'Helvetica-Bold', fontSize: 10.5, color: C.negro },
-
-  // Content blocks
-  para:   { marginBottom: 7, lineHeight: 1.5 },
-  bq:     {
-    borderLeftWidth: 3, borderLeftColor: C.dorado, borderLeftStyle: 'solid',
-    paddingLeft: 10, marginBottom: 8, marginTop: 2,
+  h4wrap: {
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: 9, marginBottom: 3,
   },
-  bqTxt:  { fontFamily: 'Helvetica-Oblique', fontSize: 9, color: C.grisT, lineHeight: 1.5 },
-  hr:     { height: 0.8, backgroundColor: C.grisB, marginVertical: 8 },
+  h4bar:  { width: 2.5, height: 11, backgroundColor: G.medium, marginRight: 5 },
+  h4:     { fontFamily: 'Helvetica-Bold', fontSize: 9.5, color: G.dark },
+
+  // Body blocks
+  para:   { marginBottom: 6, lineHeight: 1.5, fontSize: 9 },
+  bq:     {
+    borderLeftWidth: 2.5, borderLeftColor: G.border, borderLeftStyle: 'solid',
+    paddingLeft: 9, marginBottom: 7, marginTop: 2,
+  },
+  bqTxt:  { fontFamily: 'Helvetica-Oblique', fontSize: 8.5, color: G.medium, lineHeight: 1.5 },
+  hr:     { height: 0.8, backgroundColor: G.bgLight, marginVertical: 8 },
 
   // Tables
-  tbl:    { marginBottom: 10, marginTop: 4, borderWidth: 0.5, borderColor: C.grisB },
-  tblHdr: { flexDirection: 'row', backgroundColor: C.rojo },
-  tblRow: { flexDirection: 'row', borderTopWidth: 0.5, borderTopColor: C.grisB },
-  tblRowA:{ backgroundColor: C.celdaA },
-  tblCell:{ flex: 1, padding: 5 },
-  tblTH:  { fontFamily: 'Helvetica-Bold', fontSize: 8.5, color: C.white },
-  tblTD:  { fontFamily: 'Helvetica', fontSize: 8.5, color: C.negro, lineHeight: 1.4 },
+  tbl:    {
+    marginBottom: 10, marginTop: 4,
+    borderWidth: 0.8, borderColor: G.border,
+  },
+  tblHdr: { flexDirection: 'row', backgroundColor: G.bgLight },
+  tblRow: {
+    flexDirection: 'row',
+    borderTopWidth: 0.8, borderTopColor: G.border,
+  },
+  tblRowAlt: { backgroundColor: G.bgRow },
+  tblCell:   { flex: 1, padding: 5 },
+  tblTH:     { fontFamily: 'Helvetica-Bold', fontSize: 8.5, color: G.black },
+  tblTD:     { fontFamily: 'Helvetica', fontSize: 8.5, color: G.dark, lineHeight: 1.35 },
 
   // Code blocks
   code:   {
-    backgroundColor: C.gris, padding: 8, marginBottom: 8, marginTop: 4,
-    borderLeftWidth: 3, borderLeftColor: C.dorado, borderLeftStyle: 'solid',
+    backgroundColor: G.bgLight,
+    padding: 8,
+    marginBottom: 8, marginTop: 3,
   },
-  codeLn: { fontFamily: 'Courier', fontSize: 6.5, color: '#2A2A2A', lineHeight: 1.35 },
+  codeLn: { fontFamily: 'Courier', fontSize: 7, color: G.dark, lineHeight: 1.3 },
 
   // Lists
-  listWrap: { marginBottom: 7 },
-  listItem: { flexDirection: 'row', marginBottom: 3, paddingLeft: 6 },
-  listBul:  { width: 14, fontFamily: 'Helvetica', fontSize: 9, color: C.rojo, paddingTop: 0.5 },
-  listTxt:  { flex: 1, fontSize: 9.5, lineHeight: 1.45 },
+  listWrap: { marginBottom: 6 },
+  listItem: { flexDirection: 'row', marginBottom: 2.5, paddingLeft: 4 },
+  listBul:  { width: 12, fontFamily: 'Helvetica', fontSize: 9, color: G.medium, paddingTop: 0.5 },
+  listTxt:  { flex: 1, fontSize: 9, lineHeight: 1.45 },
 })
+
+// ─── Version number normalizer ────────────────────────────────────────────────
+// Convierte ^4.5.1 → v4.5.1, ~2 → v2 (solo fuera de patrones regex)
+function normalizeVersions(text: string): string {
+  return text
+    .replace(/(?<![/\w])\^(\d)/g, 'v$1')
+    .replace(/(?<![/\w])~(\d)/g, 'v$1')
+}
 
 // ─── Inline text parser ───────────────────────────────────────────────────────
 function inline(raw: string): React.ReactNode[] {
-  const text = raw
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // strip markdown links
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/
-  const parts = text.split(pattern).filter(p => p !== '')
+  // Strip markdown links, then normalize versions in plain-text segments
+  const stripped = raw.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  const parts = stripped.split(/(\*\*[^*]+\*\*|`[^`]+`)/).filter(p => p !== '')
+
   return parts.map((p, i) => {
     if (p.startsWith('**') && p.endsWith('**') && p.length > 4)
-      return <Text key={i} style={{ fontFamily: 'Helvetica-Bold' }}>{p.slice(2, -2)}</Text>
+      return (
+        <Text key={i} style={{ fontFamily: 'Helvetica-Bold' }}>
+          {normalizeVersions(p.slice(2, -2))}
+        </Text>
+      )
     if (p.startsWith('`') && p.endsWith('`') && p.length > 2)
-      return <Text key={i} style={{ fontFamily: 'Courier', fontSize: 8, backgroundColor: '#E8E8E8' }}>{p.slice(1, -1)}</Text>
-    return <Text key={i}>{p}</Text>
+      // Code spans: keep content unchanged
+      return (
+        <Text key={i} style={{ fontFamily: 'Courier', fontSize: 7.5, backgroundColor: G.bgLight }}>
+          {p.slice(1, -1)}
+        </Text>
+      )
+    return <Text key={i}>{normalizeVersions(p)}</Text>
   })
 }
 
@@ -182,7 +209,8 @@ type MdBlock =
 
 // ─── Markdown parser ──────────────────────────────────────────────────────────
 function parseMd(md: string): MdBlock[] {
-  const lines = md.split('\n')
+  // Strip \r — el archivo tiene CRLF y el \r rompe el regex de separadores de tabla
+  const lines = md.replace(/\r/g, '').split('\n')
   const out: MdBlock[] = []
   let i = 0
   while (i < lines.length) {
@@ -228,10 +256,9 @@ function parseMd(md: string): MdBlock[] {
       out.push({ t: 'list', items }); continue
     }
 
-    // Empty line
     if (l.trim() === '') { i++; continue }
 
-    // Paragraph — collect consecutive body lines
+    // Paragraph
     const pl: string[] = []
     while (
       i < lines.length &&
@@ -271,9 +298,7 @@ function RenderBlock({ b }: { b: MdBlock }) {
 
     case 'hr': return <View style={S.hr} />
 
-    case 'para': return (
-      <Text style={S.para}>{inline(b.text)}</Text>
-    )
+    case 'para': return <Text style={S.para}>{inline(b.text)}</Text>
 
     case 'bq': return (
       <View style={S.bq}>
@@ -288,7 +313,6 @@ function RenderBlock({ b }: { b: MdBlock }) {
       if (!hdr) return null
       return (
         <View style={S.tbl}>
-          {/* Header row */}
           <View style={S.tblHdr}>
             {hdr.map((c, j) => (
               <View key={j} style={S.tblCell}>
@@ -296,9 +320,8 @@ function RenderBlock({ b }: { b: MdBlock }) {
               </View>
             ))}
           </View>
-          {/* Data rows */}
           {body.map((row, ri) => (
-            <View key={ri} style={[S.tblRow, ri % 2 !== 0 ? S.tblRowA : {}]}>
+            <View key={ri} style={[S.tblRow, ri % 2 !== 0 ? S.tblRowAlt : {}]}>
               {row.map((c, ci) => (
                 <View key={ci} style={S.tblCell}>
                   <Text style={S.tblTD}>{inline(c)}</Text>
@@ -322,7 +345,7 @@ function RenderBlock({ b }: { b: MdBlock }) {
       <View style={S.listWrap}>
         {b.items.map((item, j) => (
           <View key={j} style={S.listItem}>
-            <Text style={S.listBul}>{'• '}</Text>
+            <Text style={S.listBul}>{'- '}</Text>
             <Text style={S.listTxt}>{inline(item)}</Text>
           </View>
         ))}
@@ -333,51 +356,62 @@ function RenderBlock({ b }: { b: MdBlock }) {
   }
 }
 
-// ─── PDF Document component ───────────────────────────────────────────────────
+// ─── Cover page ───────────────────────────────────────────────────────────────
+function CoverPage() {
+  return (
+    <Page size="A4" style={S.coverPage}>
+      <Image src={LOGO_SRC} style={S.coverLogo} />
+      <View style={S.coverSepLine} />
+      <Text style={S.coverTitle}>{'DOCUMENTACIÓN TÉCNICA'}</Text>
+      <Text style={S.coverSubtitle}>Hacienda El Encanto — Portal de Eventos</Text>
+      <View style={S.coverSepLine2} />
+
+      <View style={{ alignItems: 'center' }}>
+        <Text style={S.coverMetaLabel}>CLIENTE</Text>
+        <Text style={S.coverMetaValue}>Hacienda El Encanto — Juan Carlos Pulido</Text>
+
+        <Text style={S.coverMetaLabel}>DESARROLLADOR</Text>
+        <Text style={S.coverMetaValue}>Ing. Jeisson Rincón</Text>
+
+        <Text style={S.coverMetaLabel}>FECHA</Text>
+        <Text style={S.coverMetaValue}>29 de julio de 2026</Text>
+      </View>
+    </Page>
+  )
+}
+
+// ─── PDF Document ─────────────────────────────────────────────────────────────
 function TechDoc({ blocks }: { blocks: MdBlock[] }) {
   return (
     <Document
       title="Documentación Técnica — Hacienda El Encanto"
-      author="Hacienda El Encanto"
+      author="Ing. Jeisson Rincón"
       creator="Portal Hacienda El Encanto"
       subject="Documentación técnica del sistema de gestión de eventos"
     >
-      {/* ── Portada ── */}
-      <Page size="A4" style={S.coverPage}>
-        <Image src={LOGO} style={S.coverLogo} />
-        <View style={S.coverLineDor} />
-        <Text style={S.coverTitle}>Documentación Técnica</Text>
-        <Text style={S.coverSub}>Hacienda El Encanto — Portal de Eventos</Text>
-        <Text style={S.coverDate}>29 de julio de 2026</Text>
-        <Text style={S.coverDesc}>
-          {'Documento de referencia técnica para el sistema de gestión de eventos,\n'}
-          {'portal multi-rol y sitio web público.\n'}
-          {'Cota, Cundinamarca — Colombia'}
-        </Text>
-        <View style={S.coverLineRojo} />
-      </Page>
+      <CoverPage />
 
-      {/* ── Páginas de contenido ── */}
+      {/* Páginas de contenido */}
       <Page size="A4" style={S.page}>
         {/* Header fijo */}
         <View style={S.hdr} fixed>
-          <Image src={LOGO} style={S.hdrLogo} />
+          <Image src={LOGO_SRC} style={S.hdrLogo} />
           <Text style={S.hdrTitle}>Documentación Técnica — Hacienda El Encanto</Text>
           <View style={S.hdrLine} />
         </View>
 
-        {/* Footer fijo con número de página */}
+        {/* Footer fijo */}
         <View style={S.ftr} fixed>
           <View style={S.ftrLine} />
           <Text
             style={S.ftrText}
             render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
-              `Página ${pageNumber} de ${totalPages}   ·   Hacienda El Encanto   ·   www.hacienda-encanto.com`
+              `Pág. ${pageNumber} / ${totalPages}`
             }
           />
         </View>
 
-        {/* Bloques de contenido */}
+        {/* Contenido */}
         {blocks.map((b, i) => (
           <RenderBlock key={i} b={b} />
         ))}
@@ -402,10 +436,10 @@ async function main() {
   fs.writeFileSync(OUT, buf)
 
   const kb = Math.round(buf.length / 1024)
-  console.log(`✅  PDF guardado: ${OUT}  (${kb} KB)`)
+  console.log(`✅  Guardado: ${OUT}  (${kb} KB)`)
 }
 
 main().catch(e => {
-  console.error('❌  Error generando PDF:', e)
+  console.error('❌  Error:', e)
   process.exit(1)
 })
