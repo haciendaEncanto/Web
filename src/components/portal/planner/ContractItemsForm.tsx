@@ -1,32 +1,42 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { saveContractItems } from "@/app/actions/contrato-items";
 import { VARIABLE_ITEM_LABELS, type ContractItems } from "@/lib/contract-items";
 
 interface Props {
-  bookingId: string;
-  initialItems: ContractItems;
+  bookingId:     string;
+  initialItems:  ContractItems;
   initialCapilla: boolean;
-  isLocked: boolean;
+  isLocked:      boolean;
+  guestCount?:   number;
 }
 
-type BoolKey =
-  | "dj" | "maestro_ceremonias"
-  | "sonido" | "luces" | "pista_baile" | "gaseosa_agua" | "coctel"
-  | "barman" | "aseo" | "planner" | "estacion_cafe" | "kit_boda" | "mobiliario";
+// Servicios con cantidad por defecto 1 (anteriormente booleanos)
+const SERVICIO_NUM_ITEMS = [
+  "dj", "maestro_ceremonia", "sonido", "luces", "pista_baile",
+  "barman", "aseo", "planner", "estacion_cafe", "mobiliario",
+] as const;
+type ServicioNumKey = typeof SERVICIO_NUM_ITEMS[number];
 
-const BOOL_ITEMS: BoolKey[] = [
-  "dj", "maestro_ceremonias",
-  "sonido", "luces", "pista_baile",
-  "gaseosa_agua", "coctel",
-  "barman", "aseo", "planner", "estacion_cafe", "kit_boda", "mobiliario",
-];
+// Sí/No toggle puro (siguen siendo booleanos)
+type BoolKey = "gaseosa_agua" | "coctel" | "kit_boda";
+const BOOL_ITEMS: BoolKey[] = ["gaseosa_agua", "coctel", "kit_boda"];
 
-type CantidadKey = "menu" | "pastel" | "mesa_dulces" | "canelazo" | "champana" | "whisky" | "meseros" | "menaje";
-const CANTIDAD_ITEMS: CantidadKey[] = [
+// Pirotecnia: toggle + cantidad condicional
+const PIROTECNIA_ITEMS = ["pirotecnia", "polvora_fria"] as const;
+type PirotecniaKey = typeof PIROTECNIA_ITEMS[number];
+
+// Cantidades por persona
+const CANTIDAD_ITEMS = [
   "menu", "pastel", "mesa_dulces", "canelazo", "champana", "whisky", "meseros", "menaje",
+] as const;
+type CantidadKey = typeof CANTIDAD_ITEMS[number];
+
+// Campos que se auto-rellenan con guest_count cuando están en 0
+const AUTOFILL_KEYS: (ServicioNumKey | CantidadKey)[] = [
+  "canelazo", "champana", "mobiliario", "menaje",
 ];
 
 function Checkmark() {
@@ -38,8 +48,8 @@ function Checkmark() {
 }
 
 interface ToggleBtnProps {
-  label: string;
-  checked: boolean;
+  label:    string;
+  checked:  boolean;
   disabled: boolean;
   onToggle: () => void;
 }
@@ -69,26 +79,66 @@ function ToggleBtn({ label, checked, disabled, onToggle }: ToggleBtnProps) {
   );
 }
 
+function NumInput({
+  value, onChange, disabled, min = 0,
+}: {
+  value: string; onChange: (v: string) => void; disabled: boolean; min?: number;
+}) {
+  return (
+    <input
+      type="number"
+      min={min}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className="w-full border border-negro/10 bg-crema/10 px-2.5 py-1.5 text-[0.82rem] text-negro rounded-lg focus:outline-none focus:border-dorado/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+    />
+  );
+}
+
 export function ContractItemsForm({
   bookingId,
   initialItems,
   initialCapilla,
   isLocked,
+  guestCount,
 }: Props) {
-  const [items, setItems] = useState<ContractItems>(initialItems);
+  const [items, setItems]     = useState<ContractItems>(initialItems);
   const [capilla, setCapilla] = useState(initialCapilla);
-  const [saved, setSaved] = useState(false);
-  const [err, setErr] = useState("");
+  const [saved, setSaved]     = useState(false);
+  const [err, setErr]         = useState("");
   const [isPending, startTransition] = useTransition();
 
-  function toggle(key: BoolKey) {
+  // Auto-rellenar campos con guest_count si están en "0" al montar el form
+  useEffect(() => {
+    if (!guestCount || guestCount <= 0) return;
+    const gc = String(guestCount);
+    setItems((prev) => {
+      const next = { ...prev };
+      for (const key of AUTOFILL_KEYS) {
+        if ((next[key] as string) === "0") {
+          (next as Record<string, unknown>)[key] = gc;
+        }
+      }
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function setStr(key: keyof ContractItems, val: string) {
+    if (isLocked) return;
+    setItems((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function toggleBool(key: BoolKey) {
     if (isLocked) return;
     setItems((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function setCantidad(key: CantidadKey, val: string) {
+  function togglePirotecnia(key: PirotecniaKey) {
     if (isLocked) return;
-    setItems((prev) => ({ ...prev, [key]: val }));
+    const active = parseInt((items[key] as string) || "0") > 0;
+    setItems((prev) => ({ ...prev, [key]: active ? "0" : "1" }));
   }
 
   function handleSave() {
@@ -116,10 +166,72 @@ export function ContractItemsForm({
       </div>
 
       <div className="p-5 space-y-6">
-        {/* ─── Servicios (Sí/No) ─── */}
+
+        {/* ─── Servicios por cantidad (default 1) ─── */}
         <div>
           <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
-            Servicios
+            Servicios — cantidad
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {SERVICIO_NUM_ITEMS.map((key) => (
+              <div key={key}>
+                <label className="text-[0.71rem] text-gris block mb-1">
+                  {VARIABLE_ITEM_LABELS[key]}
+                </label>
+                <NumInput
+                  value={items[key] as string}
+                  onChange={(v) => setStr(key, v)}
+                  disabled={isLocked}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-[0.68rem] text-gris/60 mt-2">0 = no aplica</p>
+        </div>
+
+        <div className="border-t border-negro/[0.05]" />
+
+        {/* ─── Pirotecnia ─── */}
+        <div>
+          <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
+            Pirotecnia
+          </p>
+          <div className="space-y-2.5">
+            {PIROTECNIA_ITEMS.map((key) => {
+              const active = parseInt((items[key] as string) || "0") > 0;
+              return (
+                <div key={key} className="flex items-center gap-3">
+                  <ToggleBtn
+                    label={VARIABLE_ITEM_LABELS[key]}
+                    checked={active}
+                    disabled={isLocked}
+                    onToggle={() => togglePirotecnia(key)}
+                  />
+                  {active && (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={1}
+                        value={items[key] as string}
+                        onChange={(e) => !isLocked && setStr(key, e.target.value)}
+                        disabled={isLocked}
+                        className="w-20 border border-negro/10 bg-crema/10 px-2.5 py-1.5 text-[0.82rem] text-negro rounded-lg focus:outline-none focus:border-dorado/60 disabled:opacity-40"
+                      />
+                      <span className="text-[0.71rem] text-gris">unid.</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="border-t border-negro/[0.05]" />
+
+        {/* ─── Sí/No ─── */}
+        <div>
+          <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
+            Sí / No
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {BOOL_ITEMS.map((key) => (
@@ -128,7 +240,7 @@ export function ContractItemsForm({
                 label={VARIABLE_ITEM_LABELS[key]}
                 checked={items[key] as boolean}
                 disabled={isLocked}
-                onToggle={() => toggle(key)}
+                onToggle={() => toggleBool(key)}
               />
             ))}
             <ToggleBtn
@@ -142,10 +254,15 @@ export function ContractItemsForm({
 
         <div className="border-t border-negro/[0.05]" />
 
-        {/* ─── Cantidades ─── */}
+        {/* ─── Cantidades por persona ─── */}
         <div>
           <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
-            Cantidades
+            Cantidades por persona
+            {guestCount && guestCount > 0 && (
+              <span className="ml-2 text-dorado normal-case font-normal">
+                ({guestCount} invitados)
+              </span>
+            )}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {CANTIDAD_ITEMS.map((key) => (
@@ -153,22 +270,20 @@ export function ContractItemsForm({
                 <label className="text-[0.71rem] text-gris block mb-1">
                   {VARIABLE_ITEM_LABELS[key]}
                 </label>
-                <input
-                  type="number"
-                  min="0"
+                <NumInput
                   value={items[key] as string}
-                  onChange={(e) => setCantidad(key, e.target.value)}
+                  onChange={(v) => setStr(key, v)}
                   disabled={isLocked}
-                  className="w-full border border-negro/10 bg-crema/10 px-2.5 py-1.5 text-[0.82rem] text-negro rounded-lg focus:outline-none focus:border-dorado/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 />
               </div>
             ))}
           </div>
+          <p className="text-[0.68rem] text-gris/60 mt-2">0 = no aplica</p>
         </div>
 
         <div className="border-t border-negro/[0.05]" />
 
-        {/* ─── Texto libre ─── */}
+        {/* ─── Otros ─── */}
         <div>
           <p className="text-[0.7rem] font-semibold text-gris/70 uppercase tracking-wider mb-2.5">
             Otros
@@ -210,9 +325,7 @@ export function ContractItemsForm({
               Guardado
             </span>
           )}
-          {err && (
-            <span className="text-[0.78rem] text-rojo">{err}</span>
-          )}
+          {err && <span className="text-[0.78rem] text-rojo">{err}</span>}
         </div>
       )}
     </div>

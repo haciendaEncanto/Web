@@ -23,7 +23,10 @@ const LINEA = "#CCCCCC";
 
 const ORDINALS = [
   "PRIMERA", "SEGUNDA", "TERCERA", "CUARTA", "QUINTA", "SEXTA",
-  "SÉPTIMA", "OCTAVA", "NOVENA", "DÉCIMA", "DÉCIMA PRIMERA", "DÉCIMA SEGUNDA",
+  "SÉPTIMA", "OCTAVA", "NOVENA", "DÉCIMA",
+  "DÉCIMA PRIMERA", "DÉCIMA SEGUNDA", "DÉCIMA TERCERA", "DÉCIMA CUARTA",
+  "DÉCIMA QUINTA", "DÉCIMA SEXTA", "DÉCIMA SÉPTIMA", "DÉCIMA OCTAVA",
+  "DÉCIMA NOVENA", "VIGÉSIMA",
 ];
 
 const EVENT_LABEL: Record<string, string> = {
@@ -257,6 +260,7 @@ export interface ContractPDFData {
   fechaTercerAbono:   string | null;
   contractItems:      ContractItems;
   clauses:            string[];
+  extraClauses?:      { text: string }[];
   firmaUrl:           string | null;
   logoUrl?:           string | null;
   version:            number;
@@ -362,7 +366,7 @@ export function ContratoPDF({
   clientName, clientCc, clientPhone, clientAddress, clientEmail,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
   valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
-  contractItems, clauses, firmaUrl, logoUrl, version, otroSi,
+  contractItems, clauses, extraClauses, firmaUrl, logoUrl, otroSi,
   haciendaData,
 }: ContractPDFData) {
   const h: HaciendaData = haciendaData ?? { ...HACIENDA_INFO };
@@ -378,32 +382,33 @@ export function ContratoPDF({
   const nowMon = MONTHS[now.getMonth()];
   const nowYr  = now.getFullYear();
 
-  // Línea de valores concatenada
-  const valorParts: string[] = [];
-  if (valorTotal)        valorParts.push(`Valor total del evento: ${fmtMoney(valorTotal)}`);
-  if (valorAnticipo)     valorParts.push(`Primer anticipo: ${fmtMoney(valorAnticipo)}`);
-  if (fechaSegundoAbono) valorParts.push(`Fecha 2.° abono: ${fmtDate(fechaSegundoAbono)}`);
-  if (fechaTercerAbono)  valorParts.push(`Saldo: ${fmtDate(fechaTercerAbono)}`);
-  valorParts.push(`Cuenta Davivienda No. ${h.cuenta_davivienda} a nombre de ${h.nombre}.`);
+  // Saldo = total − anticipo (no se almacena por separado)
+  const saldo = (valorTotal && valorAnticipo) ? valorTotal - valorAnticipo : null;
 
   // Variables dinámicas compartidas entre cláusulas
   const templateVars: Record<string, string> = {
-    fecha_evento:       fmtDate(eventDate),
-    hora_inicio:        fmtTime(eventStartTime),
-    hora_fin:           fmtTime(eventEndTime),
-    tipo_evento:        (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
-    num_invitados:      String(guestCount),
-    cliente_direccion:  clientAddress || "—",
-    cliente_telefono:   clientPhone ? fmtPhone(clientPhone) : "—",
-    cliente_email:      clientEmail || "—",
+    fecha_evento:         fmtDate(eventDate),
+    hora_inicio:          fmtTime(eventStartTime),
+    hora_fin:             fmtTime(eventEndTime),
+    tipo_evento:          (EVENT_LABEL[eventType] ?? eventType).toUpperCase(),
+    num_invitados:        String(guestCount),
+    cliente_direccion:    clientAddress || "—",
+    cliente_telefono:     clientPhone ? fmtPhone(clientPhone) : "—",
+    cliente_email:        clientEmail || "—",
+    valor_total:          fmtMoney(valorTotal),
+    valor_anticipo:       fmtMoney(valorAnticipo),
+    fecha_segundo_abono:  fmtDate(fechaSegundoAbono),
+    valor_segundo_abono:  "A convenir",
+    fecha_tercer_abono:   fmtDate(fechaTercerAbono),
+    valor_tercer_abono:   fmtMoney(saldo),
   };
 
-  // Cláusulas 3–12: array para poder renderizar el título en bold
+  // Cláusulas 3–N: array para renderizar título en bold
   const clauseItems: { title: string; text: string }[] = [];
-  for (let i = 0; i < clauses.slice(2).length; i++) {
-    const text = clauses[i + 2];
+  for (let i = 2; i < clauses.length; i++) {
+    const text = clauses[i];
     if (!text) continue;
-    clauseItems.push({ title: `CLAUSULA ${ORDINALS[i + 2]}: `, text });
+    clauseItems.push({ title: `CLAUSULA ${ORDINALS[i] ?? `N°${i + 1}`}: `, text });
   }
 
   return (
@@ -482,14 +487,20 @@ export function ContratoPDF({
           </Text>
         )}
 
-        {/* ── Valores + Cláusulas 3–12: bloque continuo, títulos en bold ─── */}
+        {/* ── Cláusulas 3–N: bloque continuo, títulos en bold ─── */}
         <Text style={s.body}>
-          {valorParts.join("  ·  ")}
           {clauseItems.map((c, i) => (
             <Text key={i}>
               {"  "}
               <Text style={s.bold}>{c.title}</Text>
               {renderTemplate(c.text, templateVars)}
+            </Text>
+          ))}
+          {extraClauses && extraClauses.length > 0 && extraClauses.map((ec, i) => (
+            <Text key={`extra-${i}`}>
+              {"  "}
+              <Text style={s.bold}>{`CLÁUSULA ADICIONAL ${i + 1}: `}</Text>
+              {renderTemplate(ec.text, templateVars)}
             </Text>
           ))}
         </Text>

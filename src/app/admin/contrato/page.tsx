@@ -40,6 +40,18 @@ export default async function ContratoAdminPage() {
     haciendaValues[key] = contentMap[key] ?? null;
   }
 
+  // Cláusulas adicionales (contrato_clausula_extra_*)
+  const { data: extraRows } = await admin
+    .from("site_content")
+    .select("key, content")
+    .like("key", "contrato_clausula_extra_%")
+    .order("key");
+
+  const extraClauses = (extraRows ?? []).map((r) => ({
+    key:     r.key,
+    content: r.content ?? "",
+  }));
+
   return (
     <div className="space-y-4 max-w-3xl">
       <div>
@@ -51,7 +63,12 @@ export default async function ContratoAdminPage() {
           se reflejan en todos los contratos que se generen a partir de ahora.
         </p>
       </div>
-      <ContratoAdminManager clauses={clauses} firmaUrl={firmaUrl} haciendaValues={haciendaValues} />
+      <ContratoAdminManager
+        clauses={clauses}
+        firmaUrl={firmaUrl}
+        haciendaValues={haciendaValues}
+        extraClauses={extraClauses}
+      />
     </div>
   );
 }

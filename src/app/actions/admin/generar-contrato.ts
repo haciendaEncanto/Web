@@ -9,12 +9,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { ContratoPDF } from "@/components/contrato/ContratoPDF";
 import {
-  DEFAULT_CONTRACT_ITEMS,
+  coerceContractItems,
   CLAUSULA_KEYS,
   FIRMA_KEY,
   HACIENDA_CONTENT_KEYS,
   resolveHaciendaData,
-  type ContractItems,
 } from "@/lib/contract-items";
 import { generatedContractPath } from "@/lib/uploads/config";
 
@@ -95,6 +94,16 @@ export async function generarContratoPDF(
   const firmaUrl = contentMap[FIRMA_KEY] ?? null;
   const haciendaData = resolveHaciendaData(contentMap);
 
+  // Cláusulas adicionales
+  const { data: extraRows } = await admin
+    .from("site_content")
+    .select("key, content")
+    .like("key", "contrato_clausula_extra_%")
+    .order("key");
+  const extraClauses = (extraRows ?? [])
+    .filter((r) => r.content?.trim())
+    .map((r) => ({ text: r.content ?? "" }));
+
   // Determinar número de versión
   const { count } = await admin
     .from("documents")
@@ -152,8 +161,9 @@ export async function generarContratoPDF(
       valorAnticipo: booking.valor_anticipo,
       fechaSegundoAbono: booking.fecha_segundo_abono ?? null,
       fechaTercerAbono: booking.fecha_tercer_abono ?? null,
-      contractItems: (booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS,
+      contractItems: coerceContractItems(booking.contract_items),
       clauses,
+      extraClauses,
       firmaUrl,
       logoUrl: logoDataUri,
       version,

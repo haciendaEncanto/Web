@@ -6,7 +6,7 @@ const infoItems = [
     title: "Ubicación",
     text: "Vía Suba Km 5.5, Cota, Cundinamarca, Colombia",
   },
-  { icon: "📱", title: "WhatsApp", text: "+57 324 783 6852" },
+  { icon: "📱", title: "WhatsApp", text: "+57 315 006 1597" },
   { icon: "✉️", title: "Correo", text: "contacto@hacienda-encanto.com" },
   { icon: "📷", title: "Instagram", text: "@haciendaelencanto" },
 ];

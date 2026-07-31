@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const FALLBACK_PHONE = "573247836852";
+const FALLBACK_PHONE = "573150061597";
 const WA_TEXT = "Hola%2C+me+gustaría+obtener+más+información+sobre+los+eventos+en+Hacienda+El+Encanto.";
 
 export async function GET() {
