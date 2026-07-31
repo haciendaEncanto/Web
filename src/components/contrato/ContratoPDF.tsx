@@ -257,7 +257,9 @@ export interface ContractPDFData {
   valorTotal:         number | null;
   valorAnticipo:      number | null;
   fechaSegundoAbono:  string | null;
+  valorSegundoAbono:  number | null;
   fechaTercerAbono:   string | null;
+  valorTercerAbono:   number | null;
   contractItems:      ContractItems;
   clauses:            string[];
   extraClauses?:      { text: string }[];
@@ -365,7 +367,7 @@ function buildItemRows(items: ContractItems, capilla: boolean | null): ItemRow[]
 export function ContratoPDF({
   clientName, clientCc, clientPhone, clientAddress, clientEmail,
   eventType, eventDate, eventStartTime, eventEndTime, guestCount, capilla,
-  valorTotal, valorAnticipo, fechaSegundoAbono, fechaTercerAbono,
+  valorTotal, valorAnticipo, fechaSegundoAbono, valorSegundoAbono, fechaTercerAbono, valorTercerAbono,
   contractItems, clauses, extraClauses, firmaUrl, logoUrl, otroSi,
   haciendaData,
 }: ContractPDFData) {
@@ -382,9 +384,6 @@ export function ContratoPDF({
   const nowMon = MONTHS[now.getMonth()];
   const nowYr  = now.getFullYear();
 
-  // Saldo = total − anticipo (no se almacena por separado)
-  const saldo = (valorTotal && valorAnticipo) ? valorTotal - valorAnticipo : null;
-
   // Variables dinámicas compartidas entre cláusulas
   const templateVars: Record<string, string> = {
     fecha_evento:         fmtDate(eventDate),
@@ -398,9 +397,9 @@ export function ContratoPDF({
     valor_total:          fmtMoney(valorTotal),
     valor_anticipo:       fmtMoney(valorAnticipo),
     fecha_segundo_abono:  fmtDate(fechaSegundoAbono),
-    valor_segundo_abono:  "A convenir",
+    valor_segundo_abono:  fmtMoney(valorSegundoAbono),
     fecha_tercer_abono:   fmtDate(fechaTercerAbono),
-    valor_tercer_abono:   fmtMoney(saldo),
+    valor_tercer_abono:   fmtMoney(valorTercerAbono),
   };
 
   // Cláusulas 3–N: array para renderizar título en bold

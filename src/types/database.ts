@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -154,6 +154,8 @@ export type Database = {
           total_amount: number
           updated_at: string
           valor_anticipo: number | null
+          valor_segundo_abono: number | null
+          valor_tercer_abono: number | null
           valor_total: number | null
         }
         Insert: {
@@ -179,6 +181,8 @@ export type Database = {
           total_amount?: number
           updated_at?: string
           valor_anticipo?: number | null
+          valor_segundo_abono?: number | null
+          valor_tercer_abono?: number | null
           valor_total?: number | null
         }
         Update: {
@@ -204,6 +208,8 @@ export type Database = {
           total_amount?: number
           updated_at?: string
           valor_anticipo?: number | null
+          valor_segundo_abono?: number | null
+          valor_tercer_abono?: number | null
           valor_total?: number | null
         }
         Relationships: [

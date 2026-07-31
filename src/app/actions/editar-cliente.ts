@@ -29,10 +29,12 @@ const schema = z.object({
       { message: `La cantidad de invitados debe ser una de: ${GUEST_COUNT_OPTIONS.join(", ")}` }
     ),
   // Financiero
-  valor_total:         z.string().optional(),
-  valor_anticipo:      z.string().optional(),
-  fecha_segundo_abono: z.string().optional(),
-  fecha_tercer_abono:  z.string().optional(),
+  valor_total:          z.string().optional(),
+  valor_anticipo:       z.string().optional(),
+  fecha_segundo_abono:  z.string().optional(),
+  valor_segundo_abono:  z.string().optional(),
+  fecha_tercer_abono:   z.string().optional(),
+  valor_tercer_abono:   z.string().optional(),
   capilla:             z.string().optional(),
   // contract_items como JSON string
   contract_items:      z.string().optional(),
@@ -146,10 +148,12 @@ export async function editarCliente(
     contract_items:   contractItems as unknown as Json,
   };
 
-  if (d.valor_total) bookingUpdate.valor_total = parseFloat(d.valor_total);
-  if (d.valor_anticipo) bookingUpdate.valor_anticipo = parseFloat(d.valor_anticipo);
+  if (d.valor_total)         bookingUpdate.valor_total         = parseFloat(d.valor_total);
+  if (d.valor_anticipo)      bookingUpdate.valor_anticipo      = parseFloat(d.valor_anticipo);
   if (d.fecha_segundo_abono) bookingUpdate.fecha_segundo_abono = d.fecha_segundo_abono;
-  if (d.fecha_tercer_abono) bookingUpdate.fecha_tercer_abono = d.fecha_tercer_abono;
+  if (d.valor_segundo_abono) bookingUpdate.valor_segundo_abono = parseFloat(d.valor_segundo_abono);
+  if (d.fecha_tercer_abono)  bookingUpdate.fecha_tercer_abono  = d.fecha_tercer_abono;
+  if (d.valor_tercer_abono)  bookingUpdate.valor_tercer_abono  = parseFloat(d.valor_tercer_abono);
   if (d.capilla === "true") bookingUpdate.capilla = true;
   else if (d.capilla === "false") bookingUpdate.capilla = false;
 

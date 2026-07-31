@@ -35,7 +35,9 @@ export default async function AdminClienteDetailPage({ params }: Props) {
     .select(
       `id, event_type, event_date, event_start_time, event_end_time,
        guest_count, status, notes, valor_total, valor_anticipo,
-       fecha_segundo_abono, fecha_tercer_abono, capilla, contract_items`,
+       fecha_segundo_abono, valor_segundo_abono,
+       fecha_tercer_abono, valor_tercer_abono,
+       capilla, contract_items`,
     )
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
@@ -82,7 +84,9 @@ export default async function AdminClienteDetailPage({ params }: Props) {
     valor_total:         booking.valor_total?.toString() ?? "",
     valor_anticipo:      booking.valor_anticipo?.toString() ?? "",
     fecha_segundo_abono: booking.fecha_segundo_abono ?? "",
+    valor_segundo_abono: booking.valor_segundo_abono?.toString() ?? "",
     fecha_tercer_abono:  booking.fecha_tercer_abono ?? "",
+    valor_tercer_abono:  booking.valor_tercer_abono?.toString() ?? "",
     capilla:             booking.capilla === true ? "true" : booking.capilla === false ? "false" : "",
     contract_items:      (booking.contract_items as typeof DEFAULT_CONTRACT_ITEMS | null) ?? DEFAULT_CONTRACT_ITEMS,
   };

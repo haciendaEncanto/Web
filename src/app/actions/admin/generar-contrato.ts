@@ -67,7 +67,7 @@ export async function generarContratoPDF(
   // Fetch booking activo
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, event_type, event_date, event_start_time, event_end_time, guest_count, capilla, valor_total, valor_anticipo, fecha_segundo_abono, fecha_tercer_abono, contract_items, status")
+    .select("id, event_type, event_date, event_start_time, event_end_time, guest_count, capilla, valor_total, valor_anticipo, fecha_segundo_abono, valor_segundo_abono, fecha_tercer_abono, valor_tercer_abono, contract_items, status")
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -160,7 +160,9 @@ export async function generarContratoPDF(
       valorTotal: booking.valor_total,
       valorAnticipo: booking.valor_anticipo,
       fechaSegundoAbono: booking.fecha_segundo_abono ?? null,
+      valorSegundoAbono: booking.valor_segundo_abono ?? null,
       fechaTercerAbono: booking.fecha_tercer_abono ?? null,
+      valorTercerAbono: booking.valor_tercer_abono ?? null,
       contractItems: coerceContractItems(booking.contract_items),
       clauses,
       extraClauses,
