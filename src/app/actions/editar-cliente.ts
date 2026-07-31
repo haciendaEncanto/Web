@@ -79,7 +79,7 @@ export async function editarCliente(
     .eq("id", user.id)
     .single();
 
-  if (!caller || !["admin", "wedding_planner"].includes(caller.role)) {
+  if (!caller || !["admin", "wedding_planner", "asesor_comercial"].includes(caller.role)) {
     return { error: "Sin permisos" };
   }
 

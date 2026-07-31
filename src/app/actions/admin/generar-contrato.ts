@@ -23,7 +23,7 @@ async function verifyPlanner() {
   if (!user) return { error: "No autenticado" as string, userId: "" };
   const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !["admin", "wedding_planner"].includes(profile.role))
+  if (!profile || !["admin", "wedding_planner", "asesor_comercial"].includes(profile.role))
     return { error: "Sin permisos" as string, userId: "" };
   return { error: null, userId: user.id };
 }

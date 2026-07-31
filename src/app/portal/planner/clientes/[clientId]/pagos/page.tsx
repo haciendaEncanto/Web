@@ -16,7 +16,7 @@ export default async function PagosPlannerPage({
 
   const { data: me } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
-  if (!me || !["admin", "wedding_planner"].includes(me.role)) redirect("/portal");
+  if (!me || !["admin", "wedding_planner", "asesor_comercial"].includes(me.role)) redirect("/portal");
 
   const admin = createAdminClient();
 

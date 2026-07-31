@@ -17,13 +17,14 @@ export default async function ClientesPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["admin", "wedding_planner"].includes(profile.role)) {
+  if (!profile || !["admin", "wedding_planner", "asesor_comercial"].includes(profile.role)) {
     redirect("/portal");
   }
 
-  // La lista de clientes del planner no restringe por fecha — el planner
-  // gestiona clientes a lo largo de todo el ciclo de vida del evento.
+  // La lista de clientes no restringe por fecha — se gestiona el ciclo de vida completo.
   const rows = await fetchClientBookingRows(supabase, { restrictToUpcoming: false });
+
+  const canCreateClient = ["admin", "wedding_planner"].includes(profile.role);
 
   return (
     <div className="space-y-6">
@@ -37,12 +38,14 @@ export default async function ClientesPage() {
             Todos los clientes — activos y cumplidos
           </p>
         </div>
-        <Link
-          href="/portal/planner/nuevo-cliente"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco text-[0.8rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors shrink-0 mt-1"
-        >
-          + Nuevo cliente
-        </Link>
+        {canCreateClient && (
+          <Link
+            href="/portal/planner/nuevo-cliente"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-dorado text-blanco text-[0.8rem] font-medium rounded-xl hover:bg-dorado/90 transition-colors shrink-0 mt-1"
+          >
+            + Nuevo cliente
+          </Link>
+        )}
       </div>
 
       <ClientesTable rows={rows} />
