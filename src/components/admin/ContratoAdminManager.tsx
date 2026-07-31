@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { CheckCircle2, Loader2, Upload, Trash2, FileSignature } from "lucide-react";
+import { CheckCircle2, Loader2, Upload, Trash2, FileSignature, Plus } from "lucide-react";
 import {
   saveClausula,
   saveHaciendaField,
   requestFirmaUpload,
   confirmFirmaUpload,
   deleteFirma,
+  saveExtraClausula,
+  deleteExtraClausula,
 } from "@/app/actions/admin/contrato";
 import { uploadFileToSignedUrl } from "@/lib/uploads/client";
 import {
@@ -17,10 +19,16 @@ import {
   CLAUSULA_KEYS,
 } from "@/lib/contract-items";
 
+interface ExtraClausula {
+  key:     string;
+  content: string;
+}
+
 interface Props {
-  clauses: Record<string, string | null>;
-  firmaUrl: string | null;
+  clauses:       Record<string, string | null>;
+  firmaUrl:      string | null;
   haciendaValues: Record<string, string | null>;
+  extraClauses:  ExtraClausula[];
 }
 
 function ClausulEditor({ index, clausulaKey, initial }: { index: number; clausulaKey: string; initial: string }) {
@@ -237,8 +245,109 @@ function FirmaSection({ initial }: { initial: string | null }) {
   );
 }
 
-export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues }: Props) {
+function ExtraClausulEditor({
+  clausulaKey,
+  displayIndex,
+  initial,
+  onDelete,
+}: {
+  clausulaKey:  string;
+  displayIndex: number;
+  initial:      string;
+  onDelete:     (key: string) => void;
+}) {
+  const [value, setValue]   = useState(initial);
+  const [saved, setSaved]   = useState(false);
+  const [err, setErr]       = useState("");
+  const [isPending, startTransition]   = useTransition();
+  const [deleting, startDelTransition] = useTransition();
+
+  function handleSave() {
+    setErr("");
+    setSaved(false);
+    startTransition(async () => {
+      const res = await saveExtraClausula(clausulaKey, value);
+      if (res.error) { setErr(res.error); return; }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    });
+  }
+
+  function handleDelete() {
+    if (!confirm(`¿Eliminar cláusula adicional ${displayIndex}?`)) return;
+    startDelTransition(async () => {
+      const res = await deleteExtraClausula(clausulaKey);
+      if (res.error) { setErr(res.error); return; }
+      onDelete(clausulaKey);
+    });
+  }
+
+  return (
+    <div className="bg-blanco rounded-2xl border border-negro/[0.07] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-negro/5 bg-crema/30 flex items-center justify-between gap-3">
+        <h3 className="font-serif text-[0.92rem] text-negro tracking-[-0.01em]">
+          Cláusula adicional {displayIndex}
+        </h3>
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span className="flex items-center gap-1 text-[0.73rem] text-green-600">
+              <CheckCircle2 size={12} /> Guardado
+            </span>
+          )}
+          {err && <span className="text-[0.73rem] text-rojo">{err}</span>}
+          <button
+            onClick={handleSave}
+            disabled={isPending || deleting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-dorado text-blanco text-[0.75rem] font-medium rounded-lg hover:bg-dorado/90 transition-colors disabled:opacity-50"
+          >
+            {isPending && <Loader2 size={11} className="animate-spin" />}
+            {isPending ? "Guardando…" : "Guardar"}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isPending || deleting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-rojo/30 text-[0.75rem] text-rojo rounded-lg hover:bg-rojo/5 transition-colors disabled:opacity-50"
+          >
+            {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+            Eliminar
+          </button>
+        </div>
+      </div>
+      <div className="p-5">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          rows={5}
+          className="w-full border border-negro/10 bg-crema/10 px-3 py-2.5 text-[0.83rem] text-negro rounded-lg focus:outline-none focus:border-dorado/70 transition-colors resize-y leading-relaxed"
+          placeholder="Texto de la cláusula adicional…"
+        />
+        <p className="text-[0.68rem] text-gris mt-1.5">
+          Disponibles: {`{{fecha_evento}} {{hora_inicio}} {{hora_fin}} {{num_invitados}} {{valor_total}} {{valor_anticipo}} {{cliente_email}}`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues, extraClauses: initialExtras }: Props) {
   const haciendaFields = Object.keys(HACIENDA_CONTENT_KEYS) as (keyof typeof HACIENDA_INFO)[];
+  const [extras, setExtras] = useState<ExtraClausula[]>(initialExtras);
+
+  function nextExtraKey() {
+    const maxN = extras.reduce((m, e) => {
+      const match = e.key.match(/contrato_clausula_extra_(\d+)/);
+      return match ? Math.max(m, parseInt(match[1])) : m;
+    }, 0);
+    return `contrato_clausula_extra_${maxN + 1}`;
+  }
+
+  function handleAddExtra() {
+    setExtras((prev) => [...prev, { key: nextExtraKey(), content: "" }]);
+  }
+
+  function handleDeleteExtra(key: string) {
+    setExtras((prev) => prev.filter((e) => e.key !== key));
+  }
 
   return (
     <div className="space-y-8">
@@ -251,15 +360,15 @@ export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues }: Prop
           </h3>
         </div>
         <div className="px-5 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {haciendaFields.map((fieldKey) => {
-            const contentKey = HACIENDA_CONTENT_KEYS[fieldKey];
+          {haciendaFields.map((fk) => {
+            const contentKey = HACIENDA_CONTENT_KEYS[fk];
             return (
               <HaciendaFieldEditor
-                key={fieldKey}
-                fieldKey={fieldKey}
+                key={fk}
+                fieldKey={fk}
                 contentKey={contentKey}
-                label={HACIENDA_FIELD_LABELS[fieldKey]}
-                initial={haciendaValues[contentKey] ?? HACIENDA_INFO[fieldKey]}
+                label={HACIENDA_FIELD_LABELS[fk]}
+                initial={haciendaValues[contentKey] ?? HACIENDA_INFO[fk]}
               />
             );
           })}
@@ -269,7 +378,7 @@ export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues }: Prop
       {/* Firma */}
       <FirmaSection initial={firmaUrl} />
 
-      {/* Cláusulas */}
+      {/* Cláusulas base */}
       <div>
         <h2 className="font-serif text-[1.2rem] text-negro tracking-[-0.02em] mb-4">
           Cláusulas del contrato
@@ -284,6 +393,39 @@ export function ContratoAdminManager({ clauses, firmaUrl, haciendaValues }: Prop
             />
           ))}
         </div>
+      </div>
+
+      {/* Cláusulas adicionales */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-[1.2rem] text-negro tracking-[-0.02em]">
+            Cláusulas adicionales
+          </h2>
+          <button
+            onClick={handleAddExtra}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-negro text-crema text-[0.78rem] font-medium rounded-xl hover:bg-negro/85 transition-colors"
+          >
+            <Plus size={13} />
+            Agregar cláusula
+          </button>
+        </div>
+        {extras.length === 0 ? (
+          <p className="text-[0.82rem] text-gris">
+            No hay cláusulas adicionales. Usa el botón para agregar.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {extras.map((ec, i) => (
+              <ExtraClausulEditor
+                key={ec.key}
+                clausulaKey={ec.key}
+                displayIndex={i + 1}
+                initial={ec.content}
+                onDelete={handleDeleteExtra}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -117,6 +117,44 @@ export async function saveHaciendaField(
   return {};
 }
 
+export async function saveExtraClausula(
+  key: string,
+  content: string,
+): Promise<{ error?: string }> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  if (!key.match(/^contrato_clausula_extra_(\d+)$/)) return { error: "Clave inválida" };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("site_content")
+    .upsert({ key, content }, { onConflict: "key" });
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/contrato");
+  return {};
+}
+
+export async function deleteExtraClausula(
+  key: string,
+): Promise<{ error?: string }> {
+  const { error: authErr } = await verifyAdmin();
+  if (authErr) return { error: authErr };
+
+  if (!key.match(/^contrato_clausula_extra_(\d+)$/)) return { error: "Clave inválida" };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("site_content")
+    .delete()
+    .eq("key", key);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/contrato");
+  return {};
+}
+
 export async function deleteFirma(): Promise<{ error?: string }> {
   const { error: authErr } = await verifyAdmin();
   if (authErr) return { error: authErr };

@@ -21,7 +21,7 @@ export default async function EditarClientePage({ params }: Props) {
     .eq("id", user.id)
     .single();
 
-  if (!caller || !["admin", "wedding_planner"].includes(caller.role)) {
+  if (!caller || !["admin", "wedding_planner", "asesor_comercial"].includes(caller.role)) {
     redirect("/portal");
   }
 
@@ -38,7 +38,10 @@ export default async function EditarClientePage({ params }: Props) {
   const { data: booking } = await supabase
     .from("bookings")
     .select(`id, event_type, event_date, event_start_time, event_end_time, guest_count,
-             valor_total, valor_anticipo, fecha_segundo_abono, fecha_tercer_abono, capilla, contract_items`)
+             valor_total, valor_anticipo,
+             fecha_segundo_abono, valor_segundo_abono,
+             fecha_tercer_abono, valor_tercer_abono,
+             capilla, contract_items`)
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -62,7 +65,9 @@ export default async function EditarClientePage({ params }: Props) {
     valor_total:         booking.valor_total?.toString() ?? "",
     valor_anticipo:      booking.valor_anticipo?.toString() ?? "",
     fecha_segundo_abono: booking.fecha_segundo_abono ?? "",
+    valor_segundo_abono: booking.valor_segundo_abono?.toString() ?? "",
     fecha_tercer_abono:  booking.fecha_tercer_abono ?? "",
+    valor_tercer_abono:  booking.valor_tercer_abono?.toString() ?? "",
     capilla:             booking.capilla === true ? "true" : booking.capilla === false ? "false" : "",
     contract_items:      (booking.contract_items as typeof DEFAULT_CONTRACT_ITEMS | null) ?? DEFAULT_CONTRACT_ITEMS,
   };

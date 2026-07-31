@@ -103,7 +103,8 @@ function getNavItems(role: string): NavItem[] {
   }
   if (role === "asesor_comercial") {
     return [
-      { href: "/portal/asesor-comercial", label: "Eventos", icon: CalendarDays },
+      { href: "/portal/asesor-comercial", label: "Eventos y Contactos", icon: CalendarDays },
+      { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
     ];
   }
   if (role === "asesor_logistica") {

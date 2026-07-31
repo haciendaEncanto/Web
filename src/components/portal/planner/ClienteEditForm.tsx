@@ -64,10 +64,12 @@ interface Props {
     event_start_time: string;
     event_end_time: string;
     guest_count: number;
-    valor_total: string;
-    valor_anticipo: string;
+    valor_total:         string;
+    valor_anticipo:      string;
     fecha_segundo_abono: string;
-    fecha_tercer_abono: string;
+    valor_segundo_abono: string;
+    fecha_tercer_abono:  string;
+    valor_tercer_abono:  string;
     capilla: string;
     contract_items: ContractItems;
   };
@@ -99,11 +101,13 @@ export function ClienteEditForm({
   const [guestCount, setGuestCount] = useState(String(defaults.guest_count));
 
   // Financiero
-  const [valorTotal, setValorTotal] = useState(defaults.valor_total);
-  const [valorAnticipo, setValorAnticipo] = useState(defaults.valor_anticipo);
+  const [valorTotal, setValorTotal]               = useState(defaults.valor_total);
+  const [valorAnticipo, setValorAnticipo]         = useState(defaults.valor_anticipo);
   const [fechaSegundoAbono, setFechaSegundoAbono] = useState(defaults.fecha_segundo_abono);
-  const [fechaTercerAbono, setFechaTercerAbono] = useState(defaults.fecha_tercer_abono);
-  const [capilla, setCapilla] = useState(defaults.capilla);
+  const [valorSegundoAbono, setValorSegundoAbono] = useState(defaults.valor_segundo_abono);
+  const [fechaTercerAbono, setFechaTercerAbono]   = useState(defaults.fecha_tercer_abono);
+  const [valorTercerAbono, setValorTercerAbono]   = useState(defaults.valor_tercer_abono);
+  const [capilla, setCapilla]                     = useState(defaults.capilla);
 
   // Ítems del contrato
   const [items, setItems] = useState<ContractItems>(defaults.contract_items);
@@ -127,10 +131,12 @@ export function ClienteEditForm({
     fd.set("event_start_time",    startTime);
     fd.set("event_end_time",      endTime);
     fd.set("guest_count",         guestCount);
-    fd.set("valor_total",         valorTotal);
-    fd.set("valor_anticipo",      valorAnticipo);
-    fd.set("fecha_segundo_abono", fechaSegundoAbono);
-    fd.set("fecha_tercer_abono",  fechaTercerAbono);
+    fd.set("valor_total",          valorTotal);
+    fd.set("valor_anticipo",       valorAnticipo);
+    fd.set("fecha_segundo_abono",  fechaSegundoAbono);
+    fd.set("valor_segundo_abono",  valorSegundoAbono);
+    fd.set("fecha_tercer_abono",   fechaTercerAbono);
+    fd.set("valor_tercer_abono",   valorTercerAbono);
     fd.set("capilla",             capilla);
     fd.set("contract_items",      JSON.stringify(items));
 
@@ -286,12 +292,34 @@ export function ClienteEditForm({
             className={inputCls(!!fieldError("fecha_segundo_abono"))}
           />
         </Field>
-        <Field label="Fecha 3.° abono" error={fieldError("fecha_tercer_abono")}>
+        <Field label="Valor 2.° abono (COP)" error={fieldError("valor_segundo_abono")}>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            value={valorSegundoAbono}
+            onChange={(e) => setValorSegundoAbono(e.target.value)}
+            placeholder="Ej. 5000000"
+            className={inputCls(!!fieldError("valor_segundo_abono"))}
+          />
+        </Field>
+        <Field label="Fecha 3.° abono / saldo" error={fieldError("fecha_tercer_abono")}>
           <input
             type="date"
             value={fechaTercerAbono}
             onChange={(e) => setFechaTercerAbono(e.target.value)}
             className={inputCls(!!fieldError("fecha_tercer_abono"))}
+          />
+        </Field>
+        <Field label="Valor 3.° abono / saldo (COP)" error={fieldError("valor_tercer_abono")}>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            value={valorTercerAbono}
+            onChange={(e) => setValorTercerAbono(e.target.value)}
+            placeholder="Ej. 7000000"
+            className={inputCls(!!fieldError("valor_tercer_abono"))}
           />
         </Field>
       </Section>

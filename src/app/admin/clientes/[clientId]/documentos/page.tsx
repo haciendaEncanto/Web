@@ -1,10 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { listGuestListsConTamano } from "@/app/actions/invitados";
-import { InvitadosReadOnly } from "@/components/portal/InvitadosReadOnly";
+import { listDocumentosConTamano } from "@/app/actions/documentos";
+import { DocumentosPlanner } from "@/components/portal/planner/DocumentosPlanner";
 
-export default async function InvitadosAdminPage({
+export default async function AdminDocumentosPage({
   params,
 }: {
   params: Promise<{ clientId: string }>;
@@ -27,43 +27,28 @@ export default async function InvitadosAdminPage({
 
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, guest_count")
+    .select("id, event_type")
     .eq("client_id", clientId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
-  let mapUrl: string | null = null;
-  let mapName: string | null = null;
-  let files: Awaited<ReturnType<typeof listGuestListsConTamano>> = [];
+  const { data: rows } = booking
+    ? await admin
+        .from("documents")
+        .select("id, title, type, created_at, file_url")
+        .eq("booking_id", booking.id)
+        .order("created_at", { ascending: false })
+    : { data: [] };
 
-  if (booking) {
-    const guestCount = booking.guest_count ?? 0;
-    const { data: maps } = await admin
-      .from("salon_maps")
-      .select("name, image_url")
-      .lte("min_guests", guestCount)
-      .gte("max_guests", guestCount)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    mapUrl = maps?.[0]?.image_url ?? null;
-    mapName = maps?.[0]?.name ?? null;
-
-    const { data: rows } = await admin
-      .from("guest_tables")
-      .select("id, file_url, uploaded_at")
-      .eq("booking_id", booking.id)
-      .order("uploaded_at", { ascending: false });
-    files = await listGuestListsConTamano(rows ?? []);
-  }
+  const documentos = await listDocumentosConTamano(rows ?? []);
 
   return (
     <div className="max-w-3xl space-y-6">
       <div>
         <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
-          Distribución de mesas
+          Documentos del cliente
         </h2>
         <p className="text-gris text-[0.88rem] mt-1">
           {profile.full_name ?? profile.email}
@@ -73,11 +58,11 @@ export default async function InvitadosAdminPage({
       {!booking ? (
         <div className="bg-blanco rounded-2xl border border-negro/[0.07] p-12 text-center">
           <p className="text-gris text-[0.88rem]">
-            Este cliente no tiene un evento activo.
+            Este cliente no tiene un evento activo. Crea uno primero.
           </p>
         </div>
       ) : (
-        <InvitadosReadOnly mapUrl={mapUrl} mapName={mapName} files={files} />
+        <DocumentosPlanner bookingId={booking.id} initialDocumentos={documentos} />
       )}
     </div>
   );

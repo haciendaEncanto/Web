@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { listDocumentosConTamano } from "@/app/actions/documentos";
 import { ContratoPlanner } from "@/components/portal/planner/ContratoPlanner";
 import { ContractItemsForm } from "@/components/portal/planner/ContractItemsForm";
-import { DEFAULT_CONTRACT_ITEMS, type ContractItems } from "@/lib/contract-items";
+import { coerceContractItems } from "@/lib/contract-items";
 
 export default async function ContratoPlannerPage({
   params,
@@ -19,7 +19,7 @@ export default async function ContratoPlannerPage({
 
   const { data: me } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
-  if (!me || !["admin", "wedding_planner"].includes(me.role)) redirect("/portal");
+  if (!me || !["admin", "wedding_planner", "asesor_comercial"].includes(me.role)) redirect("/portal");
 
   const admin = createAdminClient();
 
@@ -32,7 +32,7 @@ export default async function ContratoPlannerPage({
 
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, valor_total, valor_anticipo, contract_locked, contract_items, capilla")
+    .select("id, valor_total, valor_anticipo, contract_locked, contract_items, capilla, guest_count")
     .eq("client_id", clientId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
@@ -102,9 +102,10 @@ export default async function ContratoPlannerPage({
       {booking && (
         <ContractItemsForm
           bookingId={booking.id}
-          initialItems={{ ...DEFAULT_CONTRACT_ITEMS, ...((booking.contract_items as Partial<ContractItems>) ?? {}) }}
+          initialItems={coerceContractItems(booking.contract_items)}
           initialCapilla={booking.capilla ?? false}
           isLocked={booking.contract_locked ?? false}
+          guestCount={booking.guest_count ?? undefined}
         />
       )}
 

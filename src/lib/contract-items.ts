@@ -2,53 +2,56 @@
 // Guardados como JSONB en bookings.contract_items
 
 export interface ContractItems {
-  // Sí/No con cantidad fija implícita (DJ=1, Maestro=1)
-  dj:                  boolean;
-  maestro_ceremonias:  boolean;
-  // Sí/No — infraestructura
-  sonido:              boolean;
-  luces:               boolean;
-  pista_baile:         boolean;
+  // Cantidad (número) — 0 = no aplica, ≥1 = cantidad incluida
+  dj:                  string;
+  maestro_ceremonia:   string;
+  sonido:              string;
+  luces:               string;
+  pista_baile:         string;
+  barman:              string;
+  aseo:                string;
+  planner:             string;
+  estacion_cafe:       string;
+  mobiliario:          string;  // auto-fill con guest_count
+  pirotecnia:          string;  // NUEVO
+  polvora_fria:        string;  // NUEVO
+  // Sí/No toggle
   gaseosa_agua:        boolean;
   coctel:              boolean;
-  // Sí/No simple
-  barman:              boolean;
-  aseo:                boolean;
-  planner:             boolean;
-  estacion_cafe:       boolean;
   kit_boda:            boolean;
-  mobiliario:          boolean;
-  // Cantidad (número de personas/unidades)
+  // Cantidad (por persona / unidades)
   menu:                string;
   pastel:              string;
   mesa_dulces:         string;
-  canelazo:            string;
-  champana:            string;
+  canelazo:            string;  // auto-fill con guest_count
+  champana:            string;  // auto-fill con guest_count (copas)
   whisky:              string;
   meseros:             string;
-  menaje:              string;
+  menaje:              string;  // auto-fill con guest_count
   // Texto libre
   tarjetas_invitacion: string;
 }
 
-// Todos los booleanos inician en false — el planner activa los que aplican
+// Por defecto 1 para servicios estándar siempre incluidos; 0 para cantidades variables
 export const DEFAULT_CONTRACT_ITEMS: ContractItems = {
-  dj:                  false,
-  maestro_ceremonias:  false,
-  sonido:              false,
-  luces:               false,
-  pista_baile:         false,
+  dj:                  "1",
+  maestro_ceremonia:   "1",
+  sonido:              "1",
+  luces:               "1",
+  pista_baile:         "1",
+  barman:              "1",
+  aseo:                "1",
+  planner:             "1",
+  estacion_cafe:       "1",
+  mobiliario:          "0",
+  pirotecnia:          "0",
+  polvora_fria:        "0",
   gaseosa_agua:        false,
   coctel:              false,
-  barman:              false,
-  aseo:                false,
-  planner:             false,
-  estacion_cafe:       false,
   kit_boda:            false,
-  mobiliario:          false,
   menu:                "0",
   pastel:              "0",
-  mesa_dulces:         "0",
+  mesa_dulces:         "1",
   canelazo:            "0",
   champana:            "0",
   whisky:              "0",
@@ -57,12 +60,39 @@ export const DEFAULT_CONTRACT_ITEMS: ContractItems = {
   tarjetas_invitacion: "Según cotización",
 };
 
+// Convierte datos históricos (booleanos en campos ahora string) al tipo actual
+export function coerceContractItems(raw: unknown): ContractItems {
+  const result = { ...DEFAULT_CONTRACT_ITEMS };
+  if (!raw || typeof raw !== "object") return result;
+  const obj = raw as Record<string, unknown>;
+
+  for (const key of Object.keys(result) as (keyof ContractItems)[]) {
+    const v = obj[key];
+    if (v === undefined || v === null) continue;
+    const def = result[key];
+    if (typeof def === "string") {
+      if (typeof v === "boolean") {
+        // campo migrado de boolean → string
+        (result as Record<string, unknown>)[key] = v ? "1" : "0";
+      } else {
+        (result as Record<string, unknown>)[key] = String(v);
+      }
+    } else {
+      // boolean fields (gaseosa_agua, coctel, kit_boda)
+      (result as Record<string, unknown>)[key] = Boolean(v);
+    }
+  }
+
+  return result;
+}
+
 // Orden de visualización en formulario y PDF
 export const VARIABLE_ITEM_ORDER: (keyof ContractItems)[] = [
-  "dj", "maestro_ceremonias",
+  "dj", "maestro_ceremonia",
   "sonido", "luces", "pista_baile",
   "gaseosa_agua", "coctel",
   "barman", "aseo", "planner", "estacion_cafe", "kit_boda", "mobiliario",
+  "pirotecnia", "polvora_fria",
   "menu", "pastel", "mesa_dulces", "canelazo", "champana", "whisky",
   "meseros", "menaje", "tarjetas_invitacion",
 ];
@@ -70,7 +100,7 @@ export const VARIABLE_ITEM_ORDER: (keyof ContractItems)[] = [
 // Etiquetas de los ítems variables
 export const VARIABLE_ITEM_LABELS: Record<keyof ContractItems, string> = {
   dj:                  "DJ",
-  maestro_ceremonias:  "Maestro de ceremonias",
+  maestro_ceremonia:   "Maestro de ceremonia",
   sonido:              "Sonido",
   luces:               "Luces",
   pista_baile:         "Pista de baile",
@@ -82,11 +112,13 @@ export const VARIABLE_ITEM_LABELS: Record<keyof ContractItems, string> = {
   estacion_cafe:       "Estación de café",
   kit_boda:            "Kit de boda",
   mobiliario:          "Mobiliario",
+  pirotecnia:          "Pirotecnia",
+  polvora_fria:        "Pólvora fría",
   menu:                "Menú",
   pastel:              "Pastel",
   mesa_dulces:         "Mesa de dulces",
   canelazo:            "Canelazo",
-  champana:            "Champaña",
+  champana:            "Champaña (copas)",
   whisky:              "Whisky (botellas)",
   meseros:             "Meseros",
   menaje:              "Menaje",
@@ -94,26 +126,28 @@ export const VARIABLE_ITEM_LABELS: Record<keyof ContractItems, string> = {
 };
 
 // Tipo de campo por ítem variable
-// sino-fixed-1 → Sí/No; si Sí, muestra "1" fijo
-// sino          → Sí/No puro
-// cantidad      → número
+// sino-fixed-1 → legacy (sin uso activo tras migración)
+// sino          → Sí/No toggle booleano
+// cantidad      → número entero ≥ 0
 // texto         → texto libre
 export type ContractFieldType = "sino-fixed-1" | "sino" | "cantidad" | "texto";
 
 export const VARIABLE_ITEM_TYPES: Record<keyof ContractItems, ContractFieldType> = {
-  dj:                  "sino-fixed-1",
-  maestro_ceremonias:  "sino-fixed-1",
-  sonido:              "sino",
-  luces:               "sino",
-  pista_baile:         "sino",
+  dj:                  "cantidad",
+  maestro_ceremonia:   "cantidad",
+  sonido:              "cantidad",
+  luces:               "cantidad",
+  pista_baile:         "cantidad",
   gaseosa_agua:        "sino",
   coctel:              "sino",
-  barman:              "sino",
-  aseo:                "sino",
-  planner:             "sino",
-  estacion_cafe:       "sino",
+  barman:              "cantidad",
+  aseo:                "cantidad",
+  planner:             "cantidad",
+  estacion_cafe:       "cantidad",
   kit_boda:            "sino",
-  mobiliario:          "sino",
+  mobiliario:          "cantidad",
+  pirotecnia:          "cantidad",
+  polvora_fria:        "cantidad",
   menu:                "cantidad",
   pastel:              "cantidad",
   mesa_dulces:         "cantidad",
@@ -132,7 +166,7 @@ export const HACIENDA_INFO = {
   cc_representante:  "1127661646",
   nit:               "901860912-1",
   direccion:         "Kilómetro 5, Vía Suba Cota",
-  whatsapp:          "3247836852",
+  whatsapp:          "3150061597",
   email:             "contacto@hacienda-encanto.com",
   cuenta_davivienda: "108900524282",
 } as const;
@@ -174,8 +208,8 @@ export function resolveHaciendaData(
   return result;
 }
 
-// Número de cláusulas del contrato
-export const CONTRATO_CLAUSULAS_COUNT = 12;
+// Número de cláusulas base del contrato
+export const CONTRATO_CLAUSULAS_COUNT = 20;
 
 export const CLAUSULA_KEYS = Array.from(
   { length: CONTRATO_CLAUSULAS_COUNT },

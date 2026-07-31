@@ -4,10 +4,9 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClienteTabNav } from "@/components/portal/planner/ClienteTabNav";
+import { CambiarPasswordButton } from "@/components/admin/CambiarPasswordButton";
 
-const ALLOWED_ROLES = ["admin", "wedding_planner", "asesor_comercial"];
-
-export default async function PlannerClienteLayout({
+export default async function AdminClienteLayout({
   children,
   params,
 }: {
@@ -22,7 +21,7 @@ export default async function PlannerClienteLayout({
 
   const { data: me } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
-  if (!me || !ALLOWED_ROLES.includes(me.role)) redirect("/portal");
+  if (!me || me.role !== "admin") redirect("/portal");
 
   const admin = createAdminClient();
   const { data: profile } = await admin
@@ -38,18 +37,21 @@ export default async function PlannerClienteLayout({
   return (
     <div className="space-y-5">
       <div>
-        <div className="flex items-center gap-2 text-[0.8rem] text-gris mb-3">
-          <Link
-            href="/portal/planner/clientes"
-            className="inline-flex items-center gap-1 hover:text-negro transition-colors"
-          >
-            <ArrowLeft size={13} />
-            Clientes
-          </Link>
-          <span>/</span>
-          <span className="text-negro font-medium">{name}</span>
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <div className="flex items-center gap-2 text-[0.8rem] text-gris">
+            <Link
+              href="/admin/clientes"
+              className="inline-flex items-center gap-1 hover:text-negro transition-colors"
+            >
+              <ArrowLeft size={13} />
+              Clientes
+            </Link>
+            <span>/</span>
+            <span className="text-negro font-medium">{name}</span>
+          </div>
+          <CambiarPasswordButton userId={clientId} displayName={name} />
         </div>
-        <ClienteTabNav clientId={clientId} role={me.role} />
+        <ClienteTabNav clientId={clientId} role="admin" basePath="/admin/clientes" />
       </div>
       {children}
     </div>

@@ -14,13 +14,26 @@ const TABS = [
   { segment: "actividades", label: "Actividades",  Icon: CalendarDays },
 ];
 
-export function ClienteTabNav({ clientId }: { clientId: string }) {
+const ASESOR_SEGMENTS = new Set(["editar", "documentos", "contrato", "pagos"]);
+
+export function ClienteTabNav({
+  clientId,
+  role,
+  basePath = "/portal/planner/clientes",
+}: {
+  clientId: string;
+  role: string;
+  basePath?: string;
+}) {
   const pathname = usePathname();
+  const tabs = role === "asesor_comercial"
+    ? TABS.filter((t) => ASESOR_SEGMENTS.has(t.segment))
+    : TABS;
 
   return (
     <div className="flex gap-1 flex-wrap">
-      {TABS.map(({ segment, label, Icon }) => {
-        const href = `/portal/planner/clientes/${clientId}/${segment}`;
+      {tabs.map(({ segment, label, Icon }) => {
+        const href = `${basePath}/${clientId}/${segment}`;
         const isActive = pathname === href;
         return (
           <Link

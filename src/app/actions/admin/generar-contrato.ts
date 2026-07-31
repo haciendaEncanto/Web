@@ -9,12 +9,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { ContratoPDF } from "@/components/contrato/ContratoPDF";
 import {
-  DEFAULT_CONTRACT_ITEMS,
+  coerceContractItems,
   CLAUSULA_KEYS,
   FIRMA_KEY,
   HACIENDA_CONTENT_KEYS,
   resolveHaciendaData,
-  type ContractItems,
 } from "@/lib/contract-items";
 import { generatedContractPath } from "@/lib/uploads/config";
 
@@ -24,7 +23,7 @@ async function verifyPlanner() {
   if (!user) return { error: "No autenticado" as string, userId: "" };
   const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !["admin", "wedding_planner"].includes(profile.role))
+  if (!profile || !["admin", "wedding_planner", "asesor_comercial"].includes(profile.role))
     return { error: "Sin permisos" as string, userId: "" };
   return { error: null, userId: user.id };
 }
@@ -68,7 +67,7 @@ export async function generarContratoPDF(
   // Fetch booking activo
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, event_type, event_date, event_start_time, event_end_time, guest_count, capilla, valor_total, valor_anticipo, fecha_segundo_abono, fecha_tercer_abono, contract_items, status")
+    .select("id, event_type, event_date, event_start_time, event_end_time, guest_count, capilla, valor_total, valor_anticipo, fecha_segundo_abono, valor_segundo_abono, fecha_tercer_abono, valor_tercer_abono, contract_items, status")
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -94,6 +93,16 @@ export async function generarContratoPDF(
   const clauses = CLAUSULA_KEYS.map((k) => contentMap[k] ?? "");
   const firmaUrl = contentMap[FIRMA_KEY] ?? null;
   const haciendaData = resolveHaciendaData(contentMap);
+
+  // Cláusulas adicionales
+  const { data: extraRows } = await admin
+    .from("site_content")
+    .select("key, content")
+    .like("key", "contrato_clausula_extra_%")
+    .order("key");
+  const extraClauses = (extraRows ?? [])
+    .filter((r) => r.content?.trim())
+    .map((r) => ({ text: r.content ?? "" }));
 
   // Determinar número de versión
   const { count } = await admin
@@ -151,9 +160,12 @@ export async function generarContratoPDF(
       valorTotal: booking.valor_total,
       valorAnticipo: booking.valor_anticipo,
       fechaSegundoAbono: booking.fecha_segundo_abono ?? null,
+      valorSegundoAbono: booking.valor_segundo_abono ?? null,
       fechaTercerAbono: booking.fecha_tercer_abono ?? null,
-      contractItems: (booking.contract_items as ContractItems | null) ?? DEFAULT_CONTRACT_ITEMS,
+      valorTercerAbono: booking.valor_tercer_abono ?? null,
+      contractItems: coerceContractItems(booking.contract_items),
       clauses,
+      extraClauses,
       firmaUrl,
       logoUrl: logoDataUri,
       version,
