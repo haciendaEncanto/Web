@@ -9,6 +9,8 @@ interface Vista360Props {
 }
 
 export function Vista360({ tourUrl }: Vista360Props) {
+  if (!tourUrl || tourUrl === "#") return null;
+
   return (
     <section className="relative h-[420px] md:h-[500px] flex items-center justify-center overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
