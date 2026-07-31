@@ -1,10 +1,10 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listDocumentosConTamano } from "@/app/actions/documentos";
 import { ContratoPlanner } from "@/components/portal/planner/ContratoPlanner";
+import { ContractItemsForm } from "@/components/portal/planner/ContractItemsForm";
+import { coerceContractItems } from "@/lib/contract-items";
 
 export default async function AdminContratoClientePage({
   params,
@@ -32,7 +32,7 @@ export default async function AdminContratoClientePage({
 
   const { data: booking } = await admin
     .from("bookings")
-    .select("id, valor_total, valor_anticipo, contract_locked")
+    .select("id, valor_total, valor_anticipo, contract_locked, contract_items, capilla, guest_count")
     .eq("client_id", clientId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
@@ -62,6 +62,16 @@ export default async function AdminContratoClientePage({
       hint: "Edita el perfil del cliente y agrega su dirección.",
     },
     {
+      ok: !!profile.phone,
+      label: "Teléfono del cliente registrado",
+      hint: "Edita el perfil del cliente y agrega su número de teléfono.",
+    },
+    {
+      ok: !!profile.email,
+      label: "Correo electrónico del cliente registrado",
+      hint: "El cliente necesita un correo electrónico asociado.",
+    },
+    {
       ok: !!booking,
       label: "Evento activo asignado",
       hint: "El cliente necesita un evento activo (no cancelado).",
@@ -80,20 +90,6 @@ export default async function AdminContratoClientePage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-2 text-[0.8rem] text-gris">
-        <Link
-          href="/admin/clientes"
-          className="inline-flex items-center gap-1 hover:text-negro transition-colors"
-        >
-          <ArrowLeft size={13} />
-          Clientes
-        </Link>
-        <span>/</span>
-        <span className="text-negro">{profile.full_name ?? profile.email}</span>
-        <span>/</span>
-        <span className="text-dorado">Contrato</span>
-      </div>
-
       <div>
         <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
           Contrato de <span className="text-dorado">servicios</span>
@@ -102,6 +98,16 @@ export default async function AdminContratoClientePage({
           {profile.full_name ?? profile.email}
         </p>
       </div>
+
+      {booking && (
+        <ContractItemsForm
+          bookingId={booking.id}
+          initialItems={coerceContractItems(booking.contract_items)}
+          initialCapilla={booking.capilla ?? false}
+          isLocked={booking.contract_locked ?? false}
+          guestCount={booking.guest_count ?? undefined}
+        />
+      )}
 
       <ContratoPlanner
         clientId={clientId}

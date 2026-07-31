@@ -16,7 +16,15 @@ const TABS = [
 
 const ASESOR_SEGMENTS = new Set(["editar", "documentos", "contrato", "pagos"]);
 
-export function ClienteTabNav({ clientId, role }: { clientId: string; role: string }) {
+export function ClienteTabNav({
+  clientId,
+  role,
+  basePath = "/portal/planner/clientes",
+}: {
+  clientId: string;
+  role: string;
+  basePath?: string;
+}) {
   const pathname = usePathname();
   const tabs = role === "asesor_comercial"
     ? TABS.filter((t) => ASESOR_SEGMENTS.has(t.segment))
@@ -25,7 +33,7 @@ export function ClienteTabNav({ clientId, role }: { clientId: string; role: stri
   return (
     <div className="flex gap-1 flex-wrap">
       {tabs.map(({ segment, label, Icon }) => {
-        const href = `/portal/planner/clientes/${clientId}/${segment}`;
+        const href = `${basePath}/${clientId}/${segment}`;
         const isActive = pathname === href;
         return (
           <Link

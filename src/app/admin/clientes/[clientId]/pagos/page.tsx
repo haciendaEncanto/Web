@@ -1,6 +1,4 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PagosPlanner } from "@/components/portal/planner/PagosPlanner";
@@ -45,18 +43,6 @@ export default async function AdminPagosPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-2 text-[0.8rem] text-gris">
-        <Link
-          href={`/admin/clientes/${clientId}`}
-          className="inline-flex items-center gap-1 hover:text-negro transition-colors"
-        >
-          <ArrowLeft size={13} />
-          {profile.full_name ?? profile.email}
-        </Link>
-        <span>/</span>
-        <span className="text-dorado">Pagos</span>
-      </div>
-
       <div>
         <h2 className="font-serif text-[1.9rem] text-negro tracking-[-0.03em]">
           Pagos del cliente

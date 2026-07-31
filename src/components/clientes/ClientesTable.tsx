@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, ClipboardList, Users, CalendarDays, Eye, FileText, CreditCard, Music2, Map, ScrollText } from "lucide-react";
+import { Pencil, ClipboardList, Users, CalendarDays, FileText, CreditCard, Music2, Map, ScrollText } from "lucide-react";
 import { getClientSegment, type ClientBookingRow, type ClientSegment } from "@/lib/clientes";
 
 const EVENT_LABEL: Record<string, string> = {
@@ -176,11 +176,25 @@ export function ClientesTable({
                             {basePath === "admin" ? (
                               <>
                                 <Link
-                                  href={`/admin/clientes/${b.client_id}`}
-                                  title="Ver cliente"
+                                  href={`/admin/clientes/${b.client_id}/editar`}
+                                  title="Editar cliente"
+                                  className="p-2 text-negro/30 hover:text-negro hover:bg-negro/5 rounded-lg transition-colors"
+                                >
+                                  <Pencil size={15} />
+                                </Link>
+                                <Link
+                                  href={`/admin/clientes/${b.client_id}/documentos`}
+                                  title="Documentos"
                                   className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
                                 >
-                                  <Eye size={15} />
+                                  <FileText size={15} />
+                                </Link>
+                                <Link
+                                  href={`/admin/clientes/${b.client_id}/contrato`}
+                                  title="Contrato"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <ScrollText size={15} />
                                 </Link>
                                 <Link
                                   href={`/admin/clientes/${b.client_id}/pagos`}
@@ -204,11 +218,11 @@ export function ClientesTable({
                                   <Map size={15} />
                                 </Link>
                                 <Link
-                                  href={`/admin/clientes/${b.client_id}/contrato`}
-                                  title="Contrato"
+                                  href={`/admin/clientes/${b.client_id}/actividades`}
+                                  title="Agenda"
                                   className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
                                 >
-                                  <ScrollText size={15} />
+                                  <CalendarDays size={15} />
                                 </Link>
                               </>
                             ) : (
@@ -262,15 +276,15 @@ export function ClientesTable({
                                 >
                                   <ScrollText size={15} />
                                 </Link>
+                                <Link
+                                  href={`/portal/planner/clientes/${b.client_id}/actividades`}
+                                  title="Agenda"
+                                  className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
+                                >
+                                  <CalendarDays size={15} />
+                                </Link>
                               </>
                             )}
-                            <Link
-                              href={`/portal/planner/clientes/${b.client_id}/actividades`}
-                              title="Agenda"
-                              className="p-2 text-negro/30 hover:text-dorado hover:bg-dorado/5 rounded-lg transition-colors"
-                            >
-                              <CalendarDays size={15} />
-                            </Link>
                           </div>
                         </td>
                       )}
