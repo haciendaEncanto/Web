@@ -3,8 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
-import { galleryImagePath } from "@/lib/uploads/config";
+import { removeUploadedFile } from "@/lib/uploads/server";
+import { GALLERY_IMAGE_FOLDER } from "@/lib/uploads/config";
+
+const SUPABASE_HOST = "oewqyckeqolrpjbjevap.supabase.co";
 
 async function verifyEditor() {
   const supabase = await createClient();
@@ -26,35 +28,51 @@ function revalidateAll() {
   revalidatePath("/revelacion-de-genero");
 }
 
-// ─── Upload directo a Supabase Storage (signed URL) ───────────────────────────
+// ─── Upload directo a Colombia Hosting (3 pasos — el archivo nunca toca Vercel) ─
 
 export type UploadedImage = {
   id: string; url: string; title: string | null;
   category: string | null; sort_order: number; is_published: boolean;
 };
 
+/**
+ * Paso 1: valida permisos, tipo y tamaño. Devuelve las credenciales necesarias
+ * para que el browser suba el archivo directamente a Colombia Hosting.
+ */
 export async function requestGaleriaUpload(meta: {
   fileName: string;
   contentType: string;
   size: number;
   category: string;
-}): Promise<{ signedUrl?: string; token?: string; path?: string; error?: string }> {
+}): Promise<{ uploadUrl?: string; token?: string; folder?: string; error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
 
-  const path = galleryImagePath(meta.category, meta.fileName);
-  const { upload, error } = await createSignedUpload("gallery-image", {
-    contentType: meta.contentType,
-    size: meta.size,
-    path,
-  });
-  if (error || !upload) return { error };
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(meta.contentType))
+    return { error: `Formato no permitido: ${meta.contentType}` };
+  if (meta.size <= 0)
+    return { error: "El archivo está vacío" };
+  if (meta.size > 10 * 1024 * 1024)
+    return { error: `El archivo supera el límite de 10 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
 
-  return { signedUrl: upload.signedUrl, token: upload.token, path: upload.path };
+  const uploadUrl = process.env.HOSTING_UPLOAD_URL;
+  const token = process.env.HOSTING_UPLOAD_TOKEN;
+  if (!uploadUrl || !token)
+    return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
+
+  const subFolder = GALLERY_IMAGE_FOLDER[meta.category] ?? "general";
+  const folder = `galeria/${subFolder}`;
+
+  return { uploadUrl, token, folder };
 }
 
+/**
+ * Paso 3: recibe la URL pública que devolvió Colombia Hosting e inserta en BD.
+ * Si falla el INSERT, la imagen queda huérfana en el servidor (sin delete API).
+ */
 export async function confirmGaleriaUpload(meta: {
-  path: string;
+  url: string;
   category: string;
   title: string;
 }): Promise<{ image?: UploadedImage; error?: string }> {
@@ -66,7 +84,7 @@ export async function confirmGaleriaUpload(meta: {
   const { data: img, error: insErr } = await admin
     .from("gallery_images")
     .insert({
-      url:          publicUrlFor("gallery-image", meta.path),
+      url:          meta.url,
       title:        meta.title.trim() || null,
       category:     meta.category,
       sort_order:   0,
@@ -75,10 +93,7 @@ export async function confirmGaleriaUpload(meta: {
     .select("id, url, title, category, sort_order, is_published")
     .single();
 
-  if (insErr) {
-    await removeUploadedFile("gallery-image", meta.path);
-    return { error: `Error al guardar: ${insErr.message}` };
-  }
+  if (insErr) return { error: `Error al guardar: ${insErr.message}` };
 
   revalidateAll();
   return { image: img as UploadedImage };
@@ -103,15 +118,21 @@ export async function deleteGaleriaImage(id: string, url: string): Promise<{ err
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
   const admin = createAdminClient();
+
+  // Imágenes antiguas en Supabase Storage: intentar borrar el archivo
   try {
     const parsed = new URL(url);
-    const marker = "/object/public/gallery/";
-    const idx    = parsed.pathname.indexOf(marker);
-    if (idx !== -1) {
-      const storagePath = decodeURIComponent(parsed.pathname.slice(idx + marker.length));
-      await admin.storage.from("gallery").remove([storagePath]);
+    if (parsed.hostname === SUPABASE_HOST) {
+      const marker = "/object/public/gallery/";
+      const idx    = parsed.pathname.indexOf(marker);
+      if (idx !== -1) {
+        const storagePath = decodeURIComponent(parsed.pathname.slice(idx + marker.length));
+        await removeUploadedFile("gallery-image", storagePath);
+      }
     }
-  } catch { /* si la URL no es parseable, borramos solo el registro */ }
+    // Imágenes en Colombia Hosting no tienen endpoint de borrado — solo se elimina el registro
+  } catch { /* URL no parseable */ }
+
   const { error } = await admin.from("gallery_images").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidateAll();

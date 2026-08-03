@@ -3,8 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { createSignedUpload, publicUrlFor, removeUploadedFile } from "@/lib/uploads/server";
-import { heroVideoPath } from "@/lib/uploads/config";
+import { removeUploadedFile } from "@/lib/uploads/server";
+import { HERO_VIDEO_FOLDER } from "@/lib/uploads/config";
+
+const SUPABASE_HOST = "oewqyckeqolrpjbjevap.supabase.co";
 
 async function verifyEditor() {
   const supabase = await createClient();
@@ -37,35 +39,50 @@ async function deactivatePage(
   }
 }
 
-// ─── Upload directo a Supabase Storage (signed URL) ───────────────────────────
+// ─── Upload directo a Colombia Hosting (3 pasos — el archivo nunca toca Vercel) ─
 
 export type UploadedVideo = {
   id: string; url: string; title: string | null;
   event_type: string | null; is_active: boolean;
 };
 
+/**
+ * Paso 1: valida permisos, tipo y tamaño. Devuelve las credenciales necesarias
+ * para que el browser suba el archivo directamente a Colombia Hosting.
+ */
 export async function requestVideoUpload(meta: {
   fileName: string;
   contentType: string;
   size: number;
   eventType: string;
-}): Promise<{ signedUrl?: string; token?: string; path?: string; error?: string }> {
+}): Promise<{ uploadUrl?: string; token?: string; folder?: string; error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
 
-  const path = heroVideoPath(meta.eventType, meta.fileName);
-  const { upload, error } = await createSignedUpload("hero-video", {
-    contentType: meta.contentType,
-    size: meta.size,
-    path,
-  });
-  if (error || !upload) return { error };
+  const allowed = ["video/mp4", "video/webm", "video/quicktime"];
+  if (!allowed.includes(meta.contentType))
+    return { error: `Formato no permitido: ${meta.contentType}` };
+  if (meta.size <= 0)
+    return { error: "El archivo está vacío" };
+  if (meta.size > 500 * 1024 * 1024)
+    return { error: `El video supera el límite de 500 MB (${(meta.size / 1024 / 1024).toFixed(0)} MB)` };
 
-  return { signedUrl: upload.signedUrl, token: upload.token, path: upload.path };
+  const uploadUrl = process.env.HOSTING_UPLOAD_URL;
+  const token = process.env.HOSTING_UPLOAD_TOKEN;
+  if (!uploadUrl || !token)
+    return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
+
+  const subFolder = HERO_VIDEO_FOLDER[meta.eventType] ?? "home";
+  const folder = `videos/${subFolder}`;
+
+  return { uploadUrl, token, folder };
 }
 
+/**
+ * Paso 3: recibe la URL pública que devolvió Colombia Hosting e inserta en BD.
+ */
 export async function confirmVideoUpload(meta: {
-  path: string;
+  url: string;
   eventType: string;
   title: string;
   isActive: boolean;
@@ -82,7 +99,7 @@ export async function confirmVideoUpload(meta: {
   const { data: vid, error: insErr } = await admin
     .from("hero_videos")
     .insert({
-      url:        publicUrlFor("hero-video", meta.path),
+      url:        meta.url,
       title:      meta.title.trim() || null,
       event_type: meta.eventType || null,
       is_active:  meta.isActive,
@@ -91,10 +108,7 @@ export async function confirmVideoUpload(meta: {
     .select("id, url, title, event_type, is_active")
     .single();
 
-  if (insErr) {
-    await removeUploadedFile("hero-video", meta.path);
-    return { error: `Error al guardar: ${insErr.message}` };
-  }
+  if (insErr) return { error: `Error al guardar: ${insErr.message}` };
 
   revalidate();
   return { video: vid as UploadedVideo };
@@ -127,15 +141,21 @@ export async function deleteVideo(id: string, url: string): Promise<{ error?: st
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
   const admin = createAdminClient();
+
+  // Videos antiguos en Supabase Storage: intentar borrar el archivo
   try {
     const parsed = new URL(url);
-    const marker = "/object/public/videos/";
-    const idx    = parsed.pathname.indexOf(marker);
-    if (idx !== -1) {
-      const storagePath = decodeURIComponent(parsed.pathname.slice(idx + marker.length));
-      await admin.storage.from("videos").remove([storagePath]);
+    if (parsed.hostname === SUPABASE_HOST) {
+      const marker = "/object/public/videos/";
+      const idx    = parsed.pathname.indexOf(marker);
+      if (idx !== -1) {
+        const storagePath = decodeURIComponent(parsed.pathname.slice(idx + marker.length));
+        await removeUploadedFile("hero-video", storagePath);
+      }
     }
-  } catch { /* URL no parseable — borra solo el registro */ }
+    // Videos en Colombia Hosting no tienen endpoint de borrado — solo se elimina el registro
+  } catch { /* URL no parseable */ }
+
   const { error } = await admin.from("hero_videos").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidate();

@@ -1,6 +1,47 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UPLOAD_KINDS, type UploadKind } from "./config";
 
+// ─── Colombia Hosting ─────────────────────────────────────────────────────────
+
+/**
+ * Sube un buffer generado en el servidor (p.ej. PDF de contrato) directamente
+ * al endpoint PHP de Colombia Hosting. No pasa por el body de Vercel porque
+ * el archivo ya existe en memoria del servidor.
+ */
+export async function uploadToHosting(
+  fileBuffer: ArrayBuffer,
+  folder: string,
+  fileName: string,
+  mimeType: string,
+): Promise<{ url?: string; error?: string }> {
+  const uploadUrl = process.env.HOSTING_UPLOAD_URL;
+  const token = process.env.HOSTING_UPLOAD_TOKEN;
+  if (!uploadUrl || !token) {
+    return { error: "HOSTING_UPLOAD_URL o HOSTING_UPLOAD_TOKEN no están configurados" };
+  }
+
+  const form = new FormData();
+  form.append("file", new Blob([fileBuffer], { type: mimeType }), fileName);
+  form.append("folder", folder);
+
+  try {
+    const res = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "X-Upload-Token": token },
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      return { error: `Error HTTP ${res.status} del servidor de archivos: ${text}` };
+    }
+    const data = (await res.json()) as { success: boolean; url?: string; error?: string };
+    if (!data.success) return { error: data.error ?? "Error en el servidor de archivos" };
+    return { url: data.url };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Error de red al subir archivo" };
+  }
+}
+
 interface RequestUploadMeta {
   contentType: string;
   size: number;

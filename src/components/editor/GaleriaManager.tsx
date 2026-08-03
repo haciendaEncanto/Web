@@ -30,7 +30,7 @@ import {
   reorderGaleriaImages,
   type UploadedImage,
 } from "@/app/actions/editor/galeria";
-import { uploadFileToSignedUrl } from "@/lib/uploads/client";
+import { uploadToHosting } from "@/lib/uploads/client";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -119,7 +119,7 @@ function UploadModal({
         category,
       });
 
-      if (req.error || !req.signedUrl || !req.token || !req.path) {
+      if (req.error || !req.uploadUrl || !req.token || !req.folder) {
         clearInterval(interval);
         setError(req.error ?? "No se pudo iniciar la subida");
         setUploading(false);
@@ -127,19 +127,19 @@ function UploadModal({
         return;
       }
 
-      const upErr = await uploadFileToSignedUrl("gallery", req.path, req.token, file);
-      if (upErr.error) {
+      const up = await uploadToHosting(req.uploadUrl, req.token, req.folder, file);
+      if (up.error || !up.url) {
         clearInterval(interval);
-        setError(upErr.error);
+        setError(up.error ?? "No se pudo subir la imagen");
         setUploading(false);
         setProgress(0);
         return;
       }
 
       const result = await confirmGaleriaUpload({
-        path: req.path,
+        url:      up.url,
         category,
-        title: title.trim(),
+        title:    title.trim(),
       });
       clearInterval(interval);
 
