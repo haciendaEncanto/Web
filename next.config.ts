@@ -13,7 +13,7 @@ const CSP = [
   "font-src 'self' data:",
   `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://www.google.com https://www.googleapis.com`,
   "frame-src https://www.google.com https://maps.google.com",
-  `media-src 'self' blob: https://${SUPABASE_HOST}`,
+  `media-src 'self' blob: https://${SUPABASE_HOST} https://contenido.hacienda-encanto.com`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
