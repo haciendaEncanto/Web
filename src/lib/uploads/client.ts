@@ -43,8 +43,12 @@ export async function uploadToHosting(
       return { error: `Error HTTP ${res.status} del servidor de archivos: ${text}` };
     }
     const data = (await res.json()) as { success: boolean; url?: string; error?: string };
+    console.log("[uploadToHosting] respuesta PHP:", data);
     if (!data.success) return { error: data.error ?? "Error en el servidor de archivos" };
-    return { url: data.url };
+    // Forzar HTTPS — el PHP debería devolverlo así, pero como salvaguarda:
+    const url = data.url?.replace(/^http:\/\//i, "https://");
+    console.log("[uploadToHosting] URL final guardada:", url);
+    return { url };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Error de red al subir archivo" };
   }
