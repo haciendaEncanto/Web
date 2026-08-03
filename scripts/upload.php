@@ -49,10 +49,21 @@ if (!$expected || !hash_equals($expected, $token)) {
 
 $folder = trim($_POST['folder'] ?? '');
 
-// Solo letras, números, guión, guión bajo y slash — sin .. ni rutas absolutas
-if ($folder === '' || !preg_match('/^[a-zA-Z0-9_\-]+(\/[a-zA-Z0-9_\-]+)*$/', $folder)) {
+$allowed_folders = [
+    'galeria/boda',
+    'galeria/quince',
+    'galeria/empresarial',
+    'galeria/revelacion',
+    'galeria/general',
+    'videos',
+    'documentos',
+    'avatars/firmas',
+    'sitio',
+];
+
+if (!in_array($folder, $allowed_folders, true)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Parámetro folder inválido']);
+    echo json_encode(['success' => false, 'error' => "Carpeta no permitida: '$folder'"]);
     exit;
 }
 

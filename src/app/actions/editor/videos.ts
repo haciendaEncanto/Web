@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { removeUploadedFile } from "@/lib/uploads/server";
-import { HERO_VIDEO_FOLDER } from "@/lib/uploads/config";
 
 const SUPABASE_HOST = "oewqyckeqolrpjbjevap.supabase.co";
 
@@ -72,8 +71,7 @@ export async function requestVideoUpload(meta: {
   if (!uploadUrl || !token)
     return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
 
-  const subFolder = HERO_VIDEO_FOLDER[meta.eventType] ?? "home";
-  const folder = `videos/${subFolder}`;
+  const folder = "videos";
 
   return { uploadUrl, token, folder };
 }

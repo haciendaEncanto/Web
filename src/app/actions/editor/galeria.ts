@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { removeUploadedFile } from "@/lib/uploads/server";
-import { GALLERY_IMAGE_FOLDER } from "@/lib/uploads/config";
 
 const SUPABASE_HOST = "oewqyckeqolrpjbjevap.supabase.co";
 
@@ -61,8 +60,9 @@ export async function requestGaleriaUpload(meta: {
   if (!uploadUrl || !token)
     return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
 
-  const subFolder = GALLERY_IMAGE_FOLDER[meta.category] ?? "general";
-  const folder = `galeria/${subFolder}`;
+  const validCategories = ["boda", "quince", "empresarial", "revelacion", "general"];
+  const category = validCategories.includes(meta.category) ? meta.category : "general";
+  const folder = `galeria/${category}`;
 
   return { uploadUrl, token, folder };
 }
