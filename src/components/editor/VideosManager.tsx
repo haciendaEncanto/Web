@@ -3,7 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import { Upload, Trash2, ToggleLeft, ToggleRight, Loader2, Film, CheckCircle2 } from "lucide-react";
 import { requestVideoUpload, confirmVideoUpload, activateVideo, deactivateVideo, deleteVideo, type UploadedVideo } from "@/app/actions/editor/videos";
-import { uploadFileToSignedUrl } from "@/lib/uploads/client";
+import { uploadToHosting } from "@/lib/uploads/client";
 
 type HeroVideo = {
   id: string; url: string; title: string | null;
@@ -82,7 +82,7 @@ function UploadForm({ onDone }: { onDone: (video: UploadedVideo) => void }) {
         eventType,
       });
 
-      if (req.error || !req.signedUrl || !req.token || !req.path) {
+      if (req.error || !req.uploadUrl || !req.token || !req.folder) {
         clearInterval(interval);
         setError(req.error ?? "No se pudo iniciar la subida");
         setUploading(false);
@@ -90,17 +90,17 @@ function UploadForm({ onDone }: { onDone: (video: UploadedVideo) => void }) {
         return;
       }
 
-      const upErr = await uploadFileToSignedUrl("videos", req.path, req.token, file);
-      if (upErr.error) {
+      const up = await uploadToHosting(req.uploadUrl, req.token, req.folder, file);
+      if (up.error || !up.url) {
         clearInterval(interval);
-        setError(upErr.error);
+        setError(up.error ?? "No se pudo subir el video");
         setUploading(false);
         setProgress(0);
         return;
       }
 
       const result = await confirmVideoUpload({
-        path:      req.path,
+        url:       up.url,
         eventType,
         title:     title.trim(),
         isActive:  activar,
