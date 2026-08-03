@@ -79,12 +79,19 @@ export async function confirmGaleriaUpload(meta: {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };
 
+  // Forzar HTTPS — salvaguarda server-side antes de persistir en BD
+  const safeUrl = meta.url.replace(/^http:\/\//i, "https://");
+  console.log("[confirmGaleriaUpload] URL recibida:", meta.url, "→ guardada:", safeUrl);
+  if (!safeUrl.startsWith("https://")) {
+    return { error: `URL inválida: debe comenzar con https:// (recibida: ${meta.url})` };
+  }
+
   const admin = createAdminClient();
 
   const { data: img, error: insErr } = await admin
     .from("gallery_images")
     .insert({
-      url:          meta.url,
+      url:          safeUrl,
       title:        meta.title.trim() || null,
       category:     meta.category,
       sort_order:   0,
