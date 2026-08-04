@@ -68,9 +68,9 @@ export default async function HomePage() {
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/2.jpeg",   title: "Boda El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/2.jpeg", title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/3.jpeg",   title: "Boda El Encanto" },
-      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.png",  title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/4.jpeg",   title: "Boda El Encanto" },
-      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.png",  title: "Quinceañera El Encanto" },
     ];
   }
 
