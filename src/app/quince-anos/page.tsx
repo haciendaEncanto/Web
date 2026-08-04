@@ -34,26 +34,14 @@ const config: EventPageConfig = {
     supertitle: "Momentos reales",
     title: "Quince años que brillan",
     fallback: [
-      {
-        url: "/placeholder-evento.svg",
-        title: "Celebración quince años",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Decoración especial",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Jardines El Encanto",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Salón principal",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "El Encanto",
-      },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/1.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/2.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/5.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/6.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/7.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/8.jpeg", title: "Quinceañera El Encanto" },
     ],
   },
   paquetes: {

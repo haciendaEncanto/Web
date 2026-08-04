@@ -34,26 +34,16 @@ const config: EventPageConfig = {
     supertitle: "Momentos reales",
     title: "Bodas que inspiran",
     fallback: [
-      {
-        url: "/placeholder-evento.svg",
-        title: "Celebración El Encanto",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Decoración",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Jardines",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Ceremonia",
-      },
-      {
-        url: "/placeholder-evento.svg",
-        title: "Recepción",
-      },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/1.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/2.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/3.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/4.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/5.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/6.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/7.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/8.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/9.jpeg",  title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/10.jpeg", title: "Boda El Encanto" },
     ],
   },
   paquetes: {

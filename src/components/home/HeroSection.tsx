@@ -12,13 +12,19 @@ interface HeroVideo {
 const BLACK_POSTER =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
 
+// Fallback de emergencia: si Supabase no entrega videos, se usa esta URL directa
+const FALLBACK_VIDEOS: HeroVideo[] = [
+  { url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4", thumbnail_url: null },
+];
+
 export function HeroSection({ videos }: { videos: HeroVideo[] }) {
+  const effectiveVideos = videos.length >= 1 ? videos : FALLBACK_VIDEOS;
   const ref1 = useRef<HTMLVideoElement>(null);
   const ref2 = useRef<HTMLVideoElement>(null);
   const currentRef = useRef(0);
 
   useEffect(() => {
-    if (videos.length < 2 || !ref1.current || !ref2.current) return;
+    if (effectiveVideos.length < 2 || !ref1.current || !ref2.current) return;
     const vids = [ref1.current, ref2.current];
 
     function switchVideo() {
@@ -32,13 +38,13 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
 
     vids.forEach((v) => v.addEventListener("ended", switchVideo));
     return () => vids.forEach((v) => v.removeEventListener("ended", switchVideo));
-  }, [videos]);
+  }, [effectiveVideos]);
 
   return (
     <section className="relative w-screen overflow-hidden">
       {/* Bloque de video / imagen */}
       <div className="relative w-full h-[calc(100dvh-72px)] md:h-[calc(100vh-72px)] overflow-hidden flex flex-col justify-between">
-        {videos.length >= 1 ? (
+        {effectiveVideos.length >= 1 ? (
           <>
             <video
               ref={ref1}
@@ -46,24 +52,24 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
               muted
               loop
               playsInline
-              poster={videos[0].thumbnail_url ?? BLACK_POSTER}
+              poster={effectiveVideos[0].thumbnail_url ?? BLACK_POSTER}
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
               style={{ opacity: 1 }}
             >
-              <source src={videos[0].url} type="video/mp4" />
+              <source src={effectiveVideos[0].url} type="video/mp4" />
             </video>
 
-            {videos.length >= 2 && (
+            {effectiveVideos.length >= 2 && (
               <video
                 ref={ref2}
                 muted
                 loop
                 playsInline
-                poster={videos[1].thumbnail_url ?? BLACK_POSTER}
+                poster={effectiveVideos[1].thumbnail_url ?? BLACK_POSTER}
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
                 style={{ opacity: 0 }}
               >
-                <source src={videos[1].url} type="video/mp4" />
+                <source src={effectiveVideos[1].url} type="video/mp4" />
               </video>
             )}
           </>
