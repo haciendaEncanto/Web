@@ -79,7 +79,7 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
             fill
             sizes="100vw"
             priority={i === 0}
-            className="object-cover object-top transition-opacity duration-[1000ms]"
+            className="object-cover object-center transition-opacity duration-[1000ms]"
             style={{ opacity: i === current ? 1 : 0 }}
           />
         ))}
