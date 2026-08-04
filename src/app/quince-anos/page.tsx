@@ -36,8 +36,8 @@ const config: EventPageConfig = {
     fallback: [
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/1.jpeg", title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/2.jpeg", title: "Quinceañera El Encanto" },
-      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.jpeg", title: "Quinceañera El Encanto" },
-      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.png", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.png", title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/5.jpeg", title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/6.jpeg", title: "Quinceañera El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/7.jpeg", title: "Quinceañera El Encanto" },
