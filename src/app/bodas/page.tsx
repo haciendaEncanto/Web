@@ -43,7 +43,6 @@ const config: EventPageConfig = {
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/7.jpeg",  title: "Boda El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/8.jpeg",  title: "Boda El Encanto" },
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/9.jpeg",  title: "Boda El Encanto" },
-      { url: "https://contenido.hacienda-encanto.com/galeria/boda/10.jpeg", title: "Boda El Encanto" },
     ],
   },
   paquetes: {
