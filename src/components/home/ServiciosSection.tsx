@@ -13,7 +13,19 @@ export interface ServiciosSectionImages {
   decoracion: string | null;
 }
 
+const FALLBACK_IMAGES: ServiciosSectionImages = {
+  catering:   "https://contenido.hacienda-encanto.com/galeria/sitio/servicios/cate.jpeg",
+  fotografia: "https://contenido.hacienda-encanto.com/galeria/sitio/servicios/foto.jpeg",
+  decoracion: "https://contenido.hacienda-encanto.com/galeria/sitio/servicios/deco.jpeg",
+};
+
 export function ServiciosSection({ images }: { images?: ServiciosSectionImages }) {
+  const effectiveImages: ServiciosSectionImages = {
+    catering:   images?.catering   ?? FALLBACK_IMAGES.catering,
+    fotografia: images?.fotografia ?? FALLBACK_IMAGES.fotografia,
+    decoracion: images?.decoracion ?? FALLBACK_IMAGES.decoracion,
+  };
+
   return (
     <section className="py-24 bg-crema">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -37,9 +49,9 @@ export function ServiciosSection({ images }: { images?: ServiciosSectionImages }
               className="bg-blanco rounded-2xl overflow-hidden transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="relative h-60">
-                {images?.[s.key] ? (
+                {effectiveImages[s.key] ? (
                   <Image
-                    src={images[s.key] as string}
+                    src={effectiveImages[s.key] as string}
                     alt={s.title}
                     fill
                     className="object-cover"
