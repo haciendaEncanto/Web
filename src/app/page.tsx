@@ -60,6 +60,20 @@ export default async function HomePage() {
     // Supabase no disponible — el sitio sigue funcionando con videos hardcodeados y secciones vacías
   }
 
+  // Si Supabase no devolvió imágenes, usar imágenes reales de Colombia Hosting como fallback
+  if (sliderImages.length === 0) {
+    sliderImages = [
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/1.jpeg",   title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/1.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/2.jpeg",   title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/2.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/3.jpeg",   title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/3.jpeg", title: "Quinceañera El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/boda/4.jpeg",   title: "Boda El Encanto" },
+      { url: "https://contenido.hacienda-encanto.com/galeria/quince/4.jpeg", title: "Quinceañera El Encanto" },
+    ];
+  }
+
   return (
     <>
       <NavBar />
