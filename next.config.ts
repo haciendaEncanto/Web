@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: SUPABASE_HOST,
       },
+      {
+        protocol: "https",
+        hostname: "contenido.hacienda-encanto.com",
+      },
     ],
   },
   async headers() {
