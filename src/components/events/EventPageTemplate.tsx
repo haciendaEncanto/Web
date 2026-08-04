@@ -12,8 +12,6 @@ import { Vista360 } from "./Vista360";
 import type { EventPageConfig } from "./types";
 
 export async function EventPageTemplate({ config }: { config: EventPageConfig }) {
-  const supabase = await createClient();
-
   // TEMPORAL: Supabase Storage con quota excedida — URLs hardcodeadas en Colombia Hosting
   // Restaurar query cuando se renueve la quota:
   // supabase.from("hero_videos").select("url").eq("event_type",config.hero.videoEventType)...
@@ -25,41 +23,61 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
   };
   const heroVideoUrl = HERO_VIDEOS_TEMP[config.hero.videoEventType] ?? null;
 
-  const [
-    { data: galleryImages },
-    { data: rawPackages },
-    { data: testimonials },
-    { data: tourContent },
-  ] = await Promise.all([
-    supabase
-      .from("gallery_images")
-      .select("url, title")
-      .eq("is_published", true)
-      .eq("category", config.gallery.category)
-      .order("sort_order")
-      .limit(8),
-    supabase
-      .from("packages")
-      .select("id, name, description, includes, sort_order")
-      .eq("is_active", true)
-      .eq("event_type", config.paquetes.eventType)
-      .order("sort_order"),
-    supabase
-      .from("testimonials")
-      .select("client_name, event_type, rating, content, photo_url")
-      .eq("is_published", true)
-      .eq("event_type", config.testimonios.eventType)
-      .order("sort_order"),
-    supabase
-      .from("site_content")
-      .select("content")
-      .eq("key", "tour_360_url")
-      .maybeSingle(),
-  ]);
+  // Fallback: Supabase puede estar no disponible temporalmente
+  type GaleriaRow = { url: string; title: string | null };
+  type PaqueteRow = { id: string; name: string; description: string | null; includes: unknown; sort_order: number };
+  type TestimonioRow = { client_name: string; event_type: string | null; rating: number | null; content: string; photo_url: string | null };
 
-  const allImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
+  let galleryImages: GaleriaRow[] = [];
+  let rawPackages: PaqueteRow[] = [];
+  let testimonials: TestimonioRow[] = [];
+  let tourUrl: string | null = null;
 
-  const packages = (rawPackages ?? []).map((p) => ({
+  try {
+    const supabase = await createClient();
+    const [
+      { data: galleryData },
+      { data: packagesData },
+      { data: testimonialsData },
+      { data: tourContent },
+    ] = await Promise.all([
+      supabase
+        .from("gallery_images")
+        .select("url, title")
+        .eq("is_published", true)
+        .eq("category", config.gallery.category)
+        .order("sort_order")
+        .limit(8),
+      supabase
+        .from("packages")
+        .select("id, name, description, includes, sort_order")
+        .eq("is_active", true)
+        .eq("event_type", config.paquetes.eventType)
+        .order("sort_order"),
+      supabase
+        .from("testimonials")
+        .select("client_name, event_type, rating, content, photo_url")
+        .eq("is_published", true)
+        .eq("event_type", config.testimonios.eventType)
+        .order("sort_order"),
+      supabase
+        .from("site_content")
+        .select("content")
+        .eq("key", "tour_360_url")
+        .maybeSingle(),
+    ]);
+
+    galleryImages = galleryData ?? [];
+    rawPackages = packagesData ?? [];
+    testimonials = testimonialsData ?? [];
+    tourUrl = tourContent?.content ?? null;
+  } catch {
+    // Supabase no disponible — se usan fallbacks de config y secciones vacías
+  }
+
+  const allImages = galleryImages.length ? galleryImages : config.gallery.fallback;
+
+  const packages = rawPackages.map((p) => ({
     ...p,
     includes: Array.isArray(p.includes) ? (p.includes as string[]) : [],
   }));
@@ -75,7 +93,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
         <EventDescripcion config={config.experiencia} />
 
         {/* 3. Vista 360° */}
-        <Vista360 tourUrl={tourContent?.content ?? null} />
+        <Vista360 tourUrl={tourUrl} />
 
         {/* 4. Galería */}
         <div id="galeria">
@@ -91,7 +109,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
 
         {/* 6. Testimonios */}
         <EventTestimonios
-          testimonials={testimonials ?? []}
+          testimonials={testimonials}
           title={config.testimonios.title}
         />
 

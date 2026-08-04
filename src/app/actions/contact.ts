@@ -61,28 +61,38 @@ export async function submitContactForm(
   // Round-robin: asignar al asesor activo con menos asignaciones
   const admin = createAdminClient();
 
-  const [{ data: assignments }, { data: asesorProfiles }] = await Promise.all([
-    admin
-      .from("asesor_assignments")
-      .select("asesor_id, total_assignments, last_assigned_at")
-      .order("total_assignments", { ascending: true })
-      .order("last_assigned_at", { ascending: true, nullsFirst: true }),
-    admin
-      .from("profiles")
-      .select("id, full_name, is_active, phone, callmebot_api_key")
-      .in("role", ["asesor_comercial", "wedding_planner"]),
-  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let assignments: any[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let asesorProfiles: any[] = [];
+  try {
+    const [assignmentsRes, profilesRes] = await Promise.all([
+      admin
+        .from("asesor_assignments")
+        .select("asesor_id, total_assignments, last_assigned_at")
+        .order("total_assignments", { ascending: true })
+        .order("last_assigned_at", { ascending: true, nullsFirst: true }),
+      admin
+        .from("profiles")
+        .select("id, full_name, is_active, phone, callmebot_api_key")
+        .in("role", ["asesor_comercial", "wedding_planner"]),
+    ]);
+    assignments = assignmentsRes.data ?? [];
+    asesorProfiles = profilesRes.data ?? [];
+  } catch {
+    // Supabase no disponible — contacto sin asesor asignado
+  }
 
   // Round-robin: incluir asesores activos aunque no tengan fila en asesor_assignments
-  const activeAsesores = (asesorProfiles ?? []).filter((p) => p.is_active);
+  const activeAsesores = asesorProfiles.filter((p) => p.is_active);
   console.log(
     "[round-robin] perfiles encontrados:",
-    (asesorProfiles ?? []).map((p) => `${p.full_name}(is_active=${p.is_active})`)
+    asesorProfiles.map((p) => `${p.full_name}(is_active=${p.is_active})`)
   );
   console.log("[round-robin] activos:", activeAsesores.length);
 
   const assignmentMap = new Map(
-    (assignments ?? []).map((a) => [a.asesor_id, a])
+    assignments.map((a) => [a.asesor_id, a])
   );
   const virtualList = activeAsesores.map((p) => ({
     asesor_id: p.id,
@@ -102,54 +112,59 @@ export async function submitContactForm(
   console.log(
     "[round-robin] orden:",
     virtualList.map((v) => {
-      const p = (asesorProfiles ?? []).find((x) => x.id === v.asesor_id);
+      const p = asesorProfiles.find((x) => x.id === v.asesor_id);
       return `${p?.full_name}(total=${v.total_assignments},last=${v.last_assigned_at ?? "null"})`;
     })
   );
 
   const selected = virtualList[0] ?? null;
   const assignedAsesorId = selected?.asesor_id ?? null;
-  const assignedAsesor = (asesorProfiles ?? []).find((p) => p.id === assignedAsesorId) ?? null;
+  const assignedAsesor = asesorProfiles.find((p) => p.id === assignedAsesorId) ?? null;
   const asesorName = assignedAsesor?.full_name ?? "el equipo";
   console.log("[round-robin] seleccionado:", asesorName);
 
-  // Guardar en base de datos
-  const supabase = await createClient();
-  const { error } = await supabase.from("contact_messages").insert({
-    name,
-    email: email || null,
-    phone: phone ?? null,
-    subject,
-    message,
-    event_date,
-    guest_count,
-    whatsapp,
-    assigned_asesor_id: assignedAsesorId,
-  });
-
-  if (error) {
-    return { error: "No pudimos enviar tu mensaje. Inténtalo de nuevo más tarde." };
-  }
-
-  // Incrementar contador — upsert maneja tanto nuevo registro como actualización
-  if (selected) {
-    await admin.from("asesor_assignments").upsert(
-      {
-        asesor_id: selected.asesor_id,
-        total_assignments: selected.total_assignments + 1,
-        last_assigned_at: new Date().toISOString(),
-      },
-      { onConflict: "asesor_id" }
-    );
-  }
-
-  // Construir mensaje completo con todos los campos
+  // Construir mensaje WA antes del insert — disponible tanto en éxito como en fallback
   const waMsg = buildLeadMessage({ name, whatsapp, email: email || null, subject, event_date, guest_count, message, asesorName });
 
-  // Notificación al número central — fire and forget
-  void sendWhatsAppNotification(waMsg);
+  // Guardar en base de datos
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from("contact_messages").insert({
+      name,
+      email: email || null,
+      phone: phone ?? null,
+      subject,
+      message,
+      event_date,
+      guest_count,
+      whatsapp,
+      assigned_asesor_id: assignedAsesorId,
+    });
 
-  // Notificación al asesor en su número personal si tiene CallMeBot configurado
+    if (error) throw new Error(error.message);
+
+    // Incrementar contador — upsert maneja tanto nuevo registro como actualización
+    if (selected) {
+      await admin.from("asesor_assignments").upsert(
+        {
+          asesor_id: selected.asesor_id,
+          total_assignments: selected.total_assignments + 1,
+          last_assigned_at: new Date().toISOString(),
+        },
+        { onConflict: "asesor_id" }
+      );
+    }
+  } catch {
+    // Supabase no disponible — intentar notificación CallMeBot y guiar al usuario a WhatsApp
+    void sendWhatsAppNotification(waMsg);
+    return {
+      error:
+        "En este momento no podemos registrar tu mensaje. Por favor, escríbenos directamente al WhatsApp +57 315 006 1597",
+    };
+  }
+
+  // Notificaciones CallMeBot — fire and forget
+  void sendWhatsAppNotification(waMsg);
   if (assignedAsesor?.phone && assignedAsesor?.callmebot_api_key) {
     void sendWhatsAppToPhone(assignedAsesor.phone, assignedAsesor.callmebot_api_key, waMsg);
   }
