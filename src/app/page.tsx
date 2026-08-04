@@ -16,18 +16,19 @@ import { SITE_IMAGE_KEYS, type SiteImageKey } from "@/lib/uploads/config";
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [{ data: testimonials }, { data: heroVideos }, { data: sliderImagesRaw }, { data: siteImageRows }] =
+  // TEMPORAL: Supabase Storage con quota excedida — URLs hardcodeadas en Colombia Hosting
+  // Restaurar query cuando se renueve la quota:
+  // supabase.from("hero_videos").select("url,thumbnail_url").eq("is_active",true).is("event_type",null).order("sort_order")
+  const heroVideos = [
+    { url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4", thumbnail_url: null },
+  ];
+
+  const [{ data: testimonials }, { data: sliderImagesRaw }, { data: siteImageRows }] =
     await Promise.all([
       supabase
         .from("testimonials")
         .select("client_name, event_type, rating, content, photo_url")
         .eq("is_published", true)
-        .order("sort_order"),
-      supabase
-        .from("hero_videos")
-        .select("url, thumbnail_url")
-        .eq("is_active", true)
-        .is("event_type", null)
         .order("sort_order"),
       supabase
         .from("gallery_images")

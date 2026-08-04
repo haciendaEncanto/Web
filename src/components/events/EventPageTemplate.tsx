@@ -14,12 +14,22 @@ import type { EventPageConfig } from "./types";
 export async function EventPageTemplate({ config }: { config: EventPageConfig }) {
   const supabase = await createClient();
 
+  // TEMPORAL: Supabase Storage con quota excedida — URLs hardcodeadas en Colombia Hosting
+  // Restaurar query cuando se renueve la quota:
+  // supabase.from("hero_videos").select("url").eq("event_type",config.hero.videoEventType)...
+  const HERO_VIDEOS_TEMP: Record<string, string | null> = {
+    boda:        "https://contenido.hacienda-encanto.com/videos/Nuevo_Boda_optimizado.mp4",
+    quince:      "https://contenido.hacienda-encanto.com/videos/Quince_optimizado.mp4",
+    empresarial: null,
+    revelacion:  null,
+  };
+  const heroVideoUrl = HERO_VIDEOS_TEMP[config.hero.videoEventType] ?? null;
+
   const [
     { data: galleryImages },
     { data: rawPackages },
     { data: testimonials },
     { data: tourContent },
-    { data: heroVideo },
   ] = await Promise.all([
     supabase
       .from("gallery_images")
@@ -45,14 +55,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       .select("content")
       .eq("key", "tour_360_url")
       .maybeSingle(),
-    supabase
-      .from("hero_videos")
-      .select("url")
-      .eq("event_type", config.hero.videoEventType)
-      .eq("is_active", true)
-      .order("sort_order")
-      .limit(1)
-      .maybeSingle(),
   ]);
 
   const allImages = galleryImages?.length ? galleryImages : config.gallery.fallback;
@@ -67,7 +69,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <NavBar />
       <main className="pt-[72px]">
         {/* 1. Hero */}
-        <EventHero {...config.hero} videoUrl={heroVideo?.url ?? null} />
+        <EventHero {...config.hero} videoUrl={heroVideoUrl} />
 
         {/* 2. Experiencia — párrafo emocional centrado */}
         <EventDescripcion config={config.experiencia} />
