@@ -7,7 +7,7 @@ const SUPABASE_HOST = "oewqyckeqolrpjbjevap.supabase.co";
 // 'unsafe-inline' y 'unsafe-eval' son necesarios para Next.js App Router en producción.
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com`,
+  `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://static.cloudflareinsights.com`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://${SUPABASE_HOST} https://contenido.hacienda-encanto.com`,
   "font-src 'self' data:",
