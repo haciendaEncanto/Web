@@ -43,6 +43,7 @@ export function TestimoniosSection({ testimonials }: { testimonials: Testimonio[
               key={current}
               src={TESTIMONIAL_VIDEOS[current]}
               controls
+              controlsList="nodownload"
               className="w-full h-[320px] rounded-2xl bg-negro object-contain"
               onEnded={advance}
             />
