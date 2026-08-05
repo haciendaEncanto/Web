@@ -15,7 +15,21 @@ export interface EventosSectionImages {
   revelacion: string | null;
 }
 
+const FALLBACK_IMAGES: EventosSectionImages = {
+  boda:        "https://contenido.hacienda-encanto.com/galeria/sitio/eventos/boda.jpeg",
+  quince:      "https://contenido.hacienda-encanto.com/galeria/sitio/eventos/quince.jpeg",
+  empresarial: null,
+  revelacion:  null,
+};
+
 export function EventosSection({ images }: { images?: EventosSectionImages }) {
+  const effectiveImages: EventosSectionImages = {
+    boda:        images?.boda        ?? FALLBACK_IMAGES.boda,
+    quince:      images?.quince      ?? FALLBACK_IMAGES.quince,
+    empresarial: images?.empresarial ?? FALLBACK_IMAGES.empresarial,
+    revelacion:  images?.revelacion  ?? FALLBACK_IMAGES.revelacion,
+  };
+
   return (
     <section id="eventos" className="py-24 bg-crema">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -39,10 +53,10 @@ export function EventosSection({ images }: { images?: EventosSectionImages }) {
               href={e.href}
               className="relative rounded-2xl overflow-hidden h-[420px] group block"
             >
-              {images?.[e.key] ? (
+              {effectiveImages[e.key] ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={images[e.key] as string}
+                  src={effectiveImages[e.key] as string}
                   alt={e.title}
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                   className="transition-transform duration-[600ms] scale-105 md:scale-100 md:group-hover:scale-105"
