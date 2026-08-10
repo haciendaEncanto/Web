@@ -27,6 +27,7 @@ import {
   Map,
   ScrollText,
   Inbox,
+  Newspaper,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -73,6 +74,8 @@ function getNavItems(role: string): NavItem[] {
       { href: "/editor/imagenes-sitio", label: "Imágenes del sitio", icon: Images },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
+      { href: "/editor/staff", label: "Equipo", icon: Users },
+      { href: "/editor/blog", label: "Blog", icon: Newspaper },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
     ];
   }
@@ -84,6 +87,8 @@ function getNavItems(role: string): NavItem[] {
       { href: "/editor/imagenes-sitio", label: "Imágenes del sitio", icon: Images },
       { href: "/editor/testimonios", label: "Testimonios", icon: Star },
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
+      { href: "/editor/staff", label: "Equipo", icon: Users },
+      { href: "/editor/blog", label: "Blog", icon: Newspaper },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
     ];
   }
