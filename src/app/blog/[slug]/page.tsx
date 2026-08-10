@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BookOpen, CalendarDays, User } from "lucide-react";
+import { BookOpen, CalendarDays, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/home/NavBar";
 import { Footer } from "@/components/home/Footer";
@@ -81,7 +81,8 @@ async function getOtherPosts(excludeSlug: string): Promise<PostCard[]> {
       .select("id,titulo,slug,foto_url,published_at")
       .eq("is_published", true)
       .neq("slug", excludeSlug)
-      .order("published_at", { ascending: false });
+      .order("published_at", { ascending: false })
+      .limit(10);
     if (data && (data as PostCard[]).length > 0) return data as PostCard[];
   } catch {
     // Supabase no disponible
@@ -163,14 +164,6 @@ export default async function BlogPostPage({
 
               {/* ── Artículo principal ── */}
               <div className="flex-1 min-w-0 max-w-[720px]">
-                {/* Volver */}
-                <Link
-                  href="/blog"
-                  className="inline-flex items-center gap-1.5 text-[0.78rem] text-negro/45 hover:text-dorado transition-colors mb-8"
-                >
-                  <ArrowLeft size={13} /> Volver al blog
-                </Link>
-
                 {/* Metadata */}
                 <div className="flex flex-wrap items-center gap-4 text-[0.75rem] text-negro/40 mb-5">
                   {post.published_at && (

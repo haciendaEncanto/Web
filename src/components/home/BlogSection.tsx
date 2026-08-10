@@ -56,8 +56,8 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             Blog
           </p>
           <h2 className="font-serif text-[2.4rem] md:text-[3rem] font-light text-negro tracking-[-0.03em] leading-[1.1]">
-            Reflexiones &amp;{" "}
-            <em className="text-dorado not-italic">Consejos</em>
+            El Encanto{" "}
+            <em className="text-dorado not-italic">del Detalle</em>
           </h2>
           <div className="w-[50px] h-px bg-dorado mx-auto mt-6" />
         </div>
