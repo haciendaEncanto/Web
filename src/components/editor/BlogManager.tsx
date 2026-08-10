@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import {
   createBlogPost, updateBlogPost, deleteBlogPost, togglePublish,
-  generateSlug,
   type BlogPostData, type BlogPostRow,
 } from "@/app/actions/editor/blog";
+import { generateSlug } from "@/lib/blog-utils";
 import { uploadToColombiaHosting } from "@/lib/uploads/colombia-hosting";
 
 const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
