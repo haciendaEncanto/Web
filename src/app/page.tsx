@@ -5,7 +5,9 @@ import { EventosSection } from "@/components/home/EventosSection";
 import { NosotrosSection } from "@/components/home/NosotrosSection";
 import { ServiciosSection } from "@/components/home/ServiciosSection";
 import { TestimoniosSection } from "@/components/home/TestimoniosSection";
+import { StaffSection } from "@/components/home/StaffSection";
 import { CTASection } from "@/components/home/CTASection";
+import { BlogSection } from "@/components/home/BlogSection";
 import { ContactoSection } from "@/components/home/ContactoSection";
 import { Footer } from "@/components/home/Footer";
 import { WhatsAppButton } from "@/components/home/WhatsAppButton";
@@ -27,16 +29,27 @@ export default async function HomePage() {
 
   // Fallback: Supabase no disponible hasta el 20 de agosto — secciones quedan vacías pero el sitio no cae
   type TestimonioRow = { client_name: string; event_type: string | null; rating: number | null; content: string; photo_url: string | null };
+  type StaffRow = { id: string; nombre: string; cargo: string; descripcion: string | null; foto_url: string | null };
+  type BlogPostRow = { id: string; titulo: string; slug: string; resumen: string | null; foto_url: string | null; published_at: string | null };
   let testimonials: TestimonioRow[] = [];
   let sliderImages: { url: string; title: string | null }[] = [];
+  let staffMembers: StaffRow[] = [];
+  let blogPosts: BlogPostRow[] = [];
   const siteImages = Object.fromEntries(
     SITE_IMAGE_KEYS.map((k) => [k, null]),
   ) as Record<SiteImageKey, string | null>;
 
   try {
     const supabase = await createClient();
-    const [{ data: testimonialsData }, { data: sliderImagesRaw }, { data: siteImageRows }] =
-      await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+    const [
+      { data: testimonialsData },
+      { data: sliderImagesRaw },
+      { data: siteImageRows },
+      { data: staffData },
+      { data: blogData },
+    ] = await Promise.all([
         supabase
           .from("testimonials")
           .select("client_name, event_type, rating, content, photo_url")
@@ -51,10 +64,23 @@ export default async function HomePage() {
           .from("site_content")
           .select("key, content")
           .in("key", SITE_IMAGE_KEYS),
+        db
+          .from("staff")
+          .select("id, nombre, cargo, descripcion, foto_url")
+          .eq("is_active", true)
+          .order("sort_order"),
+        db
+          .from("blog_posts")
+          .select("id, titulo, slug, resumen, foto_url, published_at")
+          .eq("is_published", true)
+          .order("published_at", { ascending: false })
+          .limit(3),
       ]);
 
     testimonials = testimonialsData ?? [];
     sliderImages = pickRandomSliderImages(sliderImagesRaw ?? []);
+    staffMembers = (staffData ?? []) as StaffRow[];
+    blogPosts = (blogData ?? []) as BlogPostRow[];
     for (const row of siteImageRows ?? []) {
       if (SITE_IMAGE_KEYS.includes(row.key as SiteImageKey)) {
         siteImages[row.key as SiteImageKey] = row.content;
@@ -105,7 +131,9 @@ export default async function HomePage() {
           title="Así vivimos los eventos"
         />
         <TestimoniosSection testimonials={testimonials} />
+        <StaffSection members={staffMembers} />
         <CTASection />
+        <BlogSection posts={blogPosts} />
         <ContactoSection />
       </main>
       <Footer />

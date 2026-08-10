@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 const BASE = "https://www.hacienda-encanto.com";
-const LAST_MODIFIED = new Date("2026-07-24");
+const LAST_MODIFIED = new Date("2026-08-10");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -10,5 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/quince-anos`,           lastModified: LAST_MODIFIED, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/eventos-empresariales`, lastModified: LAST_MODIFIED, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/revelacion-de-genero`,  lastModified: LAST_MODIFIED, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/blog`,                  lastModified: LAST_MODIFIED, changeFrequency: "weekly",  priority: 0.7 },
   ];
 }
