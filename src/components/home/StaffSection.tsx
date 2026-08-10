@@ -9,9 +9,27 @@ type StaffMember = {
 };
 
 const FALLBACK_STAFF: StaffMember[] = [
-  { id: "1", nombre: "DJ Jeisson Evolution", cargo: "DJ Profesional",         descripcion: null, foto_url: null },
-  { id: "2", nombre: "DJ Pipper Pimienta",   cargo: "Maestro de Ceremonias",  descripcion: null, foto_url: null },
-  { id: "3", nombre: "Jonny Delgado",         cargo: "Wedding Planner",        descripcion: null, foto_url: null },
+  {
+    id: "1",
+    nombre: "Jonny Delgado",
+    cargo: "Wedding Planner",
+    descripcion: "Más de 15 años haciendo realidad los eventos más soñados con dedicación y pasión.",
+    foto_url: null,
+  },
+  {
+    id: "2",
+    nombre: "DJ Jeisson Evolution",
+    cargo: "DJ Profesional",
+    descripcion: "La música perfecta para que cada instante quede grabado para siempre en la memoria.",
+    foto_url: null,
+  },
+  {
+    id: "3",
+    nombre: "DJ Pipper Pimienta",
+    cargo: "Maestro de Ceremonias (Animador)",
+    descripcion: "Energía, carisma y alegría para animar cada celebración al máximo nivel.",
+    foto_url: null,
+  },
 ];
 
 export function StaffSection({ members }: { members: StaffMember[] }) {
@@ -44,7 +62,10 @@ export function StaffSection({ members }: { members: StaffMember[] }) {
           ].join(" ")}
         >
           {effectiveMembers.map((m) => (
-            <div key={m.id} className="flex flex-col items-center text-center px-4">
+            <div
+              key={m.id}
+              className="group relative flex flex-col items-center text-center p-6 rounded-2xl"
+            >
               {/* Foto circular */}
               <div className="w-28 h-28 rounded-full overflow-hidden ring-2 ring-dorado/30 bg-dorado/5 flex items-center justify-center shrink-0">
                 {m.foto_url ? (
@@ -59,7 +80,7 @@ export function StaffSection({ members }: { members: StaffMember[] }) {
                 )}
               </div>
 
-              {/* Info */}
+              {/* Info siempre visible */}
               <p className="font-medium text-negro text-[1.05rem] mt-4 leading-snug">
                 {m.nombre}
               </p>
@@ -70,6 +91,23 @@ export function StaffSection({ members }: { members: StaffMember[] }) {
                 <p className="text-[0.83rem] text-negro/55 mt-2 leading-relaxed max-w-[240px]">
                   {m.descripcion}
                 </p>
+              )}
+
+              {/* Overlay hover — fade + slide desde abajo */}
+              {m.descripcion && (
+                <div
+                  className={[
+                    "absolute inset-0 rounded-2xl",
+                    "bg-negro/80 flex items-center justify-center px-6",
+                    "opacity-0 translate-y-3 pointer-events-none",
+                    "group-hover:opacity-100 group-hover:translate-y-0",
+                    "transition-all duration-300 ease-out",
+                  ].join(" ")}
+                >
+                  <p className="text-blanco text-[0.9rem] leading-relaxed text-center font-light italic">
+                    &ldquo;{m.descripcion}&rdquo;
+                  </p>
+                </div>
               )}
             </div>
           ))}

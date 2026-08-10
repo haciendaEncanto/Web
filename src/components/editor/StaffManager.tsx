@@ -153,7 +153,7 @@ function StaffForm({
         </div>
         <div className="sm:col-span-2">
           <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
-            Descripción / frase corta
+            Reseña
           </label>
           <input
             type="text"

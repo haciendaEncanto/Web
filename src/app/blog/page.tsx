@@ -63,7 +63,9 @@ export default async function BlogPage() {
 
   try {
     const supabase = await createClient();
-    const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db: any = supabase;
+    const { data } = await db
       .from("blog_posts")
       .select("id,titulo,slug,resumen,foto_url,autor,published_at")
       .eq("is_published", true)

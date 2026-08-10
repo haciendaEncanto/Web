@@ -18,6 +18,8 @@ type Post = {
   published_at: string | null;
 };
 
+type PostCard = Pick<Post, "id" | "titulo" | "slug" | "foto_url" | "published_at">;
+
 const FALLBACK_POSTS: Post[] = [
   {
     id: "fb1",
@@ -54,7 +56,9 @@ const FALLBACK_POSTS: Post[] = [
 async function getPost(slug: string): Promise<Post | null> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db: any = supabase;
+    const { data } = await db
       .from("blog_posts")
       .select("id,titulo,slug,resumen,contenido,foto_url,autor,published_at")
       .eq("slug", slug)
@@ -65,6 +69,26 @@ async function getPost(slug: string): Promise<Post | null> {
     // Supabase no disponible
   }
   return FALLBACK_POSTS.find((p) => p.slug === slug) ?? null;
+}
+
+async function getOtherPosts(excludeSlug: string): Promise<PostCard[]> {
+  try {
+    const supabase = await createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db: any = supabase;
+    const { data } = await db
+      .from("blog_posts")
+      .select("id,titulo,slug,foto_url,published_at")
+      .eq("is_published", true)
+      .neq("slug", excludeSlug)
+      .order("published_at", { ascending: false });
+    if (data && (data as PostCard[]).length > 0) return data as PostCard[];
+  } catch {
+    // Supabase no disponible
+  }
+  return FALLBACK_POSTS
+    .filter((p) => p.slug !== excludeSlug)
+    .map(({ id, titulo, slug, foto_url, published_at }) => ({ id, titulo, slug, foto_url, published_at }));
 }
 
 export async function generateMetadata({
@@ -89,13 +113,23 @@ function formatDate(iso: string | null) {
   });
 }
 
+function formatDateShort(iso: string | null) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("es-CO", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+}
+
 export default async function BlogPostPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const [post, otherPosts] = await Promise.all([
+    getPost(slug),
+    getOtherPosts(slug),
+  ]);
   if (!post) notFound();
 
   const paragraphs = post.contenido
@@ -122,72 +156,133 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        {/* Contenido */}
+        {/* Contenido + Sidebar */}
         <div className="bg-crema py-14 px-6">
-          <div className="max-w-[720px] mx-auto">
-            {/* Volver */}
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-1.5 text-[0.78rem] text-negro/45 hover:text-dorado transition-colors mb-8"
-            >
-              <ArrowLeft size={13} /> Volver al blog
-            </Link>
+          <div className="max-w-[1200px] mx-auto">
+            <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
 
-            {/* Metadata */}
-            <div className="flex flex-wrap items-center gap-4 text-[0.75rem] text-negro/40 mb-5">
-              {post.published_at && (
-                <span className="flex items-center gap-1">
-                  <CalendarDays size={13} />
-                  {formatDate(post.published_at)}
-                </span>
-              )}
-              {post.autor && (
-                <span className="flex items-center gap-1">
-                  <User size={13} />
-                  {post.autor}
-                </span>
-              )}
-            </div>
+              {/* ── Artículo principal ── */}
+              <div className="flex-1 min-w-0 max-w-[720px]">
+                {/* Volver */}
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center gap-1.5 text-[0.78rem] text-negro/45 hover:text-dorado transition-colors mb-8"
+                >
+                  <ArrowLeft size={13} /> Volver al blog
+                </Link>
 
-            {/* Título */}
-            <h1 className="font-serif text-[2.2rem] md:text-[2.8rem] font-light text-negro tracking-[-0.03em] leading-[1.15] mb-6">
-              {post.titulo}
-            </h1>
+                {/* Metadata */}
+                <div className="flex flex-wrap items-center gap-4 text-[0.75rem] text-negro/40 mb-5">
+                  {post.published_at && (
+                    <span className="flex items-center gap-1">
+                      <CalendarDays size={13} />
+                      {formatDate(post.published_at)}
+                    </span>
+                  )}
+                  {post.autor && (
+                    <span className="flex items-center gap-1">
+                      <User size={13} />
+                      {post.autor}
+                    </span>
+                  )}
+                </div>
 
-            {post.resumen && (
-              <>
-                <div className="w-[40px] h-px bg-dorado mb-6" />
-                <p className="text-[1rem] text-negro/65 font-light leading-[1.7] mb-6 italic">
-                  {post.resumen}
-                </p>
-              </>
-            )}
+                {/* Título */}
+                <h1 className="font-serif text-[2.2rem] md:text-[2.8rem] font-light text-negro tracking-[-0.03em] leading-[1.15] mb-6">
+                  {post.titulo}
+                </h1>
 
-            {/* Contenido */}
-            {paragraphs.length > 0 && (
-              <div className="prose-custom mt-8 space-y-5">
-                {paragraphs.map((para, i) => (
-                  <p
-                    key={i}
-                    className="text-[0.95rem] text-negro/75 leading-[1.8] font-light"
-                  >
-                    {para}
+                {post.resumen && (
+                  <>
+                    <div className="w-[40px] h-px bg-dorado mb-6" />
+                    <p className="text-[1rem] text-negro/65 font-light leading-[1.7] mb-6 italic">
+                      {post.resumen}
+                    </p>
+                  </>
+                )}
+
+                {/* Contenido */}
+                {paragraphs.length > 0 && (
+                  <div className="mt-8 space-y-5">
+                    {paragraphs.map((para, i) => (
+                      <p
+                        key={i}
+                        className="text-[0.95rem] text-negro/75 leading-[1.8] font-light"
+                      >
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* CTA */}
+                <div className="mt-14 pt-10 border-t border-dorado/20 text-center">
+                  <p className="text-[0.88rem] text-negro/55 mb-4">
+                    ¿Listo para vivir tu propio evento en El Encanto?
                   </p>
-                ))}
+                  <Link
+                    href="/#contacto"
+                    className="inline-block px-8 py-3 bg-rojo text-blanco text-[0.8rem] font-medium tracking-[1.5px] uppercase rounded-lg border-2 border-rojo hover:bg-rojo/90 transition-all duration-300"
+                  >
+                    Cuéntanos tu evento
+                  </Link>
+                </div>
               </div>
-            )}
 
-            {/* CTA */}
-            <div className="mt-14 pt-10 border-t border-dorado/20 text-center">
-              <p className="text-[0.88rem] text-negro/55 mb-4">
-                ¿Listo para vivir tu propio evento en El Encanto?
-              </p>
-              <Link
-                href="/#contacto"
-                className="inline-block px-8 py-3 bg-rojo text-blanco text-[0.8rem] font-medium tracking-[1.5px] uppercase rounded-lg border-2 border-rojo hover:bg-rojo/90 transition-all duration-300"
-              >
-                Cuéntanos tu evento
-              </Link>
+              {/* ── Sidebar: más artículos ── */}
+              {otherPosts.length > 0 && (
+                <aside className="w-full lg:w-[270px] shrink-0 lg:sticky lg:top-[100px]">
+                  <h3 className="text-[0.65rem] tracking-[3px] uppercase text-dorado font-medium mb-5">
+                    Más artículos
+                  </h3>
+                  <div className="space-y-4">
+                    {otherPosts.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/blog/${p.slug}`}
+                        className="flex gap-3 group"
+                      >
+                        {/* Miniatura */}
+                        <div className="w-16 h-14 rounded-lg overflow-hidden bg-dorado/10 shrink-0">
+                          {p.foto_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.foto_url}
+                              alt={p.titulo}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <BookOpen size={14} className="text-dorado/30" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Texto */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[0.82rem] text-negro font-medium leading-snug line-clamp-2 group-hover:text-dorado transition-colors">
+                            {p.titulo}
+                          </p>
+                          {p.published_at && (
+                            <p className="text-[0.68rem] text-negro/35 mt-1">
+                              {formatDateShort(p.published_at)}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 pt-5 border-t border-dorado/15">
+                    <Link
+                      href="/blog"
+                      className="text-[0.75rem] text-dorado hover:text-dorado/70 transition-colors"
+                    >
+                      Ver todos los artículos →
+                    </Link>
+                  </div>
+                </aside>
+              )}
+
             </div>
           </div>
         </div>
