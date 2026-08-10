@@ -21,7 +21,14 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     empresarial: null,
     revelacion:  null,
   };
+  const HERO_MOBILE_VIDEOS_TEMP: Record<string, string | null> = {
+    boda:        "https://contenido.hacienda-encanto.com/videos/Nuevo_Boda_mobile.mp4",
+    quince:      "https://contenido.hacienda-encanto.com/videos/Quince_mobile.mp4",
+    empresarial: null,
+    revelacion:  null,
+  };
   const heroVideoUrl = HERO_VIDEOS_TEMP[config.hero.videoEventType] ?? null;
+  const heroMobileVideoUrl = HERO_MOBILE_VIDEOS_TEMP[config.hero.videoEventType] ?? null;
 
   // Fallback: Supabase puede estar no disponible temporalmente
   type GaleriaRow = { url: string; title: string | null };
@@ -87,7 +94,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       <NavBar />
       <main className="pt-[72px]">
         {/* 1. Hero */}
-        <EventHero {...config.hero} videoUrl={heroVideoUrl} />
+        <EventHero {...config.hero} videoUrl={heroVideoUrl} mobileVideoUrl={heroMobileVideoUrl} />
 
         {/* 2. Experiencia — párrafo emocional centrado */}
         <EventDescripcion config={config.experiencia} />
