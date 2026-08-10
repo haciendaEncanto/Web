@@ -8,6 +8,7 @@ interface EventHeroProps {
   subtitle: string;
   ctaLabel: string;
   videoUrl?: string | null;
+  mobileVideoUrl?: string | null;
 }
 
 const BLACK_POSTER =
@@ -20,6 +21,7 @@ export function EventHero({
   subtitle,
   ctaLabel,
   videoUrl,
+  mobileVideoUrl,
 }: EventHeroProps) {
   const hasImage = Boolean(image) && image !== "/placeholder-evento.svg";
 
@@ -36,6 +38,9 @@ export function EventHero({
             poster={hasImage ? image : BLACK_POSTER}
             className="absolute inset-0 w-full h-full object-cover"
           >
+            {mobileVideoUrl && (
+              <source src={mobileVideoUrl} media="(max-width: 768px)" type="video/mp4" />
+            )}
             <source src={videoUrl} type="video/mp4" />
           </video>
         ) : hasImage ? (

@@ -18,7 +18,11 @@ export default async function HomePage() {
   // Restaurar query cuando se renueve la quota:
   // supabase.from("hero_videos").select("url,thumbnail_url").eq("is_active",true).is("event_type",null).order("sort_order")
   const heroVideos = [
-    { url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4", thumbnail_url: null },
+    {
+      url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4",
+      mobile_url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_mobile.mp4",
+      thumbnail_url: null,
+    },
   ];
 
   // Fallback: Supabase no disponible hasta el 20 de agosto — secciones quedan vacías pero el sitio no cae

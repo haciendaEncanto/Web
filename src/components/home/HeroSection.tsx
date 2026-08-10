@@ -6,6 +6,7 @@ import { HeroLogoFallback } from "@/components/ui/HeroLogoFallback";
 
 interface HeroVideo {
   url: string;
+  mobile_url?: string | null;
   thumbnail_url: string | null;
 }
 
@@ -14,7 +15,11 @@ const BLACK_POSTER =
 
 // Fallback de emergencia: si Supabase no entrega videos, se usa esta URL directa
 const FALLBACK_VIDEOS: HeroVideo[] = [
-  { url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4", thumbnail_url: null },
+  {
+    url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_optimizado.mp4",
+    mobile_url: "https://contenido.hacienda-encanto.com/videos/Nuevo_Home_mobile.mp4",
+    thumbnail_url: null,
+  },
 ];
 
 export function HeroSection({ videos }: { videos: HeroVideo[] }) {
@@ -56,6 +61,9 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
               style={{ opacity: 1 }}
             >
+              {effectiveVideos[0].mobile_url && (
+                <source src={effectiveVideos[0].mobile_url} media="(max-width: 768px)" type="video/mp4" />
+              )}
               <source src={effectiveVideos[0].url} type="video/mp4" />
             </video>
 
@@ -69,6 +77,9 @@ export function HeroSection({ videos }: { videos: HeroVideo[] }) {
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms]"
                 style={{ opacity: 0 }}
               >
+                {effectiveVideos[1].mobile_url && (
+                  <source src={effectiveVideos[1].mobile_url} media="(max-width: 768px)" type="video/mp4" />
+                )}
                 <source src={effectiveVideos[1].url} type="video/mp4" />
               </video>
             )}
