@@ -5,7 +5,7 @@
 ## Estado del proyecto — Hacienda El Encanto
 
 ### Stack
-Next.js 16 + TypeScript + Tailwind v4 (`@theme inline {}` en globals.css) + Supabase (PostgreSQL + Storage + Auth). Fuentes: Cormorant Garamond. `pnpm` exclusivamente. Paleta: `--rojo`, `--dorado`, `--crema`, `--negro`, `--verde-bosque`, `--blush`.
+Next.js 16 + TypeScript + Tailwind v4 (`@theme inline {}` en globals.css) + Supabase (PostgreSQL + Auth). Fuentes: Cormorant Garamond. `pnpm` exclusivamente. Paleta: `--rojo`, `--dorado`, `--crema`, `--negro`, `--verde-bosque`, `--blush`. **Supabase Storage no se usa** — todos los archivos van a Colombia Hosting.
 
 ### Usuarios de prueba
 | Email | Contraseña | Rol |
@@ -37,6 +37,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Seguridad**: HTTP headers en next.config.ts (CSP, X-Frame-Options, etc.), rate limiting login (login_attempts, 15 min, máx 5 fallos), Zod en SAs
 - **Resiliencia Supabase outage (ago 2026)**: queries en try/catch con defaults tipados. Videos hero y galería hardcodeados a Colombia Hosting. CSP + remotePatterns incluyen `contenido.hacienda-encanto.com`
 - **Recuperación contraseña**: /reset-password + /update-password (token_hash PKCE browser-side). Admin: CambiarPasswordButton vía `admin.updateUserById`
+- **Staff y Blog** (2026-08-10): tablas `staff` + `blog_posts` (migración 20260810000001). Módulo staff: CRUD + hover overlay en home. Módulo blog: CRUD + auto-slug + `/blog` + `/blog/[slug]` con sidebar. Fotos vía PHP Colombia Hosting
 - **Otros**: SEO (sitemap.ts + robots.ts App Router nativos), reCAPTCHA badge oculto + texto legal, sin precios públicos, pestaña Cancelados eliminada de UI (bookings siguen en BD)
 
 ### Decisiones de arquitectura
@@ -51,7 +52,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 **Supabase y base de datos**
 - `createClient()` (async, SSR) para Server Components/Actions. `createBrowserClient` en client.ts. `createAdminClient()` (service_role) solo en SAs tras verificar rol — `auth.uid()` es NULL con service_role.
-- Tipos: `supabase gen types typescript --project-id oewqyckeqolrpjbjevap > src/types/database.ts` tras cada migración.
+- Tipos: `supabase gen types typescript --project-id oewqyckeqolrpjbjevap > src/types/database.ts` tras cada migración. **Tablas nuevas antes de regenerar**: usar `createRawAdminClient()` (sin genérico `Database<>`) en SAs, y `const db: any = supabase` en Server Components.
 - `sync_completed_bookings()` — security definer, marca bookings vencidos. Invocado en `fetchClientBookingRows()`/`fetchAllBookingsWithClient()` + pg_cron diario.
 - `is_staff_or_admin()` incluye `admin`, `staff`, `wedding_planner`, `asesor_comercial`, `asesor_logistica`.
 - `initialize_service_order(p_booking_id)` — idempotente (borra y recrea). **Labels críticos**: `'Hora inicio'` y `'Hora fin'` (sin "de") — deben coincidir exactamente con `service_order_templates`. Migración `20260730000001` normaliza ambos.
@@ -60,11 +61,16 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - Búsqueda mapa salón: `.limit(1)` NO `.maybeSingle()` — tolerante si dos mapas solapan el mismo rango.
 - `guest_tables`: cada fila = versión histórica Excel (sin unique en booking_id).
 
-**Uploads — patrón signed URL (crítico)**
-- NUNCA pasar archivos por SA — Vercel limita body a 4.5MB independientemente de `bodySizeLimit`.
-- **Patrón 3 pasos**: 1) SA "request" genera signed upload URL (5 min, `createAdminClient().storage.createSignedUploadUrl()`); 2) cliente sube DIRECTO a Storage con `uploadFileToSignedUrl()`; 3) SA "confirm" inserta en BD o borra si falla.
-- `src/lib/uploads/config.ts` (SITE_IMAGE_KEYS, kinds, límites — sin secretos, importable desde cliente), `server.ts`, `client.ts`.
+**Uploads — Colombia Hosting vía PHP (arquitectura definitiva)**
+- **Supabase Storage NO se usa** para ningún tipo de archivo. Todos los uploads van a `contenido.hacienda-encanto.com`.
+- NUNCA pasar archivos por SA — Vercel limita body a 4.5MB. El cliente sube DIRECTO al servidor PHP.
+- **Patrón 2 pasos**: 1) cliente llama `uploadToColombiaHosting(file, folder)` (`src/lib/uploads/colombia-hosting.ts`) que hace POST a `https://contenido.hacienda-encanto.com/upload.php`; 2) el script PHP valida mime (JPG/PNG/WebP), tamaño (5MB), guarda en la carpeta y devuelve `{ success, url }`. La URL se guarda en BD via SA.
+- **Script PHP**: `scripts/upload-colombia-hosting.php` → desplegar como `public_html/upload.php`. CORS solo desde `https://www.hacienda-encanto.com`. Acepta `file` + `folder` (ej. `galeria/staff`, `galeria/blog`).
+- **Carpetas en Colombia Hosting** (crear manualmente en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`.
+- **Excepción — PDF de contrato**: generado server-side con `renderToBuffer` en SA → pendiente migrar de `admin.storage.upload()` a Colombia Hosting.
+- `src/lib/uploads/config.ts` (SITE_IMAGE_KEYS, kinds, límites — sin secretos, importable desde cliente).
 - **Constantes compartidas NUNCA en `"use server"`** — `SITE_IMAGE_KEYS`, `SALON_MAP_CAPACITIES`, `GUEST_COUNT_OPTIONS` en módulos `lib/`. Exportarlas junto a SAs rompe en runtime (`X.map is not a function`).
+- **Funciones síncronas NUNCA en `"use server"`** — Next.js exige que todos los exports de esos archivos sean async. Mover helpers como `generateSlug` a `src/lib/blog-utils.ts` (módulo plano).
 
 **Validaciones**
 - Todo `<select>` fijo: validar con `.refine()` Zod en servidor (restricción HTML no es suficiente).
@@ -100,7 +106,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - Auto-fill al cargar ContractItemsForm: `canelazo`, `champana`, `mobiliario`, `menaje` ← `guest_count` si aún son 0.
 - `bookings.valor_segundo_abono`/`valor_tercer_abono` (numeric, nullable — migración 20260731000002). Template vars `{{valor_segundo_abono}}`/`{{valor_tercer_abono}}` formateados con `fmtMoney()` (muestra "—" si null).
 - **ContratoPDF — una sola `<Page>`**: nunca dos Pages (genera página en blanco). Header/footer `fixed` repiten en cada página.
-- **PDF server-side**: `renderToBuffer` en SA → `admin.storage.upload()`. No usa signed URL (archivo creado en servidor, no en cliente).
+- **PDF server-side**: `renderToBuffer` en SA → actualmente `admin.storage.upload()` (Supabase Storage — pendiente migrar a Colombia Hosting).
 - `sanitizeName`: `normalize("NFD").replace(/[̀-ͯ]/g, "")` con escape Unicode explícito — caracteres literales en el rango se corrompen según encoding del archivo.
 - 20 cláusulas (`contrato_clausula_1..20` en site_content). Testimonios y cláusulas con fetch y estado **separados** en ContenidoManager.
 - `aprobarContrato`: ownership check → lock → `initialize_service_order` → notifica planners/admins.
@@ -127,18 +133,21 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-04.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-10.
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
 
 ### Pendiente (operativo/contenido, no código)
 
 1. **Restaurar Supabase (20 ago 2026)** — automático vía try/catch ya existentes.
-2. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
-3. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
-4. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
-5. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, bucket `documents` privado, RLS en todas las tablas. Aplicar migración `20260730000001` si pendiente.
-6. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
+2. **Aplicar migración 20260810000001** (`staff` + `blog_posts`) con `supabase db push`; luego regenerar `src/types/database.ts`.
+3. **Carpetas Colombia Hosting** — crear en cPanel: `public_html/galeria/staff/` y `public_html/galeria/blog/`. Desplegar `scripts/upload-colombia-hosting.php` como `public_html/upload.php`.
+4. **Migrar PDF contrato a Colombia Hosting** — `generar-contrato.ts` usa `admin.storage.upload()` (única dependencia restante de Supabase Storage).
+5. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
+6. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
+7. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
+8. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, RLS en todas las tablas.
+9. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
 
 ### Archivos clave
 
@@ -157,6 +166,9 @@ src/
       admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword
       admin/generar-contrato.ts       ← generarContratoPDF (renderToBuffer+upload), eliminarHistorialContratos
       editor/galeria.ts|videos.ts|imagenes-sitio.ts|testimonios.ts|paquetes.ts|contenido.ts
+      editor/staff.ts|blog.ts            ← CRUD Staff/Blog con createRawAdminClient()
+    blog/page.tsx / blog/[slug]/page.tsx ← públicas; sidebar "Más artículos" en [slug]
+    editor/staff/page.tsx / editor/blog/page.tsx
     (auth)/login/page.tsx / reset-password/page.tsx
     auth/confirm/route.ts             ← auxiliar, no se usa para password reset
     portal/layout.tsx / page.tsx (redirect por rol)
@@ -175,13 +187,16 @@ src/
     clientes/ClientesTable.tsx        ← prop basePath:"planner"|"admin"
     asesor/ContactosAsesorView.tsx    ← estado optimista, botón wa.me completo
   lib/
-    supabase/server.ts|client.ts|admin.ts
+    supabase/server.ts|client.ts|admin.ts  ← admin.ts incluye createRawAdminClient()
     uploads/config.ts|server.ts|client.ts
+    uploads/colombia-hosting.ts            ← uploadToColombiaHosting(file, folder) vía PHP
+    blog-utils.ts                          ← generateSlug (función síncrona — NO en "use server")
     clientes.ts / eventos.ts / event-window.ts / playlist-templates.ts (ORDEN_MUSIC_FIELD_MAP)
     random-slider.ts / guest-count.ts / salon-map-capacities.ts / callmebot.ts / contract-items.ts
   proxy.ts                            ← Middleware Next.js 16 (exportado como "proxy")
   types/database.ts                   ← Regenerar con supabase gen types tras cada migración
 next.config.ts                        ← HTTP security headers vía async headers()
 public/ (logo-principal-fondo-claro.svg, trebol-original.svg, placeholder-avatar.svg, placeholder-evento.svg)
-supabase/migrations/ (última aplicada: 20260730000001_fix_cabecera_prefill.sql)
+scripts/upload-colombia-hosting.php   ← Desplegar como public_html/upload.php en Colombia Hosting
+supabase/migrations/ (última aplicada: 20260810000001_staff_blog.sql)
 ```
