@@ -38,6 +38,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Resiliencia Supabase outage (ago 2026)**: queries en try/catch con defaults tipados. Videos hero y galería hardcodeados a Colombia Hosting. CSP + remotePatterns incluyen `contenido.hacienda-encanto.com`
 - **Recuperación contraseña**: /reset-password + /update-password (token_hash PKCE browser-side). Admin: CambiarPasswordButton vía `admin.updateUserById`
 - **Staff y Blog** (2026-08-10): tablas `staff` + `blog_posts` (migración 20260810000001). Módulo staff: CRUD + hover overlay en home. Módulo blog: CRUD + auto-slug + `/blog` + `/blog/[slug]` con sidebar. Fotos vía PHP Colombia Hosting
+- **StaffSection home** (2026-08-11): 4 miembros hardcodeados en fallback — Jonny Delgado, David Castillo, DJ Jeisson Evolution, DJ Pipper Pimienta (en ese orden). Grid 2 cols móvil / 4 cols desktop. Hover overlay con reseña. Texto informativo equipo de servicio debajo de las cards (Helvetica, #5A5A58).
 - **Otros**: SEO (sitemap.ts + robots.ts App Router nativos), reCAPTCHA badge oculto + texto legal, sin precios públicos, pestaña Cancelados eliminada de UI (bookings siguen en BD)
 
 ### Decisiones de arquitectura
@@ -64,10 +65,11 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 **Uploads — Colombia Hosting vía PHP (arquitectura definitiva)**
 - **Supabase Storage NO se usa** para ningún tipo de archivo. Todos los uploads van a `contenido.hacienda-encanto.com`.
 - NUNCA pasar archivos por SA — Vercel limita body a 4.5MB. El cliente sube DIRECTO al servidor PHP.
-- **Patrón 2 pasos**: 1) cliente llama `uploadToColombiaHosting(file, folder)` (`src/lib/uploads/colombia-hosting.ts`) que hace POST a `https://contenido.hacienda-encanto.com/upload.php`; 2) el script PHP valida mime (JPG/PNG/WebP), tamaño (5MB), guarda en la carpeta y devuelve `{ success, url }`. La URL se guarda en BD via SA.
-- **Script PHP**: `scripts/upload-colombia-hosting.php` → desplegar como `public_html/upload.php`. CORS solo desde `https://www.hacienda-encanto.com`. Acepta `file` + `folder` (ej. `galeria/staff`, `galeria/blog`).
-- **Carpetas en Colombia Hosting** (crear manualmente en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`.
-- **Excepción — PDF de contrato**: generado server-side con `renderToBuffer` en SA → pendiente migrar de `admin.storage.upload()` a Colombia Hosting.
+- **Patrón 2 pasos**: 1) cliente llama `uploadToColombiaHosting(file|buffer, folder)` (`src/lib/uploads/colombia-hosting.ts`) que hace POST a `https://contenido.hacienda-encanto.com/upload.php`; 2) el script PHP valida mime, tamaño, guarda en la carpeta y devuelve `{ success, url }`. La URL se guarda en BD via SA.
+- `uploadToColombiaHosting` acepta `File | Buffer`. Cuando es `Buffer` (SA server-side), lo envuelve en `Blob` con `type:"application/pdf"`. Tipo `ColombiaFolder`: `"galeria/staff" | "galeria/blog" | "documentos/contratos"`.
+- **Script PHP**: `scripts/upload-colombia-hosting.php` → desplegado como `public_html/upload.php`. CORS desde `https://www.hacienda-encanto.com`. Acepta imágenes JPG/PNG/WebP (5 MB) y PDFs (10 MB). Prefijo `img_` para imágenes, `doc_` para PDFs.
+- **Carpetas en Colombia Hosting** (todas creadas en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`, `public_html/documentos/contratos/`.
+- **PDF de contrato** (2026-08-11): `generar-contrato.ts` usa `uploadToColombiaHosting(pdfBuffer, "documentos/contratos")`. Supabase Storage ya NO se usa para nada. `eliminarHistorialContratos` solo borra registro BD (sin delete en Colombia Hosting — no hay endpoint).
 - `src/lib/uploads/config.ts` (SITE_IMAGE_KEYS, kinds, límites — sin secretos, importable desde cliente).
 - **Constantes compartidas NUNCA en `"use server"`** — `SITE_IMAGE_KEYS`, `SALON_MAP_CAPACITIES`, `GUEST_COUNT_OPTIONS` en módulos `lib/`. Exportarlas junto a SAs rompe en runtime (`X.map is not a function`).
 - **Funciones síncronas NUNCA en `"use server"`** — Next.js exige que todos los exports de esos archivos sean async. Mover helpers como `generateSlug` a `src/lib/blog-utils.ts` (módulo plano).
@@ -106,7 +108,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - Auto-fill al cargar ContractItemsForm: `canelazo`, `champana`, `mobiliario`, `menaje` ← `guest_count` si aún son 0.
 - `bookings.valor_segundo_abono`/`valor_tercer_abono` (numeric, nullable — migración 20260731000002). Template vars `{{valor_segundo_abono}}`/`{{valor_tercer_abono}}` formateados con `fmtMoney()` (muestra "—" si null).
 - **ContratoPDF — una sola `<Page>`**: nunca dos Pages (genera página en blanco). Header/footer `fixed` repiten en cada página.
-- **PDF server-side**: `renderToBuffer` en SA → actualmente `admin.storage.upload()` (Supabase Storage — pendiente migrar a Colombia Hosting).
+- **PDF server-side**: `renderToBuffer` en SA → `uploadToColombiaHosting(pdfBuffer, "documentos/contratos")`. Supabase Storage eliminado del flujo de contratos.
 - `sanitizeName`: `normalize("NFD").replace(/[̀-ͯ]/g, "")` con escape Unicode explícito — caracteres literales en el rango se corrompen según encoding del archivo.
 - 20 cláusulas (`contrato_clausula_1..20` en site_content). Testimonios y cláusulas con fetch y estado **separados** en ContenidoManager.
 - `aprobarContrato`: ownership check → lock → `initialize_service_order` → notifica planners/admins.
@@ -133,7 +135,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-10.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-11.
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
 
@@ -141,13 +143,11 @@ Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% compl
 
 1. **Restaurar Supabase (20 ago 2026)** — automático vía try/catch ya existentes.
 2. **Aplicar migración 20260810000001** (`staff` + `blog_posts`) con `supabase db push`; luego regenerar `src/types/database.ts`.
-3. **Carpetas Colombia Hosting** — crear en cPanel: `public_html/galeria/staff/` y `public_html/galeria/blog/`. Desplegar `scripts/upload-colombia-hosting.php` como `public_html/upload.php`.
-4. **Migrar PDF contrato a Colombia Hosting** — `generar-contrato.ts` usa `admin.storage.upload()` (única dependencia restante de Supabase Storage).
-5. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
-6. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
-7. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
-8. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, RLS en todas las tablas.
-9. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
+3. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
+4. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
+5. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
+6. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, RLS en todas las tablas.
+7. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
 
 ### Archivos clave
 
@@ -164,7 +164,7 @@ src/
       contactos-asesor.ts / crear-cliente.ts / contrato-aprobacion.ts / contrato-items.ts
       orden-servicio.ts / actividades.ts / invitados.ts / salon-maps.ts / pagos.ts / documentos.ts / playlist.ts
       admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword
-      admin/generar-contrato.ts       ← generarContratoPDF (renderToBuffer+upload), eliminarHistorialContratos
+      admin/generar-contrato.ts       ← generarContratoPDF (renderToBuffer → Colombia Hosting), eliminarHistorialContratos
       editor/galeria.ts|videos.ts|imagenes-sitio.ts|testimonios.ts|paquetes.ts|contenido.ts
       editor/staff.ts|blog.ts            ← CRUD Staff/Blog con createRawAdminClient()
     blog/page.tsx / blog/[slug]/page.tsx ← públicas; sidebar "Más artículos" en [slug]
@@ -189,7 +189,7 @@ src/
   lib/
     supabase/server.ts|client.ts|admin.ts  ← admin.ts incluye createRawAdminClient()
     uploads/config.ts|server.ts|client.ts
-    uploads/colombia-hosting.ts            ← uploadToColombiaHosting(file, folder) vía PHP
+    uploads/colombia-hosting.ts            ← uploadToColombiaHosting(file|buffer, folder) vía PHP; ColombiaFolder incluye "documentos/contratos"
     blog-utils.ts                          ← generateSlug (función síncrona — NO en "use server")
     clientes.ts / eventos.ts / event-window.ts / playlist-templates.ts (ORDEN_MUSIC_FIELD_MAP)
     random-slider.ts / guest-count.ts / salon-map-capacities.ts / callmebot.ts / contract-items.ts
