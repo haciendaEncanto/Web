@@ -6,8 +6,9 @@
  * (contenido.hacienda-encanto.com/upload.php)
  *
  * Acepta POST multipart/form-data con:
- *   file   => archivo de imagen (JPG, PNG, WebP, max 5 MB)
- *   folder => carpeta destino (p.ej. "galeria/staff" o "galeria/blog")
+ *   file   => imagen (JPG, PNG, WebP, max 5 MB) o PDF (max 10 MB)
+ *   folder => carpeta destino (p.ej. "galeria/staff", "galeria/blog",
+ *             "documentos/contratos")
  *
  * Devuelve JSON: { "success": true, "url": "https://..." }
  *             o  { "success": false, "error": "..." }
@@ -29,8 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-$maxSize      = 5 * 1024 * 1024; // 5 MB
+$allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+$isPdf        = false;
+$maxSize      = 5 * 1024 * 1024; // 5 MB (imágenes); PDFs hasta 10 MB
 
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
     http_response_code(400);
@@ -40,16 +42,20 @@ if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
 
 $file = $_FILES['file'];
 
-if ($file['size'] > $maxSize) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'El archivo supera 5 MB']);
-    exit;
-}
-
 $mime = mime_content_type($file['tmp_name']);
 if (!in_array($mime, $allowedMimes)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Solo se permiten imágenes JPG, PNG o WebP']);
+    echo json_encode(['success' => false, 'error' => 'Solo se permiten imágenes JPG, PNG, WebP o archivos PDF']);
+    exit;
+}
+
+$isPdf   = ($mime === 'application/pdf');
+$maxSize = $isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+
+if ($file['size'] > $maxSize) {
+    http_response_code(400);
+    $limitLabel = $isPdf ? '10 MB' : '5 MB';
+    echo json_encode(['success' => false, 'error' => "El archivo supera $limitLabel"]);
     exit;
 }
 
@@ -66,11 +72,14 @@ if (!is_dir($uploadDir)) {
     exit;
 }
 
-$ext      = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-$allowed  = ['jpg', 'jpeg', 'png', 'webp'];
-if (!in_array($ext, $allowed)) $ext = 'jpg';
+$ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+$allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+if (!in_array($ext, $allowed)) {
+    $ext = $isPdf ? 'pdf' : 'jpg';
+}
 
-$filename = uniqid('img_', true) . '.' . $ext;
+$prefix   = $isPdf ? 'doc_' : 'img_';
+$filename = uniqid($prefix, true) . '.' . $ext;
 $destPath = $uploadDir . $filename;
 
 if (!move_uploaded_file($file['tmp_name'], $destPath)) {
