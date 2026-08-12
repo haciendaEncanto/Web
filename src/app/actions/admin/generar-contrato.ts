@@ -15,7 +15,7 @@ import {
   HACIENDA_CONTENT_KEYS,
   resolveHaciendaData,
 } from "@/lib/contract-items";
-import { generatedContractPath } from "@/lib/uploads/config";
+import { uploadToColombiaHosting } from "@/lib/uploads/colombia-hosting";
 
 async function verifyPlanner() {
   const supabase = await createClient();
@@ -175,12 +175,14 @@ export async function generarContratoPDF(
     }) as unknown as React.ReactElement<DocumentProps>
   );
 
-  // Subir a Storage (servidor, sin signed URL)
-  const storagePath = generatedContractPath(booking.id, version);
-  const { error: uploadErr } = await admin.storage
-    .from("documents")
-    .upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: false });
-  if (uploadErr) return { error: `Error al subir el PDF: ${uploadErr.message}` };
+  // Subir a Colombia Hosting
+  const { url: pdfUrl, error: uploadErr } = await uploadToColombiaHosting(
+    pdfBuffer,
+    "documentos/contratos",
+  );
+  if (uploadErr || !pdfUrl) {
+    return { error: `Error al subir el PDF: ${uploadErr ?? "URL no recibida"}` };
+  }
 
   // Insertar en documents
   const { data: inserted, error: dbErr } = await admin
@@ -188,7 +190,7 @@ export async function generarContratoPDF(
     .insert({
       booking_id: booking.id,
       title: pdfTitle,
-      file_url: storagePath,
+      file_url: pdfUrl,
       type: "contrato",
       created_by: userId,
     })
@@ -196,7 +198,6 @@ export async function generarContratoPDF(
     .single();
 
   if (dbErr || !inserted) {
-    void admin.storage.from("documents").remove([storagePath]);
     return { error: dbErr?.message ?? "Error al guardar el documento" };
   }
 
@@ -241,11 +242,8 @@ export async function eliminarHistorialContratos(
 
   if (!docs || docs.length === 0) return {};
 
-  const paths = docs.map((d) => d.file_url).filter((p): p is string => !!p);
-  if (paths.length > 0) {
-    await admin.storage.from("documents").remove(paths);
-  }
-
+  // Nota: los PDFs en Colombia Hosting no se eliminan (no hay endpoint de borrado).
+  // Solo se limpia el registro en BD.
   await admin
     .from("documents")
     .delete()
