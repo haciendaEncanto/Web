@@ -18,15 +18,22 @@ const FALLBACK_STAFF: StaffMember[] = [
   },
   {
     id: "2",
+    nombre: "David Castillo",
+    cargo: "Wedding Planner",
+    descripcion: "Coordinación impecable y atención al detalle para que cada celebración supere las expectativas.",
+    foto_url: null,
+  },
+  {
+    id: "3",
     nombre: "DJ Jeisson Evolution",
     cargo: "DJ Profesional",
     descripcion: "La música perfecta para que cada instante quede grabado para siempre en la memoria.",
     foto_url: null,
   },
   {
-    id: "3",
+    id: "4",
     nombre: "DJ Pipper Pimienta",
-    cargo: "Maestro de Ceremonias (Animador)",
+    cargo: "Maestro de Ceremonias",
     descripcion: "Energía, carisma y alegría para animar cada celebración al máximo nivel.",
     foto_url: null,
   },
@@ -58,6 +65,7 @@ export function StaffSection({ members }: { members: StaffMember[] }) {
             "grid gap-10",
             effectiveMembers.length === 1 ? "grid-cols-1 max-w-xs mx-auto" :
             effectiveMembers.length === 2 ? "grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto" :
+            effectiveMembers.length === 4 ? "grid-cols-2 lg:grid-cols-4" :
             "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
           ].join(" ")}
         >
@@ -112,6 +120,14 @@ export function StaffSection({ members }: { members: StaffMember[] }) {
             </div>
           ))}
         </div>
+
+        {/* Texto informativo debajo de las cards */}
+        <p
+          className="text-center mt-10 text-sm"
+          style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#5A5A58" }}
+        >
+          Contamos con un equipo completo de meseros y personal de servicio para garantizar una experiencia impecable en cada evento.
+        </p>
       </div>
     </section>
   );
