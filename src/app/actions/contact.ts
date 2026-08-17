@@ -1,7 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createRawAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { sendWhatsAppNotification, sendWhatsAppToPhone, buildLeadMessage } from "@/lib/callmebot";
 
@@ -40,6 +41,60 @@ export async function submitContactForm(
 
   const { recaptchaToken, phone, email, event_date, guest_count, subject, message, whatsapp, name } =
     parsed.data;
+
+  // --- IP rate limiting (capa servidor) ---
+  try {
+    const headersList = await headers();
+    const ip =
+      headersList.get("x-forwarded-for")?.split(",")[0].trim() ||
+      headersList.get("x-real-ip") ||
+      "unknown";
+
+    const rawAdmin = createRawAdminClient();
+    const now = new Date();
+    const { data: row } = await rawAdmin
+      .from("contact_attempts")
+      .select("attempts, last_attempt_at, blocked_until")
+      .eq("ip", ip)
+      .maybeSingle();
+
+    if (row) {
+      // Rechazar si sigue bloqueado
+      if (row.blocked_until && new Date(row.blocked_until) > now) {
+        return { error: "Has enviado demasiados mensajes. Por favor intenta más tarde." };
+      }
+
+      // Calcular intentos en la ventana actual (reset si último intento fue hace más de 1 hora)
+      const lastMs = new Date(row.last_attempt_at).getTime();
+      const freshWindow = now.getTime() - lastMs > 60 * 60 * 1000;
+      const attempts = freshWindow ? 1 : row.attempts + 1;
+
+      if (attempts > 3) {
+        // Duración de bloqueo: exponencial — 1h, 2h, 3h (máximo)
+        const blockCount = attempts - 3;
+        const blockHours = Math.min(Math.pow(2, blockCount - 1), 3);
+        const blockedUntil = new Date(now.getTime() + blockHours * 60 * 60 * 1000);
+        await rawAdmin.from("contact_attempts").upsert(
+          { ip, attempts, last_attempt_at: now.toISOString(), blocked_until: blockedUntil.toISOString() },
+          { onConflict: "ip" }
+        );
+        return { error: "Has enviado demasiados mensajes. Por favor intenta más tarde." };
+      }
+
+      await rawAdmin.from("contact_attempts").upsert(
+        { ip, attempts, last_attempt_at: now.toISOString(), blocked_until: null },
+        { onConflict: "ip" }
+      );
+    } else {
+      await rawAdmin.from("contact_attempts").insert({
+        ip,
+        attempts: 1,
+        last_attempt_at: now.toISOString(),
+      });
+    }
+  } catch {
+    // Supabase no disponible — permitir el envío sin bloquear
+  }
 
   // reCAPTCHA v3 — omitido en dev si no está configurado
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;

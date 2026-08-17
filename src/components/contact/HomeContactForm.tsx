@@ -3,6 +3,7 @@
 import { useActionState, startTransition, useEffect, useRef } from "react";
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useContactRateLimit } from "@/lib/contact-rate-limit";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -14,6 +15,7 @@ const label =
 export function HomeContactForm() {
   const [state, formAction] = useActionState(submitContactForm, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { blockMessage, isBlocked, checkBeforeSend, recordSend } = useContactRateLimit();
 
   useEffect(() => {
     if (!SITE_KEY) return;
@@ -26,8 +28,14 @@ export function HomeContactForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (state?.success) recordSend();
+  }, [state?.success]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!checkBeforeSend()) return;
+
     const form = e.currentTarget;
     const formData = new FormData(form);
 
@@ -153,7 +161,13 @@ export function HomeContactForm() {
         />
       </div>
 
-      {state?.error && (
+      {blockMessage && (
+        <p className="text-dorado text-sm text-center" role="alert">
+          {blockMessage}
+        </p>
+      )}
+
+      {state?.error && !blockMessage && (
         <p className="text-rojo text-sm" role="alert">
           {state.error}
         </p>
@@ -162,7 +176,8 @@ export function HomeContactForm() {
       <SubmitButton
         label="Enviar mensaje"
         pendingLabel="Enviando…"
-        className="w-full text-center bg-rojo text-blanco px-9 py-[14px] rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
+        disabled={isBlocked}
+        className="w-full text-center bg-rojo text-blanco px-9 py-3.5 rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
       />
 
       <p className="text-[0.65rem] text-gris/50 text-center leading-relaxed">

@@ -3,6 +3,7 @@
 import { useActionState, startTransition, useEffect, useRef } from "react";
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { useContactRateLimit } from "@/lib/contact-rate-limit";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -14,6 +15,7 @@ const labelClass = "block text-xs text-gris uppercase tracking-wider mb-2";
 export function ContactForm() {
   const [state, formAction] = useActionState(submitContactForm, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { blockMessage, isBlocked, checkBeforeSend, recordSend } = useContactRateLimit();
 
   useEffect(() => {
     if (!SITE_KEY) return;
@@ -26,8 +28,14 @@ export function ContactForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (state?.success) recordSend();
+  }, [state?.success]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!checkBeforeSend()) return;
+
     const form = e.currentTarget;
     const formData = new FormData(form);
 
@@ -170,7 +178,13 @@ export function ContactForm() {
         />
       </div>
 
-      {state?.error && (
+      {blockMessage && (
+        <p className="text-dorado text-sm text-center" role="alert">
+          {blockMessage}
+        </p>
+      )}
+
+      {state?.error && !blockMessage && (
         <p className="text-rojo text-sm" role="alert">
           {state.error}
         </p>
@@ -179,7 +193,8 @@ export function ContactForm() {
       <SubmitButton
         label="Cuéntanos tu evento"
         pendingLabel="Enviando…"
-        className="w-full bg-rojo text-blanco py-3 font-serif tracking-wider text-sm hover:bg-rojo-pro"
+        disabled={isBlocked}
+        className="w-full bg-rojo text-blanco py-3 font-serif tracking-wider text-sm hover:bg-rojo-pro disabled:opacity-50 disabled:cursor-not-allowed"
       />
 
       <p className="text-[0.65rem] text-gris-claro text-center leading-relaxed">
