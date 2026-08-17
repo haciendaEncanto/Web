@@ -6,6 +6,7 @@ import { NosotrosSection } from "@/components/home/NosotrosSection";
 import { ServiciosSection } from "@/components/home/ServiciosSection";
 import { TestimoniosSection } from "@/components/home/TestimoniosSection";
 import { StaffSection } from "@/components/home/StaffSection";
+import { AlianzasSection } from "@/components/home/AlianzasSection";
 import { CTASection } from "@/components/home/CTASection";
 import { BlogSection } from "@/components/home/BlogSection";
 import { ContactoSection } from "@/components/home/ContactoSection";
@@ -29,11 +30,12 @@ export default async function HomePage() {
 
   // Fallback: Supabase no disponible hasta el 20 de agosto — secciones quedan vacías pero el sitio no cae
   type TestimonioRow = { client_name: string; event_type: string | null; rating: number | null; content: string; photo_url: string | null };
-  type StaffRow = { id: string; nombre: string; cargo: string; descripcion: string | null; foto_url: string | null };
+  type StaffRow = { id: string; nombre: string; cargo: string; descripcion: string | null; foto_url: string | null; is_aliado_externo: boolean; frase: string | null };
   type BlogPostRow = { id: string; titulo: string; slug: string; resumen: string | null; foto_url: string | null; published_at: string | null };
   let testimonials: TestimonioRow[] = [];
   let sliderImages: { url: string; title: string | null }[] = [];
   let staffMembers: StaffRow[] = [];
+  let aliados: StaffRow[] = [];
   let blogPosts: BlogPostRow[] = [];
   const siteImages = Object.fromEntries(
     SITE_IMAGE_KEYS.map((k) => [k, null]),
@@ -66,7 +68,7 @@ export default async function HomePage() {
           .in("key", SITE_IMAGE_KEYS),
         db
           .from("staff")
-          .select("id, nombre, cargo, descripcion, foto_url")
+          .select("id, nombre, cargo, descripcion, foto_url, is_aliado_externo, frase")
           .eq("is_active", true)
           .order("sort_order"),
         db
@@ -79,7 +81,9 @@ export default async function HomePage() {
 
     testimonials = testimonialsData ?? [];
     sliderImages = pickRandomSliderImages(sliderImagesRaw ?? []);
-    staffMembers = (staffData ?? []) as StaffRow[];
+    const allStaff = (staffData ?? []) as StaffRow[];
+    staffMembers = allStaff.filter((m) => !m.is_aliado_externo);
+    aliados = allStaff.filter((m) => m.is_aliado_externo);
     blogPosts = (blogData ?? []) as BlogPostRow[];
     for (const row of siteImageRows ?? []) {
       if (SITE_IMAGE_KEYS.includes(row.key as SiteImageKey)) {
@@ -132,6 +136,7 @@ export default async function HomePage() {
         />
         <TestimoniosSection testimonials={testimonials} />
         <StaffSection members={staffMembers} />
+        <AlianzasSection aliados={aliados} />
         <CTASection />
         <BlogSection posts={blogPosts} />
         <ContactoSection />
