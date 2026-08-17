@@ -38,7 +38,8 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Resiliencia Supabase outage (ago 2026)**: queries en try/catch con defaults tipados. Videos hero y galería hardcodeados a Colombia Hosting. CSP + remotePatterns incluyen `contenido.hacienda-encanto.com`
 - **Recuperación contraseña**: /reset-password + /update-password (token_hash PKCE browser-side). Admin: CambiarPasswordButton vía `admin.updateUserById`
 - **Staff y Blog** (2026-08-10): tablas `staff` + `blog_posts` (migración 20260810000001). Módulo staff: CRUD + hover overlay en home. Módulo blog: CRUD + auto-slug + `/blog` + `/blog/[slug]` con sidebar. Fotos vía PHP Colombia Hosting
-- **StaffSection home** (2026-08-11): 4 miembros hardcodeados en fallback — Jonny Delgado, David Castillo, DJ Jeisson Evolution, DJ Pipper Pimienta (en ese orden). Grid 2 cols móvil / 4 cols desktop. Hover overlay con reseña. Texto informativo equipo de servicio debajo de las cards (Helvetica, #5A5A58).
+- **StaffSection home** (2026-08-11): 4 miembros hardcodeados en fallback — Jonny Delgado, David Castillo, DJ Jeisson Evolution, DJ Piper Pimienta (en ese orden). Grid 2 cols móvil / 4 cols desktop. Hover overlay con reseña. Texto informativo equipo de servicio debajo de las cards (Helvetica, #5A5A58).
+- **AlianzasSection home** (2026-08-17): tabla `staff` con columnas `is_aliado_externo BOOLEAN DEFAULT false` y `frase TEXT` (migración 20260817000001). Sección "De la mano con los mejores" — cards circular con nombre, especialidad (cargo) y frase en cursiva. Se oculta automáticamente si no hay aliados en BD (sin fallback hardcodeado). En home page.tsx: query único a `staff`, separado en `staffMembers` (is_aliado_externo=false) y `aliados` (is_aliado_externo=true). Editor `/editor/staff`: toggle "Es aliado externo" + campo "Frase / Leyenda" (aparece condicionalmente); lista con badge dorado "Aliado". Aliado de prueba en BD: Jaime Guarín — Fotografía & Video — "Cada instante merece ser eterno".
 - **Otros**: SEO (sitemap.ts + robots.ts App Router nativos), reCAPTCHA badge oculto + texto legal, sin precios públicos, pestaña Cancelados eliminada de UI (bookings siguen en BD)
 
 ### Decisiones de arquitectura
@@ -135,14 +136,14 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-11.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-17.
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
 
 ### Pendiente (operativo/contenido, no código)
 
 1. **Restaurar Supabase (20 ago 2026)** — automático vía try/catch ya existentes.
-2. **Aplicar migración 20260810000001** (`staff` + `blog_posts`) con `supabase db push`; luego regenerar `src/types/database.ts`.
+2. **Aplicar migraciones pendientes** con `supabase db push`: `20260810000001` (`staff` + `blog_posts`) y `20260817000001` (`is_aliado_externo` + `frase` + seed Jaime Guarín); luego regenerar `src/types/database.ts`.
 3. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
 4. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
 5. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
@@ -179,7 +180,7 @@ src/
     admin/ (page→redirect, dashboard, usuarios, clientes, clientes/[clientId])
     editor/ (page→redirect, galeria, videos, imagenes-sitio, testimonios, paquetes, contenido)
   components/
-    home/ / events/ / portal/ / asesor/ / admin/ / contrato/ / clientes/ / editor/ / ui/ / contact/
+    home/ (StaffSection, AlianzasSection, ...) / events/ / portal/ / asesor/ / admin/ / contrato/ / clientes/ / editor/ / ui/ / contact/
     portal/PortalShell.tsx|PortalSidebar.tsx|PortalHeader.tsx
     portal/planner/ContractItemsForm.tsx|ContratoPlanner.tsx|ClienteEditForm.tsx
     contrato/ContratoPDF.tsx          ← Document+Page única, header/footer fixed, tabla 4 cols, 20 cláusulas
@@ -198,5 +199,5 @@ src/
 next.config.ts                        ← HTTP security headers vía async headers()
 public/ (logo-principal-fondo-claro.svg, trebol-original.svg, placeholder-avatar.svg, placeholder-evento.svg)
 scripts/upload-colombia-hosting.php   ← Desplegar como public_html/upload.php en Colombia Hosting
-supabase/migrations/ (última aplicada: 20260810000001_staff_blog.sql)
+supabase/migrations/ (última creada: 20260817000001_staff_aliado_externo.sql — pendiente de aplicar con supabase db push)
 ```
