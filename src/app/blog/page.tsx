@@ -23,6 +23,15 @@ type Post = {
 
 const FALLBACK_POSTS: Post[] = [
   {
+    id: "fb0",
+    titulo: "Mis XV 2026: Las tendencias que están arrasando",
+    slug: "mis-xv-2026-tendencias-que-estan-arrasando",
+    resumen: "Descubre las 5 tendencias que están definiendo las quinceañeras este año y encuentra la que habla de ti.",
+    foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/9.png",
+    autor: "Hacienda El Encanto",
+    published_at: "2026-08-18T00:00:00Z",
+  },
+  {
     id: "fb1",
     titulo: "Cómo elegir el lugar perfecto para tu boda",
     slug: "como-elegir-el-lugar-perfecto-para-tu-boda",

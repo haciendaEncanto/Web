@@ -12,6 +12,14 @@ type BlogPost = {
 
 const FALLBACK_POSTS: BlogPost[] = [
   {
+    id: "fb0",
+    titulo: "Mis XV 2026: Las tendencias que están arrasando",
+    slug: "mis-xv-2026-tendencias-que-estan-arrasando",
+    resumen: "Descubre las 5 tendencias que están definiendo las quinceañeras este año y encuentra la que habla de ti.",
+    foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/9.png",
+    published_at: "2026-08-18T00:00:00Z",
+  },
+  {
     id: "fb1",
     titulo: "Cómo elegir el lugar perfecto para tu boda",
     slug: "como-elegir-el-lugar-perfecto-para-tu-boda",
@@ -26,14 +34,6 @@ const FALLBACK_POSTS: BlogPost[] = [
     resumen: "Las tendencias más elegantes y sofisticadas para celebrar los 15 años con un estilo único y memorable.",
     foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/1.jpeg",
     published_at: "2026-07-01T00:00:00Z",
-  },
-  {
-    id: "fb3",
-    titulo: "Eventos empresariales en la naturaleza: una experiencia diferente",
-    slug: "eventos-empresariales-en-la-naturaleza",
-    resumen: "Por qué llevar tus reuniones y eventos corporativos a un entorno natural puede transformar los resultados de tu equipo.",
-    foto_url: "https://contenido.hacienda-encanto.com/galeria/boda/3.jpeg",
-    published_at: "2026-06-15T00:00:00Z",
   },
 ];
 
