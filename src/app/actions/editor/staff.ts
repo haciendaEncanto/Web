@@ -20,6 +20,8 @@ export type StaffData = {
   cargo: string;
   descripcion?: string | null;
   foto_url?: string | null;
+  is_aliado_externo?: boolean;
+  frase?: string | null;
 };
 
 export type StaffRow = {
@@ -30,6 +32,8 @@ export type StaffRow = {
   foto_url: string | null;
   sort_order: number;
   is_active: boolean;
+  is_aliado_externo: boolean;
+  frase: string | null;
 };
 
 function revalidate() {
@@ -58,8 +62,10 @@ export async function createStaffMember(
       descripcion: data.descripcion?.trim() || null,
       foto_url: data.foto_url || null,
       sort_order: sortOrder,
+      is_aliado_externo: data.is_aliado_externo ?? false,
+      frase: data.frase?.trim() || null,
     })
-    .select("id,nombre,cargo,descripcion,foto_url,sort_order,is_active")
+    .select("id,nombre,cargo,descripcion,foto_url,sort_order,is_active,is_aliado_externo,frase")
     .single();
 
   if (error) return { error: (error as { message: string }).message };
@@ -79,7 +85,7 @@ export async function updateStaffMember(
     .from("staff")
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .select("id,nombre,cargo,descripcion,foto_url,sort_order,is_active")
+    .select("id,nombre,cargo,descripcion,foto_url,sort_order,is_active,is_aliado_externo,frase")
     .single();
 
   if (error) return { error: (error as { message: string }).message };

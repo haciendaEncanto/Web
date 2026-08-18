@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import {
-  Plus, Pencil, Trash2, Loader2, X, Upload, User,
+  Plus, Pencil, Trash2, Loader2, Upload, User,
   ChevronUp, ChevronDown, Eye, EyeOff,
 } from "lucide-react";
 import {
@@ -32,6 +32,8 @@ function StaffForm({
   const [nombre, setNombre] = useState(initial?.nombre ?? "");
   const [cargo, setCargo] = useState(initial?.cargo ?? "");
   const [descripcion, setDescripcion] = useState(initial?.descripcion ?? "");
+  const [frase, setFrase] = useState(initial?.frase ?? "");
+  const [isAliado, setIsAliado] = useState(initial?.is_aliado_externo ?? false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(initial?.foto_url ?? null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +62,8 @@ function StaffForm({
       cargo,
       descripcion: descripcion.trim() || null,
       foto_url: fotoUrl,
+      is_aliado_externo: isAliado,
+      frase: frase.trim() || null,
     };
     startTransition(async () => {
       const res = initial
@@ -163,6 +167,49 @@ function StaffForm({
             placeholder="Ej. Más de 10 años creando momentos únicos"
           />
         </div>
+
+        {/* Toggle aliado externo */}
+        <div className="sm:col-span-2 flex items-center gap-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isAliado}
+            onClick={() => setIsAliado((v) => !v)}
+            className={[
+              "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+              isAliado ? "bg-dorado" : "bg-negro/15",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "h-3.5 w-3.5 rounded-full bg-blanco shadow transition-transform",
+                isAliado ? "translate-x-4.5" : "translate-x-0.5",
+              ].join(" ")}
+            />
+          </button>
+          <label
+            className="text-[0.8rem] text-negro cursor-pointer select-none"
+            onClick={() => setIsAliado((v) => !v)}
+          >
+            Es aliado externo
+          </label>
+        </div>
+
+        {/* Frase (solo para aliados) */}
+        {isAliado && (
+          <div className="sm:col-span-2">
+            <label className="block text-[0.68rem] text-gris uppercase tracking-wider mb-1">
+              Frase / Leyenda
+            </label>
+            <input
+              type="text"
+              value={frase}
+              onChange={(e) => setFrase(e.target.value)}
+              className={inputCls}
+              placeholder="Ej. Cada instante merece ser eterno"
+            />
+          </div>
+        )}
       </div>
 
       {error && <p className="text-[0.78rem] text-rojo">{error}</p>}
@@ -316,14 +363,24 @@ export function StaffManager({ members: initial }: { members: StaffRow[] }) {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[0.9rem] font-medium text-negro leading-tight">{m.nombre}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-[0.9rem] font-medium text-negro leading-tight">{m.nombre}</p>
+                    {m.is_aliado_externo && (
+                      <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-dorado/10 text-dorado border border-dorado/25 font-medium shrink-0">
+                        Aliado
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[0.78rem] mt-0.5" style={{ color: "#C9A84C" }}>{m.cargo}</p>
                   {m.descripcion && (
                     <p className="text-[0.75rem] text-negro/40 mt-0.5 truncate">{m.descripcion}</p>
                   )}
+                  {m.frase && (
+                    <p className="text-[0.72rem] text-negro/30 mt-0.5 truncate italic">&ldquo;{m.frase}&rdquo;</p>
+                  )}
                 </div>
 
-                {/* Badge estado */}
+                {/* Badges estado */}
                 {!m.is_active && (
                   <span className="text-[0.65rem] px-1.5 py-0.5 rounded bg-negro/5 text-gris border border-negro/10 shrink-0">
                     Inactivo

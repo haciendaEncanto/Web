@@ -32,7 +32,7 @@ const FALLBACK_STAFF: StaffMember[] = [
   },
   {
     id: "4",
-    nombre: "DJ Pipper Pimienta",
+    nombre: "DJ Piper Pimienta",
     cargo: "Maestro de Ceremonias",
     descripcion: "Energía, carisma y alegría para animar cada celebración al máximo nivel.",
     foto_url: null,
