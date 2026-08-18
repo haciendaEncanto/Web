@@ -18,7 +18,7 @@ export async function uploadToColombiaHosting(
 
   if (Buffer.isBuffer(file)) {
     // Llamado server-side (SA): envolver el buffer como Blob para FormData
-    const blob = new Blob([file], { type: "application/pdf" });
+    const blob = new Blob([new Uint8Array(file)], { type: "application/pdf" });
     fd.append("file", blob, `doc_${Date.now()}.pdf`);
   } else {
     fd.append("file", file);
