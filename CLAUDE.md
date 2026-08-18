@@ -40,6 +40,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Staff y Blog** (2026-08-10): tablas `staff` + `blog_posts` (migración 20260810000001). Módulo staff: CRUD + hover overlay en home. Módulo blog: CRUD + auto-slug + `/blog` + `/blog/[slug]` con sidebar. Fotos vía PHP Colombia Hosting
 - **StaffSection home** (2026-08-11): 4 miembros hardcodeados en fallback — Jonny Delgado, David Castillo, DJ Jeisson Evolution, DJ Piper Pimienta (en ese orden). Grid 2 cols móvil / 4 cols desktop. Hover overlay con reseña. Texto informativo equipo de servicio debajo de las cards (Helvetica, #5A5A58).
 - **AlianzasSection home** (2026-08-17): tabla `staff` con columnas `is_aliado_externo BOOLEAN DEFAULT false` y `frase TEXT` (migración 20260817000001). Sección "De la mano con los mejores" — cards circular con nombre, especialidad (cargo) y frase en cursiva. Se oculta automáticamente si no hay aliados en BD (sin fallback hardcodeado). En home page.tsx: query único a `staff`, separado en `staffMembers` (is_aliado_externo=false) y `aliados` (is_aliado_externo=true). Editor `/editor/staff`: toggle "Es aliado externo" + campo "Frase / Leyenda" (aparece condicionalmente); lista con badge dorado "Aliado". Aliado de prueba en BD: Jaime Guarín — Fotografía & Video — "Cada instante merece ser eterno".
+- **Rate limiting formulario contacto** (2026-08-18): doble capa. Capa 1 cliente (`useContactRateLimit` en `src/lib/contact-rate-limit.ts`): localStorage `contact_last_sent` + `contact_backoff_minutes`; inicia en 5 min, cada intento bloqueado duplica hasta 180 min máx; cuenta regresiva en segundos visible en el formulario; botón deshabilitado mientras activo. Capa 2 servidor (`contact.ts`): tabla `contact_attempts(ip, attempts, last_attempt_at, blocked_until)` (migración 20260818000001); IP extraída de `x-forwarded-for`/`x-real-ip`; máx 3 intentos por hora; bloqueo exponencial 1h→2h→3h; usa `createRawAdminClient()` (tabla no en database.ts aún); fallo silencioso si Supabase no responde. Aplicado en `ContactForm` y `HomeContactForm` (home + 4 páginas evento). `SubmitButton` extendido con prop `disabled` externa.
 - **Otros**: SEO (sitemap.ts + robots.ts App Router nativos), reCAPTCHA badge oculto + texto legal, sin precios públicos, pestaña Cancelados eliminada de UI (bookings siguen en BD)
 
 ### Decisiones de arquitectura
@@ -120,7 +121,8 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 **Seguridad HTTP**
 - `next.config.ts` `headers()` async con `source:"/(.*)"`: `X-Frame-Options:DENY`, `X-Content-Type-Options:nosniff`, `Referrer-Policy:strict-origin-when-cross-origin`, `Permissions-Policy`, CSP.
 - CSP: `script-src` incluye `static.cloudflareinsights.com`; `img-src`/`media-src`/`connect-src` incluyen `contenido.hacienda-encanto.com` y SUPABASE_HOST; `frame-src https://www.google.com https://maps.google.com` (el iframe del mapa usa `maps.google.com` — sin este dominio muestra "contenido bloqueado").
-- Rate limiting: tabla `login_attempts` (RLS `USING(false)`), 15 min, máx 5 fallos, delay `Math.min(2^(failures-1),16)*1000ms`. Limpia expirados en background.
+- Rate limiting login: tabla `login_attempts` (RLS `USING(false)`), 15 min, máx 5 fallos, delay `Math.min(2^(failures-1),16)*1000ms`. Limpia expirados en background.
+- Rate limiting contacto: tabla `contact_attempts(ip PK, attempts, last_attempt_at, blocked_until)`. Máx 3 envíos/hora por IP; bloqueo exponencial 1h→2h→3h (máx). Capa cliente: `useContactRateLimit` con localStorage, backoff 5→10→20→40→80→160→180 min, duplica en cada intento bloqueado, reset a 5 cuando el tiempo expira. `x-forwarded-for` para IP real en Vercel.
 
 **Recuperación de contraseña — flujo token_hash**
 - `resetPasswordForEmail(email, { redirectTo: ".../update-password" })` — link enviado con `?token_hash=XXXX&type=recovery`.
@@ -136,14 +138,14 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-17.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-18.
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
 
 ### Pendiente (operativo/contenido, no código)
 
 1. **Restaurar Supabase (20 ago 2026)** — automático vía try/catch ya existentes.
-2. **Aplicar migraciones pendientes** con `supabase db push`: `20260810000001` (`staff` + `blog_posts`) y `20260817000001` (`is_aliado_externo` + `frase` + seed Jaime Guarín); luego regenerar `src/types/database.ts`.
+2. **Aplicar migraciones pendientes** con `supabase db push`: `20260810000001` (`staff` + `blog_posts`), `20260817000001` (`is_aliado_externo` + `frase` + seed Jaime Guarín) y `20260818000001` (`contact_attempts`); luego regenerar `src/types/database.ts`.
 3. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
 4. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
 5. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
@@ -161,7 +163,7 @@ src/
     update-password/page.tsx          ← standalone (fuera de (auth)); verifyOtp browser-side
     actions/
       auth.ts                         ← login (redirect por rol), logout, requestPasswordReset, updatePassword
-      contact.ts                      ← submitContactForm (Zod + reCAPTCHA + round-robin + CallMeBot)
+      contact.ts                      ← submitContactForm (Zod + IP rate limit + reCAPTCHA + round-robin + CallMeBot)
       contactos-asesor.ts / crear-cliente.ts / contrato-aprobacion.ts / contrato-items.ts
       orden-servicio.ts / actividades.ts / invitados.ts / salon-maps.ts / pagos.ts / documentos.ts / playlist.ts
       admin/usuarios.ts               ← crearUsuario, editarUsuario, toggleUsuarioActivo, cambiarPassword
@@ -194,10 +196,11 @@ src/
     blog-utils.ts                          ← generateSlug (función síncrona — NO en "use server")
     clientes.ts / eventos.ts / event-window.ts / playlist-templates.ts (ORDEN_MUSIC_FIELD_MAP)
     random-slider.ts / guest-count.ts / salon-map-capacities.ts / callmebot.ts / contract-items.ts
+    contact-rate-limit.ts                  ← hook useContactRateLimit (localStorage backoff 5→180 min)
   proxy.ts                            ← Middleware Next.js 16 (exportado como "proxy")
   types/database.ts                   ← Regenerar con supabase gen types tras cada migración
 next.config.ts                        ← HTTP security headers vía async headers()
 public/ (logo-principal-fondo-claro.svg, trebol-original.svg, placeholder-avatar.svg, placeholder-evento.svg)
 scripts/upload-colombia-hosting.php   ← Desplegar como public_html/upload.php en Colombia Hosting
-supabase/migrations/ (última creada: 20260817000001_staff_aliado_externo.sql — pendiente de aplicar con supabase db push)
+supabase/migrations/ (última creada: 20260818000001_contact_attempts.sql — pendiente de aplicar con supabase db push)
 ```
