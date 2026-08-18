@@ -138,14 +138,14 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-18.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-18 (tarde).
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
 
 ### Pendiente (operativo/contenido, no código)
 
 1. **Restaurar Supabase (20 ago 2026)** — automático vía try/catch ya existentes.
-2. **Aplicar migraciones pendientes** con `supabase db push`: `20260810000001` (`staff` + `blog_posts`), `20260817000001` (`is_aliado_externo` + `frase` + seed Jaime Guarín) y `20260818000001` (`contact_attempts`); luego regenerar `src/types/database.ts`.
+2. **Aplicar migraciones pendientes** con `supabase db push`: `20260810000001` (`staff` + `blog_posts`), `20260817000001` (`is_aliado_externo` + `frase` + seed Jaime Guarín), `20260818000001` (`contact_attempts`) y `20260818000002` (seed artículo blog XV 2026 tendencias); luego regenerar `src/types/database.ts`.
 3. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
 4. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
 5. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
