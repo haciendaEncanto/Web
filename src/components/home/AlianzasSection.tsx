@@ -35,7 +35,7 @@ export function AlianzasSection({ aliados }: { aliados: AlianzaRow[] }) {
             <em className="text-dorado not-italic">tu momento especial</em>
           </h2>
           <p className="text-negro/55 text-[0.92rem] mt-4 max-w-[520px] mx-auto leading-relaxed">
-            Profesionales externos de confianza que recomendamos para complementar tu evento
+            De la mano con los mejores profesionales externos, seleccionados con cuidado, para que cada detalle de tu evento sea perfecto.
           </p>
           <div className="w-[50px] h-px bg-dorado mx-auto mt-6" />
         </div>
@@ -76,15 +76,7 @@ export function AlianzasSection({ aliados }: { aliados: AlianzaRow[] }) {
               )}
             </div>
           ))}
-        </div>
-
-        {/* Texto informativo */}
-        <p
-          className="text-center mt-10 text-sm"
-          style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#5A5A58" }}
-        >
-          De la mano con los mejores profesionales externos, seleccionados con cuidado, para que cada detalle de tu evento sea perfecto.
-        </p>
+        </div>       
       </div>
     </section>
   );
