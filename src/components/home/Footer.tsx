@@ -18,11 +18,11 @@ const contacto = [
   "+57 315 006 1597",
   "contacto@hacienda-encanto.com",
   "Vía Suba Km 5.5, Cota",
-  "@haciendaelencanto",
+  "@haciendaelencantobt",
 ];
 
 const social = [
-  { label: "IG", href: "https://instagram.com/haciendaelencanto" },
+  { label: "IG", href: "https://www.instagram.com/haciendaelencantobt" },
   { label: "FB", href: "#" },
   { label: "WA", href: "https://wa.me/573150061597" },
 ];
