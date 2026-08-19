@@ -8,7 +8,7 @@ const infoItems = [
   },
   { icon: "📱", title: "WhatsApp", text: "+57 315 006 1597" },
   { icon: "✉️", title: "Correo", text: "contacto@hacienda-encanto.com" },
-  { icon: "📷", title: "Instagram", text: "@haciendaelencanto" },
+  { icon: "📷", title: "Instagram", text: "@haciendaelencantobt" },
 ];
 
 export function ContactoSection() {

@@ -68,7 +68,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Supabase Storage NO se usa** para ningún tipo de archivo. Todos los uploads van a `contenido.hacienda-encanto.com`.
 - NUNCA pasar archivos por SA — Vercel limita body a 4.5MB. El cliente sube DIRECTO al servidor PHP.
 - **Patrón 2 pasos**: 1) cliente llama `uploadToColombiaHosting(file|buffer, folder)` (`src/lib/uploads/colombia-hosting.ts`) que hace POST a `https://contenido.hacienda-encanto.com/upload.php`; 2) el script PHP valida mime, tamaño, guarda en la carpeta y devuelve `{ success, url }`. La URL se guarda en BD via SA.
-- `uploadToColombiaHosting` acepta `File | Buffer`. Cuando es `Buffer` (SA server-side), lo envuelve en `Blob` con `type:"application/pdf"`. Tipo `ColombiaFolder`: `"galeria/staff" | "galeria/blog" | "documentos/contratos"`.
+- `uploadToColombiaHosting` acepta `File | Buffer`. Cuando es `Buffer` (SA server-side), lo envuelve en `Blob` con `type:"application/pdf"`: `new Blob([new Uint8Array(file)], ...)` — **no** `new Blob([file])`, que falla en TypeScript estricto (`Buffer<ArrayBufferLike>` no es `BlobPart`). Tipo `ColombiaFolder`: `"galeria/staff" | "galeria/blog" | "documentos/contratos"`.
 - **Script PHP**: `scripts/upload-colombia-hosting.php` → desplegado como `public_html/upload.php`. CORS desde `https://www.hacienda-encanto.com`. Acepta imágenes JPG/PNG/WebP (5 MB) y PDFs (10 MB). Prefijo `img_` para imágenes, `doc_` para PDFs.
 - **Carpetas en Colombia Hosting** (todas creadas en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`, `public_html/documentos/contratos/`.
 - **PDF de contrato** (2026-08-11): `generar-contrato.ts` usa `uploadToColombiaHosting(pdfBuffer, "documentos/contratos")`. Supabase Storage ya NO se usa para nada. `eliminarHistorialContratos` solo borra registro BD (sin delete en Colombia Hosting — no hay endpoint).
@@ -96,7 +96,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - `PlaylistReadOnly`: URLs como texto plano con botón Copiar, no como hipervínculos.
 - Sin precios públicos — CTA siempre "Cuéntanos tu evento" / "Conoce más".
 - **TestimoniosSection** (`"use client"`): siempre renderiza. 10 clips Colombia Hosting (`testimonios/1.mp4`–`10.mp4`), `controlsList="nodownload"`, `onEnded` auto-avanza (wraparound). Dots + contador X/10. Cards texto debajo si Supabase responde.
-- **Colombia Hosting fallback**: `FALLBACK_IMG`/`FALLBACK_IMAGES` a nivel de módulo. Videos hero hardcodeados en page.tsx y EventPageTemplate. Queries Supabase en try/catch con defaults tipados.
+- **Colombia Hosting fallback**: `FALLBACK_IMG`/`FALLBACK_IMAGES` a nivel de módulo. Videos hero hardcodeados en page.tsx y EventPageTemplate. Queries Supabase en try/catch con defaults tipados. Fallbacks adicionales en page.tsx: `aliados` (Jaime Guarín) y `sliderImages` (8 fotos). Blog: artículos hardcodeados como `fb0`–`fb3` en `BlogSection.tsx`, `/blog/page.tsx` y `/blog/[slug]/page.tsx` — el artículo "Mis XV 2026" es `fb0` (más reciente) en todos.
 
 **Flujo de contacto WhatsApp**
 - Round-robin: `asesor_assignments` ordenado `total_assignments ASC, last_assigned_at ASC NULLS FIRST`. Comparador usa `!== null` explícito (no falsiness — para no saltar asesores con 0 asignaciones).
@@ -138,9 +138,11 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-18 (tarde).
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-18 (noche).
 
 **⚠ Supabase bloqueado hasta el 20 ago 2026** (quota excedida). Site público funciona con fallbacks Colombia Hosting. Portal/admin no disponibles. Cuando se restaure: try/catch en page.tsx, EventPageTemplate y contact.ts funcionarán automáticamente.
+
+**⚠ Merge develop→main pendiente** (commit `272a6d9` — fallback AlianzasSection Jaime Guarín). Bloqueado por automode de Claude. Ejecutar manualmente: `git checkout main && git pull origin main && git merge origin/develop --no-ff && git push origin main && git checkout develop`.
 
 ### Pendiente (operativo/contenido, no código)
 

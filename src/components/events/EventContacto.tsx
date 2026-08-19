@@ -4,7 +4,7 @@ const infoItems = [
   { label: "WhatsApp", text: "+57 315 006 1597" },
   { label: "Correo", text: "contacto@hacienda-encanto.com" },
   { label: "Ubicación", text: "Vía Suba Km 5.5, Cota, Cundinamarca" },
-  { label: "Instagram", text: "@haciendaelencanto" },
+  { label: "Instagram", text: "@haciendaelencantobt" },
 ];
 
 interface ContactoConfig {
