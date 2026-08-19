@@ -31,8 +31,8 @@ export function AlianzasSection({ aliados }: { aliados: AlianzaRow[] }) {
             Aliados
           </p>
           <h2 className="font-serif text-[2.4rem] md:text-[3rem] font-light text-negro tracking-[-0.03em] leading-[1.1]">
-            De la mano con{" "}
-            <em className="text-dorado not-italic">los mejores</em>
+            Con quienes confiamos{" "}
+            <em className="text-dorado not-italic">tu momento especial</em>
           </h2>
           <p className="text-negro/55 text-[0.92rem] mt-4 max-w-[520px] mx-auto leading-relaxed">
             Profesionales externos de confianza que recomendamos para complementar tu evento
@@ -83,7 +83,7 @@ export function AlianzasSection({ aliados }: { aliados: AlianzaRow[] }) {
           className="text-center mt-10 text-sm"
           style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#5A5A58" }}
         >
-          Trabajamos con los mejores profesionales externos para que cada detalle de tu evento sea perfecto.
+          De la mano con los mejores profesionales externos de confianza que recomendamos para complementar tu evento.
         </p>
       </div>
     </section>
