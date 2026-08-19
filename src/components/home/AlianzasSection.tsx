@@ -83,7 +83,7 @@ export function AlianzasSection({ aliados }: { aliados: AlianzaRow[] }) {
           className="text-center mt-10 text-sm"
           style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#5A5A58" }}
         >
-          De la mano con los mejores profesionales externos de confianza que recomendamos para complementar tu evento.
+          De la mano con los mejores profesionales externos, seleccionados con cuidado, para que cada detalle de tu evento sea perfecto.
         </p>
       </div>
     </section>
