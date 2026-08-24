@@ -69,7 +69,15 @@ function PromoForm({
     setError(null);
     const result = await uploadToColombiaHosting(f, "promociones");
     setUploading(false);
-    if (result.error) { setError(result.error); return; }
+    if (result.error) {
+      const isCors = result.error.toLowerCase().includes("fetch") || result.error.toLowerCase().includes("network");
+      setError(
+        isCors
+          ? `No se pudo conectar con el servidor de archivos. Verifica que la carpeta 'promociones/' exista en Colombia Hosting y que el sitio esté activo. Detalle: ${result.error}`
+          : `Error al subir imagen: ${result.error}`
+      );
+      return;
+    }
     setImagenUrl(result.url!);
     if (imgRef.current) imgRef.current.value = "";
   }
@@ -376,10 +384,6 @@ export function PromocionesManager({ promos: initial }: { promos: PromocionRow[]
         })}
       </div>
 
-      <p className="text-[0.75rem] text-negro/35 pt-1">
-        Las imágenes se suben a{" "}
-        <code className="bg-negro/5 px-1 py-0.5 rounded">contenido.hacienda-encanto.com/promociones/</code>
-      </p>
     </div>
   );
 }
