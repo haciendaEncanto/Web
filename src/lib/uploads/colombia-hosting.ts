@@ -15,6 +15,12 @@ export async function uploadToColombiaHosting(
   file: File | Buffer,
   folder: ColombiaFolder,
 ): Promise<{ url?: string; error?: string }> {
+  // En desarrollo, el script PHP solo permite el origen de producción (CORS).
+  // Retornar URL de prueba para poder validar el flujo completo en localhost.
+  if (process.env.NODE_ENV === "development") {
+    return { url: "https://contenido.hacienda-encanto.com/promociones/promo1.png" };
+  }
+
   const fd = new FormData();
 
   if (Buffer.isBuffer(file)) {

@@ -14,7 +14,18 @@
  *             o  { "success": false, "error": "..." }
  */
 
-header('Access-Control-Allow-Origin: https://www.hacienda-encanto.com');
+// Orígenes permitidos: producción + localhost para desarrollo local
+$allowed_origins = [
+    'https://www.hacienda-encanto.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+];
+$request_origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$cors_origin = in_array($request_origin, $allowed_origins)
+    ? $request_origin
+    : 'https://www.hacienda-encanto.com';
+
+header("Access-Control-Allow-Origin: $cors_origin");
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json');
