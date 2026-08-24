@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition, useEffect } from "react";
 import {
   Plus, Pencil, Trash2, Loader2, Upload, Megaphone,
   Eye, EyeOff, Calendar,
@@ -50,7 +50,13 @@ function PromoForm({
   onCancel: () => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [imagenUrl, setImagenUrl] = useState<string | null>(initial?.imagen_url ?? null);
+  // URL final guardada en BD (solo existe al editar una promo existente)
+  const [savedUrl, setSavedUrl] = useState<string | null>(initial?.imagen_url ?? null);
+  // Archivo pendiente de subir (seleccionado por el usuario, aún no subido)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // URL local para preview sin subir nada
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [fechaInicio, setFechaInicio] = useState(initial?.fecha_inicio ?? today);
   const [fechaFin, setFechaFin] = useState(initial?.fecha_fin ?? "");
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? nextOrder);
@@ -60,35 +66,58 @@ function PromoForm({
   const [isPending, startTransition] = useTransition();
   const imgRef = useRef<HTMLInputElement>(null);
 
-  async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
+  // Revocar el object URL al desmontar o al cambiar de archivo
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
+
+  function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > IMG_MAX_BYTES) { setError("La imagen supera 5 MB"); return; }
     if (!IMG_ALLOWED_MIME.includes(f.type)) { setError("Solo JPG, PNG o WebP"); return; }
-    setUploading(true);
     setError(null);
-    const result = await uploadToColombiaHosting(f, "promociones");
-    setUploading(false);
-    if (result.error) {
-      const isCors = result.error.toLowerCase().includes("fetch") || result.error.toLowerCase().includes("network");
-      setError(
-        isCors
-          ? `No se pudo conectar con el servidor de archivos. Verifica que la carpeta 'promociones/' exista en Colombia Hosting y que el sitio esté activo. Detalle: ${result.error}`
-          : `Error al subir imagen: ${result.error}`
-      );
-      return;
-    }
-    setImagenUrl(result.url!);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
     if (imgRef.current) imgRef.current.value = "";
+  }
+
+  function clearImage() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setSavedUrl(null);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!imagenUrl) { setError("La imagen es requerida"); return; }
+    const hasImage = selectedFile !== null || savedUrl !== null;
+    if (!hasImage) { setError("La imagen es requerida"); return; }
     if (!fechaFin) { setError("La fecha de fin es requerida"); return; }
     if (fechaFin < fechaInicio) { setError("La fecha de fin debe ser posterior a la de inicio"); return; }
+
     startTransition(async () => {
-      const data = { imagen_url: imagenUrl, fecha_inicio: fechaInicio, fecha_fin: fechaFin, sort_order: sortOrder, is_active: isActive };
+      let finalUrl = savedUrl;
+
+      // Subir archivo solo si el usuario seleccionó uno nuevo
+      if (selectedFile) {
+        setUploading(true);
+        const result = await uploadToColombiaHosting(selectedFile, "promociones");
+        setUploading(false);
+        if (result.error) {
+          const isCors = result.error.toLowerCase().includes("fetch") || result.error.toLowerCase().includes("network");
+          setError(
+            isCors
+              ? `No se pudo conectar con el servidor de archivos. Verifica que la carpeta 'promociones/' exista en Colombia Hosting y que el sitio esté activo. Detalle: ${result.error}`
+              : `Error al subir imagen: ${result.error}`
+          );
+          return;
+        }
+        finalUrl = result.url!;
+      }
+
+      const data = { imagen_url: finalUrl!, fecha_inicio: fechaInicio, fecha_fin: fechaFin, sort_order: sortOrder, is_active: isActive };
       const res = initial
         ? await updatePromocion(initial.id, data)
         : await createPromocion(data);
@@ -96,6 +125,9 @@ function PromoForm({
       onDone(res.row!);
     });
   }
+
+  // URL a mostrar en el preview: primero local, luego la guardada en BD
+  const displayUrl = previewUrl ?? savedUrl;
 
   return (
     <form
@@ -109,9 +141,9 @@ function PromoForm({
       {/* Vista previa imagen */}
       <div className="flex items-start gap-4">
         <div className="w-28 h-20 rounded-lg overflow-hidden ring-1 ring-negro/10 bg-dorado/5 flex items-center justify-center shrink-0">
-          {imagenUrl ? (
+          {displayUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imagenUrl} alt="Promoción" className="w-full h-full object-cover" />
+            <img src={displayUrl} alt="Promoción" className="w-full h-full object-cover" />
           ) : (
             <Megaphone size={22} className="text-dorado/30" />
           )}
@@ -127,16 +159,20 @@ function PromoForm({
           <button
             type="button"
             onClick={() => imgRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 border border-negro/15 rounded-lg text-[0.78rem] text-negro hover:bg-negro/5 disabled:opacity-40 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-negro/15 rounded-lg text-[0.78rem] text-negro hover:bg-negro/5 transition-colors"
           >
-            {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-            {imagenUrl ? "Cambiar imagen" : "Subir imagen"}
+            <Upload size={13} />
+            {displayUrl ? "Cambiar imagen" : "Seleccionar imagen"}
           </button>
-          {imagenUrl && (
+          {selectedFile && (
+            <p className="text-[0.72rem] text-negro/50 truncate max-w-[160px]" title={selectedFile.name}>
+              {selectedFile.name}
+            </p>
+          )}
+          {displayUrl && (
             <button
               type="button"
-              onClick={() => setImagenUrl(null)}
+              onClick={clearImage}
               className="text-[0.72rem] text-rojo hover:underline text-left"
             >
               Quitar imagen
@@ -216,8 +252,8 @@ function PromoForm({
           disabled={isPending || uploading}
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-dorado text-blanco text-[0.8rem] font-medium rounded-lg hover:bg-dorado/90 disabled:opacity-50"
         >
-          {isPending && <Loader2 size={12} className="animate-spin" />}
-          {isPending ? "Guardando…" : initial ? "Actualizar" : "Crear"}
+          {(isPending || uploading) && <Loader2 size={12} className="animate-spin" />}
+          {uploading ? "Subiendo imagen…" : isPending ? "Guardando…" : initial ? "Actualizar" : "Crear"}
         </button>
       </div>
     </form>
