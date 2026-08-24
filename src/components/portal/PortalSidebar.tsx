@@ -28,6 +28,7 @@ import {
   ScrollText,
   Inbox,
   Newspaper,
+  Megaphone,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -76,6 +77,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/staff", label: "Equipo", icon: Users },
       { href: "/editor/blog", label: "Blog", icon: Newspaper },
+      { href: "/editor/promociones", label: "Promociones", icon: Megaphone },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
     ];
   }
@@ -89,6 +91,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/editor/paquetes", label: "Paquetes", icon: Package },
       { href: "/editor/staff", label: "Equipo", icon: Users },
       { href: "/editor/blog", label: "Blog", icon: Newspaper },
+      { href: "/editor/promociones", label: "Promociones", icon: Megaphone },
       { href: "/editor/contenido", label: "Textos del sitio", icon: FileText },
     ];
   }
