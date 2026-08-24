@@ -15,6 +15,8 @@ import { WhatsAppButton } from "@/components/home/WhatsAppButton";
 import { SliderGaleria } from "@/components/ui/SliderGaleria";
 import { pickRandomSliderImages } from "@/lib/random-slider";
 import { SITE_IMAGE_KEYS, type SiteImageKey } from "@/lib/uploads/config";
+import { PromoModal } from "@/components/home/PromoModal";
+import type { PromocionRow } from "@/app/actions/editor/promociones";
 
 export default async function HomePage() {
   // TEMPORAL: Supabase Storage con quota excedida — URLs hardcodeadas en Colombia Hosting
@@ -37,6 +39,7 @@ export default async function HomePage() {
   let staffMembers: StaffRow[] = [];
   let aliados: StaffRow[] = [];
   let blogPosts: BlogPostRow[] = [];
+  let promos: PromocionRow[] = [];
   const siteImages = Object.fromEntries(
     SITE_IMAGE_KEYS.map((k) => [k, null]),
   ) as Record<SiteImageKey, string | null>;
@@ -51,6 +54,7 @@ export default async function HomePage() {
       { data: siteImageRows },
       { data: staffData },
       { data: blogData },
+      { data: promosData },
     ] = await Promise.all([
         supabase
           .from("testimonials")
@@ -77,6 +81,13 @@ export default async function HomePage() {
           .eq("is_published", true)
           .order("published_at", { ascending: false })
           .limit(3),
+        db
+          .from("promociones")
+          .select("id, imagen_url, fecha_inicio, fecha_fin, sort_order, is_active, created_at")
+          .eq("is_active", true)
+          .lte("fecha_inicio", new Date().toISOString().slice(0, 10))
+          .gte("fecha_fin", new Date().toISOString().slice(0, 10))
+          .order("sort_order"),
       ]);
 
     testimonials = testimonialsData ?? [];
@@ -85,6 +96,7 @@ export default async function HomePage() {
     staffMembers = allStaff.filter((m) => !m.is_aliado_externo);
     aliados = allStaff.filter((m) => m.is_aliado_externo);
     blogPosts = (blogData ?? []) as BlogPostRow[];
+    promos = (promosData ?? []) as PromocionRow[];
     for (const row of siteImageRows ?? []) {
       if (SITE_IMAGE_KEYS.includes(row.key as SiteImageKey)) {
         siteImages[row.key as SiteImageKey] = row.content;
@@ -158,6 +170,7 @@ export default async function HomePage() {
       </main>
       <Footer />
       <WhatsAppButton />
+      <PromoModal promos={promos} />
     </>
   );
 }

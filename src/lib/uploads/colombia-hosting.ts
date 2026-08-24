@@ -8,7 +8,8 @@ const PHP_UPLOAD_URL = "https://contenido.hacienda-encanto.com/upload.php";
 export type ColombiaFolder =
   | "galeria/staff"
   | "galeria/blog"
-  | "documentos/contratos";
+  | "documentos/contratos"
+  | "promociones";
 
 export async function uploadToColombiaHosting(
   file: File | Buffer,
