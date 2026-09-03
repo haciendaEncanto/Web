@@ -42,12 +42,12 @@ const FALLBACK_POSTS: Post[] = [
   },
   {
     id: "fb2",
-    titulo: "Tendencias en decoración para quinceañeras 2026",
-    slug: "tendencias-decoracion-quinceaneras-2026",
-    resumen: "Las tendencias más elegantes y sofisticadas para celebrar los 15 años con un estilo único y memorable.",
-    foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/1.jpeg",
-    autor: "Equipo El Encanto",
-    published_at: "2026-07-01T00:00:00Z",
+    titulo: "Por qué elegir una hacienda para tu evento empresarial",
+    slug: "por-que-elegir-una-hacienda-para-tu-evento-empresarial",
+    resumen: "Un evento empresarial en una hacienda no es solo un cambio de escenario — es una decisión estratégica que transforma resultados.",
+    foto_url: "https://contenido.hacienda-encanto.com/galeria/blog/Blog1.png",
+    autor: "Hacienda El Encanto",
+    published_at: "2026-09-02T00:00:00Z",
   },
   {
     id: "fb3",
