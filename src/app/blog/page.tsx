@@ -35,10 +35,10 @@ const FALLBACK_POSTS: Post[] = [
     id: "fb1",
     titulo: "Cómo elegir el lugar perfecto para tu boda",
     slug: "como-elegir-el-lugar-perfecto-para-tu-boda",
-    resumen: "Descubre los factores clave que debes considerar al seleccionar el espacio ideal para el día más especial de tu vida.",
+    resumen: "El lugar lo cambia todo. Descubre los 5 factores clave para encontrar el espacio que haga tu boda exactamente como la soñaste.",
     foto_url: "https://contenido.hacienda-encanto.com/galeria/boda/1.jpeg",
-    autor: "Equipo El Encanto",
-    published_at: "2026-07-15T00:00:00Z",
+    autor: "Hacienda El Encanto",
+    published_at: "2026-06-15T00:00:00Z",
   },
   {
     id: "fb2",
