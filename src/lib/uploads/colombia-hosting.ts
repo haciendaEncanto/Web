@@ -9,7 +9,8 @@ export type ColombiaFolder =
   | "galeria/staff"
   | "galeria/blog"
   | "documentos/contratos"
-  | "promociones";
+  | "promociones"
+  | "cotizaciones";
 
 export async function uploadToColombiaHosting(
   file: File | Buffer,
@@ -18,7 +19,8 @@ export async function uploadToColombiaHosting(
   // En desarrollo, el script PHP solo permite el origen de producción (CORS).
   // Retornar URL de prueba para poder validar el flujo completo en localhost.
   if (process.env.NODE_ENV === "development") {
-    return { url: "https://contenido.hacienda-encanto.com/promociones/promo1.png" };
+    const ext = Buffer.isBuffer(file) ? "pdf" : "jpg";
+    return { url: `https://contenido.hacienda-encanto.com/${folder}/mock_${Date.now()}.${ext}` };
   }
 
   const fd = new FormData();
