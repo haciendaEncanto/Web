@@ -43,7 +43,7 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
   const items = images.length >= 1 ? images.slice(0, 8) : PLACEHOLDERS;
   const [current, setCurrent] = useState(0);
   // Orientación detectada al cargar cada imagen (clave: url). Las verticales se anclan
-  // arriba para no cortar los rostros; el resto se mantiene centrado.
+  // arriba y las horizontales al 25% para no cortar los rostros.
   const [portrait, setPortrait] = useState<Record<string, boolean>>({});
 
   const advance = useCallback(() => {
@@ -90,7 +90,7 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
               );
             }}
             className={`object-cover ${
-              portrait[img.url] ? "object-top" : "object-center"
+              portrait[img.url] ? "object-top" : "object-[50%_25%]"
             } transition-opacity duration-[1000ms]`}
             style={{ opacity: i === current ? 1 : 0 }}
           />
