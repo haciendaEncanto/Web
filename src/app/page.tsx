@@ -114,7 +114,7 @@ export default async function HomePage() {
         nombre: "Jaime Guarín",
         cargo: "Fotografía & Video",
         descripcion: null,
-        foto_url: null,
+        foto_url: "https://contenido.hacienda-encanto.com/galeria/staff/Jaime.jfif",
         is_aliado_externo: true,
         frase: "Cada instante merece ser eterno",
       },
