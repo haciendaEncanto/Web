@@ -43,6 +43,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Rate limiting formulario contacto** (2026-08-18): doble capa. Capa 1 cliente (`useContactRateLimit` en `src/lib/contact-rate-limit.ts`): localStorage `contact_last_sent` + `contact_backoff_minutes`; inicia en 5 min, cada intento bloqueado duplica hasta 180 min máx; cuenta regresiva en segundos visible en el formulario; botón deshabilitado mientras activo. Capa 2 servidor (`contact.ts`): tabla `contact_attempts(ip, attempts, last_attempt_at, blocked_until)` (migración 20260818000001); IP extraída de `x-forwarded-for`/`x-real-ip`; máx 3 intentos por hora; bloqueo exponencial 1h→2h→3h; usa `createRawAdminClient()` (tabla no en database.ts aún); fallo silencioso si Supabase no responde. Aplicado en `ContactForm` y `HomeContactForm` (home + 4 páginas evento). `SubmitButton` extendido con prop `disabled` externa.
 - **Redes sociales site público** (2026-08-19): handle correcto `@haciendaelencantobt`. Instagram y TikTok como hipervínculos en Footer (lista contacto), ContactoSection y EventContacto. TikTok agregado (`https://www.tiktok.com/@haciendaelencantobt`) en los tres componentes. Iconos SVG inline en Footer (fila social: IG + TikTok + WA, eliminado FB; `fill="currentColor"` para herencia de color) y en círculos `bg-rojo` de ContactoSection/EventContacto (`fill="white"`/`stroke="white"`). WhatsApp también clickeable (`wa.me/573150061597`) en ambas secciones de contacto. Footer lista contacto muestra "Instagram: @haciendaelencantobt" y "TikTok: @haciendaelencantobt" como `<a>` con `target="_blank"`.
 - **Banners promocionales** (2026-08-24): tabla `promociones(id, imagen_url, fecha_inicio, fecha_fin, sort_order, is_active)` (migración 20260824000001, **ya aplicada**). RLS: público SELECT solo activas y vigentes (`fecha_inicio ≤ hoy ≤ fecha_fin AND is_active`); admin/editor CRUD completo. `PromoModal` en home: Client Component, aparece 800ms tras carga, fade-in, carrusel con flechas + dots si hay >1 imagen, cierre con X o Escape, fallback silencioso si no hay promos. Upload diferido: al seleccionar imagen solo se muestra preview local (`URL.createObjectURL`) + nombre de archivo; la subida a Colombia Hosting ocurre al hacer clic en "Crear"/"Actualizar"; si falla, se muestra error sin crear el registro en BD. `PromocionesManager` con estado visual Activa/Programada/Vencida/Inactiva. Link "Promociones" (icono Megaphone) en sidebar de admin y editor.
+- **Módulo cotizaciones** (2026-09-08): tablas `cotizacion_config` (12 parámetros) + `cotizaciones` (migración 20260908000001). Lógica en `src/lib/cotizacion.ts` (cálculo de precio, detección automática de día, generación de secciones). SA `cotizaciones.ts`: `fetchCotizacionConfig`, `generarCotizacionPDF` (renderToBuffer + Colombia Hosting carpeta `cotizaciones/`), `updateCotizacionConfig`. PDF generado con `@react-pdf/renderer` (`CotizacionPDF.tsx`): header/footer fijos, tabla 13 secciones + 60+ ítems numerados, total + nota de descuento. `CotizacionForm` (Client): formulario con preview de precio en tiempo real, auto-detección día de semana, botón generar PDF, botón Enviar por WhatsApp (wa.me con mensaje prellenado). Rutas: `/portal/asesor-comercial/cotizaciones`, `/portal/planner/cotizaciones`, `/admin/cotizaciones-config`. Sidebar: Calculator (asesor, planner) y SlidersHorizontal (admin). `ColombiaFolder` extendida con `"cotizaciones"`. Dev mock actualizado para retornar URL con carpeta real.
 - **Otros**: SEO (sitemap.ts + robots.ts App Router nativos), reCAPTCHA badge oculto + texto legal, sin precios públicos, pestaña Cancelados eliminada de UI (bookings siguen en BD)
 
 ### Decisiones de arquitectura
@@ -70,9 +71,9 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - **Supabase Storage NO se usa** para ningún tipo de archivo. Todos los uploads van a `contenido.hacienda-encanto.com`.
 - NUNCA pasar archivos por SA — Vercel limita body a 4.5MB. El cliente sube DIRECTO al servidor PHP.
 - **Patrón 2 pasos**: 1) cliente llama `uploadToColombiaHosting(file|buffer, folder)` (`src/lib/uploads/colombia-hosting.ts`) que hace POST a `https://contenido.hacienda-encanto.com/upload.php`; 2) el script PHP valida mime, tamaño, guarda en la carpeta y devuelve `{ success, url }`. La URL se guarda en BD via SA.
-- `uploadToColombiaHosting` acepta `File | Buffer`. Cuando es `Buffer` (SA server-side), lo envuelve en `Blob` con `type:"application/pdf"`: `new Blob([new Uint8Array(file)], ...)` — **no** `new Blob([file])`, que falla en TypeScript estricto (`Buffer<ArrayBufferLike>` no es `BlobPart`). Tipo `ColombiaFolder`: `"galeria/staff" | "galeria/blog" | "documentos/contratos" | "promociones"`. **Dev mock**: cuando `NODE_ENV === "development"` retorna `{ url: "https://contenido.hacienda-encanto.com/promociones/promo1.png" }` sin hacer fetch, evitando el CORS que bloquea localhost.
+- `uploadToColombiaHosting` acepta `File | Buffer`. Cuando es `Buffer` (SA server-side), lo envuelve en `Blob` con `type:"application/pdf"`: `new Blob([new Uint8Array(file)], ...)` — **no** `new Blob([file])`, que falla en TypeScript estricto (`Buffer<ArrayBufferLike>` no es `BlobPart`). Tipo `ColombiaFolder`: `"galeria/staff" | "galeria/blog" | "documentos/contratos" | "promociones" | "cotizaciones"`. **Dev mock**: cuando `NODE_ENV === "development"` retorna `{ url: "https://contenido.hacienda-encanto.com/{folder}/mock_{timestamp}.{ext}" }` sin hacer fetch, evitando el CORS que bloquea localhost.
 - **Script PHP**: `scripts/upload-colombia-hosting.php` → desplegado como `public_html/upload.php`. CORS dinámico: comprueba `$_SERVER['HTTP_ORIGIN']` contra lista de orígenes permitidos (`https://www.hacienda-encanto.com`, `http://localhost:3000`, `http://localhost:3001`); si coincide, emite ese origen en el header. Acepta imágenes JPG/PNG/WebP (5 MB) y PDFs (10 MB). Prefijo `img_` para imágenes, `doc_` para PDFs. **Pendiente redesplegar** en Colombia Hosting tras el fix CORS.
-- **Carpetas en Colombia Hosting** (todas creadas en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`, `public_html/documentos/contratos/`. **Pendiente crear**: `public_html/promociones/`.
+- **Carpetas en Colombia Hosting** (todas creadas en cPanel): `public_html/galeria/staff/`, `public_html/galeria/blog/`, `public_html/galeria/`, `public_html/videos/`, `public_html/testimonios/`, `public_html/documents/`, `public_html/documentos/contratos/`. **Pendiente crear**: `public_html/promociones/` y `public_html/cotizaciones/`.
 - **PDF de contrato** (2026-08-11): `generar-contrato.ts` usa `uploadToColombiaHosting(pdfBuffer, "documentos/contratos")`. Supabase Storage ya NO se usa para nada. `eliminarHistorialContratos` solo borra registro BD (sin delete en Colombia Hosting — no hay endpoint).
 - `src/lib/uploads/config.ts` (SITE_IMAGE_KEYS, kinds, límites — sin secretos, importable desde cliente).
 - **Constantes compartidas NUNCA en `"use server"`** — `SITE_IMAGE_KEYS`, `SALON_MAP_CAPACITIES`, `GUEST_COUNT_OPTIONS` en módulos `lib/`. Exportarlas junto a SAs rompe en runtime (`X.map is not a function`).
@@ -98,7 +99,7 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 - `PlaylistReadOnly`: URLs como texto plano con botón Copiar, no como hipervínculos.
 - Sin precios públicos — CTA siempre "Cuéntanos tu evento" / "Conoce más".
 - **TestimoniosSection** (`"use client"`): siempre renderiza. 10 clips Colombia Hosting (`testimonios/1.mp4`–`10.mp4`), `controlsList="nodownload"`, `onEnded` auto-avanza (wraparound). Dots + contador X/10. Cards texto debajo si Supabase responde.
-- **Colombia Hosting fallback**: `FALLBACK_IMG`/`FALLBACK_IMAGES` a nivel de módulo. Videos hero hardcodeados en page.tsx y EventPageTemplate. Queries Supabase en try/catch con defaults tipados. Fallbacks adicionales en page.tsx: `aliados` (Jaime Guarín) y `sliderImages` (8 fotos). Blog: artículos hardcodeados como `fb0`–`fb3` en `BlogSection.tsx`, `/blog/page.tsx` y `/blog/[slug]/page.tsx` — el artículo "Mis XV 2026" es `fb0` (más reciente) en todos.
+- **Colombia Hosting fallback**: `FALLBACK_IMG`/`FALLBACK_IMAGES` a nivel de módulo. Videos hero hardcodeados en page.tsx y EventPageTemplate. Queries Supabase en try/catch con defaults tipados. Fallbacks adicionales en page.tsx: `aliados` (Jaime Guarín) y `sliderImages` (8 fotos). Blog: artículos hardcodeados como `fb0`–`fb3` en `BlogSection.tsx`, `/blog/page.tsx` y `/blog/[slug]/page.tsx`. Estado actual de fallbacks (2026-09-02): `fb0`="Mis XV 2026" (2026-08-18, en BD ✅), `fb1`="Cómo elegir el lugar perfecto para tu boda" (2026-06-15, en BD ✅ id e7e2c35c), `fb2`="Por qué elegir una hacienda para tu evento empresarial" (2026-09-02, en BD ✅ id 8cdf0e9c), `fb3`="Eventos empresariales en la naturaleza" (2026-06-15, solo fallback). Cuando Supabase responde, los 3 artículos en BD reemplazan los fallbacks automáticamente.
 
 **Flujo de contacto WhatsApp**
 - Round-robin: `asesor_assignments` ordenado `total_assignments ASC, last_assigned_at ASC NULLS FIRST`. Comparador usa `!== null` explícito (no falsiness — para no saltar asesores con 0 asignaciones).
@@ -140,20 +141,22 @@ Dominio anterior `@haciendaencanto.com` (sin guión) eliminado en migración 202
 
 ### Producción
 
-Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-08-24.
+Live en **https://www.hacienda-encanto.com**. Dominio Vercel. Código 100% completo. Último estado: 2026-09-08.
 
-**⚠ Merge develop→main pendiente** (último commit develop: `f6beaf2` — incluye módulo promociones, CORS dev mock y fixes upload). Ejecutar manualmente: `git checkout main && git pull origin main && git merge origin/develop --no-ff && git push origin main && git checkout develop`.
+**⚠ Merge develop→main pendiente** (incluye módulo cotizaciones + módulo promociones + fixes anteriores). Ejecutar manualmente: `git checkout main && git pull origin main && git merge origin/develop --no-ff && git push origin main && git checkout develop`.
 
 ### Pendiente (operativo/contenido, no código)
 
-1. **Crear carpeta `public_html/promociones/`** en cPanel de Colombia Hosting — necesaria para que el upload de banners funcione en producción.
-2. **Redesplegar `upload.php`** en Colombia Hosting (sobreescribir con `scripts/upload-colombia-hosting.php`) — aplica el fix de CORS dinámico que permite localhost:3000/3001.
-3. **Regenerar `src/types/database.ts`** — `supabase gen types typescript --project-id oewqyckeqolrpjbjevap > src/types/database.ts`. Tablas nuevas (`staff`, `blog_posts`, `contact_attempts`, `promociones`) aún usan `createRawAdminClient()` porque database.ts no las conoce.
-4. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
-5. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
-6. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
-7. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, RLS en todas las tablas.
-8. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
+1. **Crear carpeta `public_html/promociones/`** en cPanel de Colombia Hosting — necesaria para el upload de banners.
+2. **Crear carpeta `public_html/cotizaciones/`** en cPanel de Colombia Hosting — necesaria para los PDFs de cotizaciones.
+3. **Aplicar migración `20260908000001_cotizaciones.sql`** en Supabase remoto — crea `cotizacion_config` + `cotizaciones` con seed de 12 parámetros.
+4. **Redesplegar `upload.php`** en Colombia Hosting (sobreescribir con `scripts/upload-colombia-hosting.php`) — aplica el fix de CORS dinámico que permite localhost:3000/3001.
+5. **Regenerar `src/types/database.ts`** — `supabase gen types typescript --project-id oewqyckeqolrpjbjevap > src/types/database.ts`. Tablas nuevas (`staff`, `blog_posts`, `contact_attempts`, `promociones`, `cotizacion_config`, `cotizaciones`) aún usan `createRawAdminClient()` porque database.ts no las conoce.
+6. **Videos y fotos empresarial/revelación** — subir desde `/editor/videos` y `/editor/galeria` cuando el cliente los entregue.
+7. **Tour 360°** — cargar URL en site_content clave `tour_360_url` desde `/editor/contenido`. Vista360.tsx ya oculta si no hay URL.
+8. **Registrar asesores en CallMeBot** — enviar `I allow callmebot.com to send me messages` al `+1(347)798-2047`, configurar `CALLMEBOT_API_KEY_CENTRAL` en Vercel.
+9. **Verificar Supabase Dashboard** — Rate Limits, JWT expiry 3600s, RLS en todas las tablas.
+10. **Pruebas usuarios reales** — Jonny Delgado (planner) y David Castillo (asesor): crear cliente→contrato→aprobación→orden→documentos→pagos.
 
 ### Archivos clave
 
@@ -173,30 +176,35 @@ src/
       admin/generar-contrato.ts       ← generarContratoPDF (renderToBuffer → Colombia Hosting), eliminarHistorialContratos
       editor/galeria.ts|videos.ts|imagenes-sitio.ts|testimonios.ts|paquetes.ts|contenido.ts
       editor/staff.ts|blog.ts|promociones.ts ← CRUD con createRawAdminClient()
+      cotizaciones.ts                 ← fetchCotizacionConfig, generarCotizacionPDF, updateCotizacionConfig
     blog/page.tsx / blog/[slug]/page.tsx ← públicas; sidebar "Más artículos" en [slug]
     editor/staff/page.tsx / editor/blog/page.tsx / editor/promociones/page.tsx
     (auth)/login/page.tsx / reset-password/page.tsx
     auth/confirm/route.ts             ← auxiliar, no se usa para password reset
     portal/layout.tsx / page.tsx (redirect por rol)
     portal/dashboard / orden-servicio / actividades / mensajes / invitados / playlist / perfil
-    portal/planner/ (nuevo-cliente, clientes, salon-mapas, orden-servicio/[bookingId])
+    portal/planner/ (nuevo-cliente, clientes, salon-mapas, orden-servicio/[bookingId], cotizaciones)
     portal/planner/clientes/[clientId]/ (contrato, actividades, invitados, documentos, pagos, playlist)
-    portal/asesor-comercial / asesor-logistica / gerente / staff
-    admin/ (page→redirect, dashboard, usuarios, clientes, clientes/[clientId])
+    portal/asesor-comercial / asesor-comercial/cotizaciones / asesor-logistica / gerente / staff
+    admin/ (page→redirect, dashboard, usuarios, clientes, clientes/[clientId], cotizaciones-config)
     editor/ (page→redirect, galeria, videos, imagenes-sitio, testimonios, paquetes, contenido, promociones)
   components/
     home/ (StaffSection, AlianzasSection, PromoModal, ...) / events/ / portal/ / asesor/ / admin/ / contrato/ / clientes/ / editor/ / ui/ / contact/
     portal/PortalShell.tsx|PortalSidebar.tsx|PortalHeader.tsx
     portal/planner/ContractItemsForm.tsx|ContratoPlanner.tsx|ClienteEditForm.tsx
     contrato/ContratoPDF.tsx          ← Document+Page única, header/footer fixed, tabla 4 cols, 20 cláusulas
+    cotizaciones/CotizacionPDF.tsx    ← Document+Page única, header/footer fixed, 13 secciones, ítems numerados
+    cotizaciones/CotizacionForm.tsx   ← Client Component; precio en tiempo real; generar PDF; enviar WhatsApp
     admin/CambiarPasswordButton.tsx   ← reutilizable en /admin/usuarios y /admin/clientes/[id]
+    admin/CotizacionConfigManager.tsx ← edición inline de los 12 parámetros de cotizacion_config
     clientes/ClientesTable.tsx        ← prop basePath:"planner"|"admin"
     asesor/ContactosAsesorView.tsx    ← estado optimista, botón wa.me completo
     editor/PromocionesManager.tsx     ← CRUD promociones; upload diferido al submit; preview local URL.createObjectURL
   lib/
     supabase/server.ts|client.ts|admin.ts  ← admin.ts incluye createRawAdminClient()
     uploads/config.ts|server.ts|client.ts
-    uploads/colombia-hosting.ts            ← uploadToColombiaHosting(file|buffer, folder) vía PHP; ColombiaFolder incluye "promociones"; dev mock en NODE_ENV=development
+    uploads/colombia-hosting.ts            ← uploadToColombiaHosting(file|buffer, folder) vía PHP; ColombiaFolder incluye "promociones" y "cotizaciones"; dev mock en NODE_ENV=development
+    cotizacion.ts                          ← calcularPrecio, detectarDiaSemana, generarSecciones (13 secciones ~62 ítems), tipos TipoEvento|DiaSemana|CotizacionConfig
     blog-utils.ts                          ← generateSlug (función síncrona — NO en "use server")
     clientes.ts / eventos.ts / event-window.ts / playlist-templates.ts (ORDEN_MUSIC_FIELD_MAP)
     random-slider.ts / guest-count.ts / salon-map-capacities.ts / callmebot.ts / contract-items.ts
@@ -206,5 +214,5 @@ src/
 next.config.ts                        ← HTTP security headers vía async headers()
 public/ (logo-principal-fondo-claro.svg, trebol-original.svg, placeholder-avatar.svg, placeholder-evento.svg)
 scripts/upload-colombia-hosting.php   ← Desplegar como public_html/upload.php en Colombia Hosting
-supabase/migrations/ (última aplicada en remoto: 20260824000001_promociones.sql — BD al día, sin pendientes)
+supabase/migrations/ (pendiente aplicar en remoto: 20260908000001_cotizaciones.sql — localmente al día)
 ```

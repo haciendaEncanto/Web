@@ -29,6 +29,8 @@ import {
   Inbox,
   Newspaper,
   Megaphone,
+  Calculator,
+  SlidersHorizontal,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { TransitionOverlay } from "@/components/ui/TransitionOverlay";
@@ -70,6 +72,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/clientes", label: "Clientes", icon: Users },
       { href: "/admin/leads", label: "Leads", icon: Inbox },
       { href: "/admin/contrato", label: "Contrato", icon: ScrollText },
+      { href: "/admin/cotizaciones-config", label: "Config. Cotizaciones", icon: SlidersHorizontal },
       { href: "/editor/galeria", label: "Galería", icon: Image },
       { href: "/editor/videos", label: "Videos", icon: Video },
       { href: "/editor/imagenes-sitio", label: "Imágenes del sitio", icon: Images },
@@ -102,6 +105,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
       { href: "/portal/planner/nuevo-cliente", label: "Nuevo cliente", icon: UserPlus },
       { href: "/portal/planner/salon-mapas", label: "Mapas del salón", icon: Map },
+      { href: "/portal/planner/cotizaciones", label: "Cotizaciones", icon: Calculator },
     ];
   }
   if (role === "staff") {
@@ -113,6 +117,7 @@ function getNavItems(role: string): NavItem[] {
     return [
       { href: "/portal/asesor-comercial", label: "Eventos y Contactos", icon: CalendarDays },
       { href: "/portal/planner/clientes", label: "Clientes", icon: Users },
+      { href: "/portal/asesor-comercial/cotizaciones", label: "Cotizaciones", icon: Calculator },
     ];
   }
   if (role === "asesor_logistica") {

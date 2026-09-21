@@ -40,7 +40,12 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/editor");
   const isAuthPage = pathname === "/login" || pathname === "/registro";
 
+  // Un redirect a /login sobre un POST de Server Action llega al cliente como HTML y
+  // Next lo reporta como "An unexpected response was received from the server".
+  const isServerAction = request.headers.has("next-action");
+
   if (isProtected && !user) {
+    if (isServerAction) console.warn("[proxy] Server Action sin sesión → /login:", pathname);
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -61,6 +66,9 @@ export async function proxy(request: NextRequest) {
     );
 
     if (sessionValid === false) {
+      if (isServerAction) {
+        console.warn(`[proxy] Server Action con sesión inactiva >${SESSION_TIMEOUT_MINUTES} min → /login:`, pathname);
+      }
       await supabase.auth.signOut();
       const url = request.nextUrl.clone();
       url.pathname = "/login";
