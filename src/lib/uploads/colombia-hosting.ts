@@ -36,11 +36,26 @@ export async function uploadToColombiaHosting(
 
   try {
     const res = await fetch(PHP_UPLOAD_URL, { method: "POST", body: fd });
-    if (!res.ok) return { error: `Error HTTP ${res.status}` };
-    const json = (await res.json()) as { success: boolean; url?: string; error?: string };
-    if (!json.success) return { error: json.error ?? "Error al subir archivo" };
+    const text = await res.text();
+    console.log("[uploadToColombiaHosting] respuesta PHP:", {
+      folder,
+      status: res.status,
+      contentType: res.headers.get("content-type"),
+      body: text.slice(0, 500),
+    });
+
+    let json: { success: boolean; url?: string; error?: string };
+    try {
+      json = JSON.parse(text);
+    } catch {
+      return { error: `El servidor de archivos no devolvió JSON (HTTP ${res.status})` };
+    }
+    if (!res.ok || !json.success) {
+      return { error: json.error ?? `Error HTTP ${res.status}` };
+    }
     return { url: json.url };
   } catch (err) {
+    console.error("[uploadToColombiaHosting] fetch falló:", err);
     return { error: err instanceof Error ? err.message : "Error de red al subir archivo" };
   }
 }

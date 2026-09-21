@@ -111,6 +111,7 @@ function UploadModal({
       setProgress(Math.round(sim));
     }, 350);
 
+    let step = "1/3 requestGaleriaUpload";
     try {
       const req = await requestGaleriaUpload({
         fileName:    file.name,
@@ -127,8 +128,10 @@ function UploadModal({
         return;
       }
 
+      step = "2/3 uploadToHosting (PHP)";
       const up = await uploadToHosting(req.uploadUrl, req.token, req.folder, file);
       if (up.error || !up.url) {
+        console.error("[GaleriaManager] paso", step, "falló:", up.error);
         clearInterval(interval);
         setError(up.error ?? "No se pudo subir la imagen");
         setUploading(false);
@@ -136,6 +139,7 @@ function UploadModal({
         return;
       }
 
+      step = "3/3 confirmGaleriaUpload";
       const result = await confirmGaleriaUpload({
         url:      up.url,
         category,
@@ -155,7 +159,9 @@ function UploadModal({
       setTimeout(() => { onUploaded(result.image!); }, 500);
     } catch (err) {
       clearInterval(interval);
-      setError(err instanceof Error ? err.message : "Error inesperado");
+      console.error("[GaleriaManager] excepción en paso", step, err);
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      setError(`${msg} (paso ${step})`);
       setUploading(false);
       setProgress(0);
     }

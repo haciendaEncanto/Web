@@ -44,27 +44,43 @@ export async function requestGaleriaUpload(meta: {
   size: number;
   category: string;
 }): Promise<{ uploadUrl?: string; token?: string; folder?: string; error?: string }> {
-  const { error: authErr } = await verifyEditor();
-  if (authErr) return { error: authErr };
+  try {
+    console.log("[requestGaleriaUpload] inicio:", meta);
 
-  const allowed = ["image/jpeg", "image/png", "image/webp"];
-  if (!allowed.includes(meta.contentType))
-    return { error: `Formato no permitido: ${meta.contentType}` };
-  if (meta.size <= 0)
-    return { error: "El archivo está vacío" };
-  if (meta.size > 10 * 1024 * 1024)
-    return { error: `El archivo supera el límite de 10 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
+    const { error: authErr } = await verifyEditor();
+    if (authErr) {
+      console.warn("[requestGaleriaUpload] auth:", authErr);
+      return { error: authErr };
+    }
 
-  const uploadUrl = process.env.HOSTING_UPLOAD_URL;
-  const token = process.env.HOSTING_UPLOAD_TOKEN;
-  if (!uploadUrl || !token)
-    return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(meta.contentType))
+      return { error: `Formato no permitido: ${meta.contentType}` };
+    if (meta.size <= 0)
+      return { error: "El archivo está vacío" };
+    if (meta.size > 10 * 1024 * 1024)
+      return { error: `El archivo supera el límite de 10 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
 
-  const validCategories = ["boda", "quince", "empresarial", "revelacion", "general"];
-  const category = validCategories.includes(meta.category) ? meta.category : "general";
-  const folder = `galeria/${category}`;
+    const uploadUrl = process.env.HOSTING_UPLOAD_URL;
+    const token = process.env.HOSTING_UPLOAD_TOKEN;
+    if (!uploadUrl || !token) {
+      console.error("[requestGaleriaUpload] env faltante:", {
+        HOSTING_UPLOAD_URL: !!uploadUrl,
+        HOSTING_UPLOAD_TOKEN: !!token,
+      });
+      return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
+    }
 
-  return { uploadUrl, token, folder };
+    const validCategories = ["boda", "quince", "empresarial", "revelacion", "general"];
+    const category = validCategories.includes(meta.category) ? meta.category : "general";
+    const folder = `galeria/${category}`;
+
+    console.log("[requestGaleriaUpload] ok:", { uploadUrl, folder });
+    return { uploadUrl, token, folder };
+  } catch (err) {
+    console.error("[requestGaleriaUpload] excepción:", err);
+    return { error: `Error inesperado al preparar la subida: ${err instanceof Error ? err.message : String(err)}` };
+  }
 }
 
 /**
@@ -76,34 +92,45 @@ export async function confirmGaleriaUpload(meta: {
   category: string;
   title: string;
 }): Promise<{ image?: UploadedImage; error?: string }> {
-  const { error: authErr } = await verifyEditor();
-  if (authErr) return { error: authErr };
+  try {
+    const { error: authErr } = await verifyEditor();
+    if (authErr) {
+      console.warn("[confirmGaleriaUpload] auth:", authErr);
+      return { error: authErr };
+    }
 
-  // Forzar HTTPS — salvaguarda server-side antes de persistir en BD
-  const safeUrl = meta.url.replace(/^http:\/\//i, "https://");
-  console.log("[confirmGaleriaUpload] URL recibida:", meta.url, "→ guardada:", safeUrl);
-  if (!safeUrl.startsWith("https://")) {
-    return { error: `URL inválida: debe comenzar con https:// (recibida: ${meta.url})` };
+    // Forzar HTTPS — salvaguarda server-side antes de persistir en BD
+    const safeUrl = meta.url.replace(/^http:\/\//i, "https://");
+    console.log("[confirmGaleriaUpload] URL recibida:", meta.url, "→ guardada:", safeUrl);
+    if (!safeUrl.startsWith("https://")) {
+      return { error: `URL inválida: debe comenzar con https:// (recibida: ${meta.url})` };
+    }
+
+    const admin = createAdminClient();
+
+    const { data: img, error: insErr } = await admin
+      .from("gallery_images")
+      .insert({
+        url:          safeUrl,
+        title:        meta.title.trim() || null,
+        category:     meta.category,
+        sort_order:   0,
+        is_published: false,
+      })
+      .select("id, url, title, category, sort_order, is_published")
+      .single();
+
+    if (insErr) {
+      console.error("[confirmGaleriaUpload] insert falló:", insErr);
+      return { error: `Error al guardar: ${insErr.message}` };
+    }
+
+    revalidateAll();
+    return { image: img as UploadedImage };
+  } catch (err) {
+    console.error("[confirmGaleriaUpload] excepción:", err);
+    return { error: `Error inesperado al guardar la imagen: ${err instanceof Error ? err.message : String(err)}` };
   }
-
-  const admin = createAdminClient();
-
-  const { data: img, error: insErr } = await admin
-    .from("gallery_images")
-    .insert({
-      url:          safeUrl,
-      title:        meta.title.trim() || null,
-      category:     meta.category,
-      sort_order:   0,
-      is_published: false,
-    })
-    .select("id, url, title, category, sort_order, is_published")
-    .single();
-
-  if (insErr) return { error: `Error al guardar: ${insErr.message}` };
-
-  revalidateAll();
-  return { image: img as UploadedImage };
 }
 
 // ─── Acciones de edición / borrado / reorden ──────────────────────────────────

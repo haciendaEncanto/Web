@@ -24,7 +24,7 @@ export async function uploadFileToSignedUrl(
  */
 export async function uploadToHosting(
   uploadUrl: string,
-  token: string,
+  _token: string,
   folder: string,
   file: File,
 ): Promise<{ url?: string; error?: string }> {
@@ -32,24 +32,40 @@ export async function uploadToHosting(
   form.append("file", file);
   form.append("folder", folder);
 
+  console.log("[uploadToHosting] POST", uploadUrl, {
+    folder, name: file.name, type: file.type, size: file.size,
+  });
+
   try {
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "X-Upload-Token": token },
-      body: form,
+    // Sin headers personalizados: el upload.php desplegado solo permite Content-Type
+    // en Access-Control-Allow-Headers, así que un X-Upload-Token dispara un preflight
+    // que el browser bloquea por CORS antes de enviar el archivo.
+    const res = await fetch(uploadUrl, { method: "POST", body: form });
+    const text = await res.text();
+    console.log("[uploadToHosting] respuesta PHP:", {
+      status: res.status,
+      contentType: res.headers.get("content-type"),
+      body: text.slice(0, 500),
     });
-    if (!res.ok) {
-      const text = await res.text();
-      return { error: `Error HTTP ${res.status} del servidor de archivos: ${text}` };
+
+    let data: { success: boolean; url?: string; error?: string };
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return {
+        error: `El servidor de archivos no devolvió JSON (HTTP ${res.status}): ${text.slice(0, 200)}`,
+      };
     }
-    const data = (await res.json()) as { success: boolean; url?: string; error?: string };
-    console.log("[uploadToHosting] respuesta PHP:", data);
-    if (!data.success) return { error: data.error ?? "Error en el servidor de archivos" };
+
+    if (!res.ok || !data.success) {
+      return { error: data.error ?? `Error HTTP ${res.status} del servidor de archivos` };
+    }
     // Forzar HTTPS — el PHP debería devolverlo así, pero como salvaguarda:
     const url = data.url?.replace(/^http:\/\//i, "https://");
     console.log("[uploadToHosting] URL final guardada:", url);
     return { url };
   } catch (err) {
+    console.error("[uploadToHosting] fetch falló (red/CORS):", err);
     return { error: err instanceof Error ? err.message : "Error de red al subir archivo" };
   }
 }
