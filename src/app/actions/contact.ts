@@ -27,6 +27,13 @@ const schema = z.object({
   guest_count: z.string().min(1, "El número de invitados es requerido"),
   message: z.string().min(5, "Cuéntanos un poco más sobre tu evento"),
   recaptchaToken: z.string(),
+  // FormData entrega el checkbox como "true" (o ausente si no está marcado)
+  aceptaPolitica: z.preprocess(
+    (v) => v === true || v === "true" || v === "on",
+    z.boolean().refine((val) => val === true, {
+      message: "Debes aceptar la política de privacidad para continuar",
+    }),
+  ),
 });
 
 export async function submitContactForm(

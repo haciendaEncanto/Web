@@ -17,7 +17,7 @@ const encanto = [
 const contacto: { text: string; href?: string; label?: string }[] = [
   { text: "+57 315 006 1597" },
   { text: "contacto@hacienda-encanto.com" },
-  { text: "Vía Suba Km 5.5, Cota" },
+  { text: "Km 5.5, Vía Suba Cota" },
   {
     text: "@haciendaelencantobt",
     href: "https://www.instagram.com/haciendaelencantobt",
@@ -157,9 +157,17 @@ export function Footer() {
 
         {/* Pie */}
         <div className="border-t border-blanco/[0.06] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[0.8rem] text-gris font-light">
-            © 2026 Hacienda El Encanto. Todos los derechos reservados.
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
+            <p className="text-[0.8rem] text-gris font-light">
+              © 2026 Hacienda El Encanto. Todos los derechos reservados.
+            </p>
+            <Link
+              href="/politica-de-privacidad"
+              className="text-[0.8rem] text-gris font-light hover:text-dorado transition-colors duration-300"
+            >
+              Política de Privacidad
+            </Link>
+          </div>
           <div className="flex gap-3">
             {social.map((s) => (
               <a

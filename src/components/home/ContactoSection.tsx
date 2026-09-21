@@ -12,7 +12,7 @@ const infoItems: InfoItem[] = [
   {
     icon: "📍",
     title: "Ubicación",
-    text: "Vía Suba Km 5.5, Cota, Cundinamarca, Colombia",
+    text: "Km 5.5, Vía Suba Cota, Cundinamarca, Colombia",
   },
   {
     icon: (

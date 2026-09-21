@@ -263,7 +263,7 @@ export function CotizacionPDF({
             <Text style={s.headerFallback}>HACIENDA EL ENCANTO</Text>
           )}
           <View style={s.headerContactRow}>
-            <Text style={s.headerContact}>Km 5, Vía Suba Cota</Text>
+            <Text style={s.headerContact}>Km 5.5, Vía Suba Cota</Text>
             <Text style={s.headerContact}>WhatsApp: 315 006 1597</Text>
             <Text style={s.headerContact}>contacto@hacienda-encanto.com</Text>
             <Text style={s.headerContact}>www.hacienda-encanto.com</Text>

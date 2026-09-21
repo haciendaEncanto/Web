@@ -11,5 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/eventos-empresariales`, lastModified: LAST_MODIFIED, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/revelacion-de-genero`,  lastModified: LAST_MODIFIED, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/blog`,                  lastModified: LAST_MODIFIED, changeFrequency: "weekly",  priority: 0.7 },
+    { url: `${BASE}/politica-de-privacidad`, lastModified: new Date("2026-09-21"), changeFrequency: "yearly", priority: 0.3 },
   ];
 }

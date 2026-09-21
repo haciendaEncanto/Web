@@ -23,6 +23,8 @@ export function buildLeadMessage(params: {
     `👥 Invitados: ${params.guest_count || "No especificado"}`,
     `💬 Mensaje: ${params.message}`,
     `🤝 Asignado a: ${params.asesorName}`,
+    "",
+    "ℹ️ Al continuar esta conversación aceptas nuestra Política de Tratamiento de Datos: https://www.hacienda-encanto.com/politica-de-privacidad",
   ].join("\n");
 }
 
