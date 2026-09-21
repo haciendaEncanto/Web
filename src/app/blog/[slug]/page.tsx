@@ -180,14 +180,14 @@ export async function generateMetadata({
 function formatDate(iso: string | null) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-CO", {
-    day: "numeric", month: "long", year: "numeric",
+    day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
   });
 }
 
 function formatDateShort(iso: string | null) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-CO", {
-    day: "numeric", month: "short", year: "numeric",
+    day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
   });
 }
 

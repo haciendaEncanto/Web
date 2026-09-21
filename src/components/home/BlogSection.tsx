@@ -40,7 +40,7 @@ const FALLBACK_POSTS: BlogPost[] = [
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-CO", {
-    day: "numeric", month: "long", year: "numeric",
+    day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
   });
 }
 
