@@ -13,27 +13,27 @@ type BlogPost = {
 const FALLBACK_POSTS: BlogPost[] = [
   {
     id: "fb0",
-    titulo: "Mis XV 2026: Las tendencias que están arrasando",
-    slug: "mis-xv-2026-tendencias-que-estan-arrasando",
-    resumen: "Descubre las 5 tendencias que están definiendo las quinceañeras este año y encuentra la que habla de ti.",
-    foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/9.png",
-    published_at: "2026-08-18T00:00:00Z",
+    titulo: "De la propuesta a la boda: la guía que toda novia colombiana necesita",
+    slug: "de-la-propuesta-a-la-boda-guia-novia-colombiana",
+    resumen: "Desde el momento en que dices 'sí' hasta el día que caminas al altar, cada decisión cuenta. Esta guía te lleva paso a paso.",
+    foto_url: "https://contenido.hacienda-encanto.com/galeria/blog/I20A1333.jpg",
+    published_at: "2026-09-21T00:00:00Z",
   },
   {
     id: "fb1",
-    titulo: "Cómo elegir el lugar perfecto para tu boda",
-    slug: "como-elegir-el-lugar-perfecto-para-tu-boda",
-    resumen: "El lugar lo cambia todo. Descubre los 5 factores clave para encontrar el espacio que haga tu boda exactamente como la soñaste.",
-    foto_url: "https://contenido.hacienda-encanto.com/galeria/boda/1.jpeg",
-    published_at: "2026-06-15T00:00:00Z",
-  },
-  {
-    id: "fb2",
     titulo: "Por qué elegir una hacienda para tu evento empresarial",
     slug: "por-que-elegir-una-hacienda-para-tu-evento-empresarial",
     resumen: "Un evento empresarial en una hacienda no es solo un cambio de escenario — es una decisión estratégica que transforma resultados.",
     foto_url: "https://contenido.hacienda-encanto.com/galeria/blog/Blog1.png",
     published_at: "2026-09-02T00:00:00Z",
+  },
+  {
+    id: "fb2",
+    titulo: "Mis XV 2026: Las tendencias que están arrasando",
+    slug: "mis-xv-2026-tendencias-que-estan-arrasando",
+    resumen: "Descubre las 5 tendencias que están definiendo las quinceañeras este año y encuentra la que habla de ti.",
+    foto_url: "https://contenido.hacienda-encanto.com/galeria/quince/9.png",
+    published_at: "2026-08-18T00:00:00Z",
   },
 ];
 
