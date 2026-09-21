@@ -165,7 +165,7 @@ export const HACIENDA_INFO = {
   representante:     "Ana Victoria Marquez Villarreal",
   cc_representante:  "1127661646",
   nit:               "901860912-1",
-  direccion:         "Kilómetro 5, Vía Suba Cota",
+  direccion:         "Km 5.5, Vía Suba Cota",
   whatsapp:          "3150061597",
   email:             "contacto@hacienda-encanto.com",
   cuenta_davivienda: "108900524282",

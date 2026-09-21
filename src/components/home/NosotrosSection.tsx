@@ -47,7 +47,7 @@ export function NosotrosSection({ image }: { image?: string | null }) {
               invitados vivan momentos extraordinarios.
             </p>
             <p className="text-[0.95rem] text-gris leading-[1.9] font-light">
-              Ubicados en la Vía Suba Km 5.5, en Cota, Cundinamarca, nuestro
+              Ubicados en el Km 5.5, Vía Suba Cota, Cundinamarca, nuestro
               espacio combina la calidez de la naturaleza con la sofisticación
               que tu evento merece. Con capacidad para más de 300 invitados,
               somos el escenario ideal para hacer realidad tu visión.

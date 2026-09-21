@@ -17,7 +17,7 @@ const encanto = [
 const contacto: { text: string; href?: string; label?: string }[] = [
   { text: "+57 315 006 1597" },
   { text: "contacto@hacienda-encanto.com" },
-  { text: "Vía Suba Km 5.5, Cota" },
+  { text: "Km 5.5, Vía Suba Cota" },
   {
     text: "@haciendaelencantobt",
     href: "https://www.instagram.com/haciendaelencantobt",

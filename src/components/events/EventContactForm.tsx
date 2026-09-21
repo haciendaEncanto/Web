@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, startTransition, useEffect } from "react";
-import Link from "next/link";
+import { useActionState, startTransition, useEffect, useState } from "react";
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { PrivacyCheckbox } from "@/components/contact/PrivacyCheckbox";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -14,6 +14,7 @@ const labelCls =
 
 export function EventContactForm({ defaultEventType }: { defaultEventType: string }) {
   const [state, formAction] = useActionState(submitContactForm, null);
+  const [aceptaPolitica, setAceptaPolitica] = useState(false);
 
   useEffect(() => {
     if (!SITE_KEY) return;
@@ -135,18 +136,14 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
         </p>
       )}
 
+      <PrivacyCheckbox checked={aceptaPolitica} onChange={setAceptaPolitica} />
+
       <SubmitButton
         label="Enviar mensaje"
         pendingLabel="Enviando…"
+        disabled={!aceptaPolitica}
         className="w-full text-center bg-rojo text-blanco px-9 py-[14px] rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
       />
-
-      <p className="text-[0.7rem] text-gris/60 text-center leading-relaxed">
-        Al enviar este formulario aceptas nuestra{" "}
-        <Link href="/politica-de-privacidad" className="underline hover:text-gris">
-          Política de Privacidad
-        </Link>
-      </p>
 
       <p className="text-[0.65rem] text-gris/50 text-center leading-relaxed">
         Protegido por reCAPTCHA —{" "}

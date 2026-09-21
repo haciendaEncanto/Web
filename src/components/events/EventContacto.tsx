@@ -20,7 +20,7 @@ const infoItems: InfoItem[] = [
     href: "https://wa.me/573150061597",
   },
   { label: "Correo", text: "contacto@hacienda-encanto.com" },
-  { label: "Ubicación", text: "Vía Suba Km 5.5, Cota, Cundinamarca" },
+  { label: "Ubicación", text: "Km 5.5, Vía Suba Cota, Cundinamarca" },
   {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20" aria-hidden="true">

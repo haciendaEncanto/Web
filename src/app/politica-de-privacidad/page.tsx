@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const EMAIL = "contacto@hacienda-encanto.com";
 const WHATSAPP_LABEL = "+57 315 006 1597";
 const WHATSAPP_HREF = "https://wa.me/573150061597";
-const ADDRESS = "Kilómetro 5, Vía Suba Cota, Cundinamarca";
+const ADDRESS = "Km 5.5, Vía Suba Cota, Cundinamarca";
 
 const linkCls =
   "text-rojo underline underline-offset-2 decoration-rojo/30 hover:decoration-rojo transition-colors";
