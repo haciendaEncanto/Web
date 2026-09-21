@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, startTransition, useEffect, useRef } from "react";
+import Link from "next/link";
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { useContactRateLimit } from "@/lib/contact-rate-limit";
@@ -179,6 +180,13 @@ export function HomeContactForm() {
         disabled={isBlocked}
         className="w-full text-center bg-rojo text-blanco px-9 py-3.5 rounded-lg text-[12px] font-medium tracking-[2px] uppercase hover:bg-rojo-pro transition-colors duration-300"
       />
+
+      <p className="text-[0.7rem] text-gris/60 text-center leading-relaxed">
+        Al enviar este formulario aceptas nuestra{" "}
+        <Link href="/politica-de-privacidad" className="underline hover:text-gris">
+          Política de Privacidad
+        </Link>
+      </p>
 
       <p className="text-[0.65rem] text-gris/50 text-center leading-relaxed">
         Protegido por reCAPTCHA —{" "}
