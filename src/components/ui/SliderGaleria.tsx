@@ -42,6 +42,9 @@ interface SliderGaleriaProps {
 export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps) {
   const items = images.length >= 1 ? images.slice(0, 8) : PLACEHOLDERS;
   const [current, setCurrent] = useState(0);
+  // Orientación detectada al cargar cada imagen (clave: url). Las verticales se anclan
+  // arriba y las horizontales al 25% para no cortar los rostros.
+  const [portrait, setPortrait] = useState<Record<string, boolean>>({});
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % items.length);
@@ -70,7 +73,7 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
         </div>
       )}
 
-      <div className="relative h-[420px] md:h-[580px] overflow-hidden">
+      <div className="relative h-[500px] md:h-[650px] overflow-hidden">
         {items.map((img, i) => (
           <Image
             key={`${i}-${img.url}`}
@@ -79,7 +82,16 @@ export function SliderGaleria({ images, supertitle, title }: SliderGaleriaProps)
             fill
             sizes="100vw"
             priority={i === 0}
-            className="object-cover object-center transition-opacity duration-[1000ms]"
+            onLoad={(e) => {
+              const { naturalWidth, naturalHeight } = e.currentTarget;
+              const isPortrait = naturalHeight > naturalWidth;
+              setPortrait((prev) =>
+                prev[img.url] === isPortrait ? prev : { ...prev, [img.url]: isPortrait },
+              );
+            }}
+            className={`object-cover ${
+              portrait[img.url] ? "object-top" : "object-[50%_25%]"
+            } transition-opacity duration-[1000ms]`}
             style={{ opacity: i === current ? 1 : 0 }}
           />
         ))}
