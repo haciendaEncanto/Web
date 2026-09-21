@@ -4,6 +4,7 @@ import { useActionState, startTransition, useEffect, useState } from "react";
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PrivacyCheckbox } from "@/components/contact/PrivacyCheckbox";
+import { WhatsAppSuccessButton } from "@/components/contact/WhatsAppSuccessButton";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -56,6 +57,7 @@ export function EventContactForm({ defaultEventType }: { defaultEventType: strin
         <p className="text-[0.85rem] text-gris">
           Nos pondremos en contacto contigo en menos de 24 horas.
         </p>
+        <WhatsAppSuccessButton />
       </div>
     );
   }

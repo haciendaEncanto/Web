@@ -4,6 +4,7 @@ import { useActionState, startTransition, useEffect, useRef, useState } from "re
 import { submitContactForm } from "@/app/actions/contact";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PrivacyCheckbox } from "@/components/contact/PrivacyCheckbox";
+import { WhatsAppSuccessButton } from "@/components/contact/WhatsAppSuccessButton";
 import { useContactRateLimit } from "@/lib/contact-rate-limit";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -78,6 +79,7 @@ export function HomeContactForm() {
         <p className="text-[0.85rem] text-gris">
           Nos pondremos en contacto contigo en menos de 24 horas.
         </p>
+        <WhatsAppSuccessButton />
       </div>
     );
   }
