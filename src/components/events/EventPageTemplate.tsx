@@ -5,7 +5,7 @@ import { WhatsAppButton } from "@/components/home/WhatsAppButton";
 import { SliderGaleria } from "@/components/ui/SliderGaleria";
 import { EventHero } from "./EventHero";
 import { EventDescripcion } from "./EventDescripcion";
-import { EventPaquetes } from "./EventPaquetes";
+import { EventEstadisticas } from "./EventEstadisticas";
 import { EventTestimonios } from "./EventTestimonios";
 import { EventContacto } from "./EventContacto";
 import { Vista360 } from "./Vista360";
@@ -32,11 +32,9 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
 
   // Fallback: Supabase puede estar no disponible temporalmente
   type GaleriaRow = { url: string; title: string | null };
-  type PaqueteRow = { id: string; name: string; description: string | null; includes: unknown; sort_order: number };
   type TestimonioRow = { client_name: string; event_type: string | null; rating: number | null; content: string; photo_url: string | null };
 
   let galleryImages: GaleriaRow[] = [];
-  let rawPackages: PaqueteRow[] = [];
   let testimonials: TestimonioRow[] = [];
   let tourUrl: string | null = null;
 
@@ -44,7 +42,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     const supabase = await createClient();
     const [
       { data: galleryData },
-      { data: packagesData },
       { data: testimonialsData },
       { data: tourContent },
     ] = await Promise.all([
@@ -55,12 +52,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
         .eq("category", config.gallery.category)
         .order("sort_order")
         .limit(8),
-      supabase
-        .from("packages")
-        .select("id, name, description, includes, sort_order")
-        .eq("is_active", true)
-        .eq("event_type", config.paquetes.eventType)
-        .order("sort_order"),
       supabase
         .from("testimonials")
         .select("client_name, event_type, rating, content, photo_url")
@@ -75,7 +66,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
     ]);
 
     galleryImages = galleryData ?? [];
-    rawPackages = packagesData ?? [];
     testimonials = testimonialsData ?? [];
     tourUrl = tourContent?.content ?? null;
   } catch {
@@ -83,11 +73,6 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
   }
 
   const allImages = galleryImages.length ? galleryImages : config.gallery.fallback;
-
-  const packages = rawPackages.map((p) => ({
-    ...p,
-    includes: Array.isArray(p.includes) ? (p.includes as string[]) : [],
-  }));
 
   return (
     <>
@@ -111,8 +96,8 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
           />
         </div>
 
-        {/* 5. Paquetes */}
-        <EventPaquetes packages={packages} config={config.paquetes} />
+        {/* 5. Estadísticas */}
+        <EventEstadisticas />
 
         {/* 6. Testimonios */}
         <EventTestimonios

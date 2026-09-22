@@ -56,13 +56,6 @@ const config: EventPageConfig = {
       },
     ],
   },
-  paquetes: {
-    supertitle: "Nuestros paquetes",
-    title: "Soluciones para cada evento",
-    subtitle:
-      "Desde reuniones íntimas hasta grandes eventos corporativos, tenemos el paquete ideal para las necesidades de tu empresa.",
-    eventType: "Evento Empresarial",
-  },
   testimonios: {
     eventType: "Evento Empresarial",
     title: "Empresas que confiaron en El Encanto",
