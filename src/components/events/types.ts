@@ -3,14 +3,6 @@ export interface EventGalleryImage {
   title: string | null;
 }
 
-export interface EventPackage {
-  id: string;
-  name: string;
-  description: string | null;
-  includes: string[];
-  sort_order: number;
-}
-
 export interface EventTestimonio {
   client_name: string;
   event_type: string | null;
@@ -36,12 +28,6 @@ export interface EventPageConfig {
     supertitle: string;
     title: string;
     fallback: EventGalleryImage[];
-  };
-  paquetes: {
-    supertitle: string;
-    title: string;
-    subtitle: string;
-    eventType: string;
   };
   testimonios: {
     eventType: string;

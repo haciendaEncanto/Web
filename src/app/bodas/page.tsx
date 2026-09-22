@@ -45,13 +45,6 @@ const config: EventPageConfig = {
       { url: "https://contenido.hacienda-encanto.com/galeria/boda/9.jpeg",  title: "Boda El Encanto" },
     ],
   },
-  paquetes: {
-    supertitle: "Nuestros paquetes",
-    title: "Todo lo que tu boda necesita",
-    subtitle:
-      "Cada paquete incluye lo esencial para que disfruten su día sin preocupaciones. Conversemos sobre los detalles de su celebración.",
-    eventType: "Boda",
-  },
   testimonios: {
     eventType: "Boda",
     title: "Ellos eligieron El Encanto para su boda",

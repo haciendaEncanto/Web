@@ -56,13 +56,6 @@ const config: EventPageConfig = {
       },
     ],
   },
-  paquetes: {
-    supertitle: "Nuestros paquetes",
-    title: "Todo para el gran momento",
-    subtitle:
-      "Diseñamos cada detalle de la revelación para que la familia disfrute el momento sin preocupaciones.",
-    eventType: "Revelación de Género",
-  },
   testimonios: {
     eventType: "Revelación de Género",
     title: "Familias que vivieron su revelación en El Encanto",

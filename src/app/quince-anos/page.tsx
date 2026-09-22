@@ -44,13 +44,6 @@ const config: EventPageConfig = {
       { url: "https://contenido.hacienda-encanto.com/galeria/quince/8.jpeg", title: "Quinceañera El Encanto" },
     ],
   },
-  paquetes: {
-    supertitle: "Nuestros paquetes",
-    title: "Todo para su gran noche",
-    subtitle:
-      "Diseñamos cada aspecto de la celebración para que la protagonista y su familia disfruten sin preocupaciones.",
-    eventType: "Quince Años",
-  },
   testimonios: {
     eventType: "Quince Años",
     title: "Ellas celebraron sus quince en El Encanto",
