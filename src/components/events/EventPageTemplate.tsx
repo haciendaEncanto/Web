@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/home/NavBar";
+import { NosotrosSection } from "@/components/home/NosotrosSection";
 import { Footer } from "@/components/home/Footer";
 import { WhatsAppButton } from "@/components/home/WhatsAppButton";
 import { SliderGaleria } from "@/components/ui/SliderGaleria";
 import { EventHero } from "./EventHero";
 import { EventDescripcion } from "./EventDescripcion";
-import { EventEstadisticas } from "./EventEstadisticas";
 import { EventTestimonios } from "./EventTestimonios";
 import { EventContacto } from "./EventContacto";
 import { Vista360 } from "./Vista360";
@@ -37,6 +37,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
   let galleryImages: GaleriaRow[] = [];
   let testimonials: TestimonioRow[] = [];
   let tourUrl: string | null = null;
+  let nosotrosImage: string | null = null;
 
   try {
     const supabase = await createClient();
@@ -44,6 +45,7 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
       { data: galleryData },
       { data: testimonialsData },
       { data: tourContent },
+      { data: nosotrosContent },
     ] = await Promise.all([
       supabase
         .from("gallery_images")
@@ -63,11 +65,17 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
         .select("content")
         .eq("key", "tour_360_url")
         .maybeSingle(),
+      supabase
+        .from("site_content")
+        .select("content")
+        .eq("key", "img_nosotros")
+        .maybeSingle(),
     ]);
 
     galleryImages = galleryData ?? [];
     testimonials = testimonialsData ?? [];
     tourUrl = tourContent?.content ?? null;
+    nosotrosImage = nosotrosContent?.content ?? null;
   } catch {
     // Supabase no disponible — se usan fallbacks de config y secciones vacías
   }
@@ -96,8 +104,8 @@ export async function EventPageTemplate({ config }: { config: EventPageConfig })
           />
         </div>
 
-        {/* 5. Estadísticas */}
-        <EventEstadisticas />
+        {/* 5. Nuestra historia */}
+        <NosotrosSection image={nosotrosImage} />
 
         {/* 6. Testimonios */}
         <EventTestimonios
