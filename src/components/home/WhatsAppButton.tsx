@@ -1,7 +1,12 @@
+const PHONE = "573028331190";
+const MESSAGE =
+  "¡Hola Encantalover! 🍀 Me gustaría conocer más sobre Hacienda El Encanto y hacer realidad el evento de mis sueños. ℹ️ Al continuar acepto la Política de Tratamiento de Datos: https://www.hacienda-encanto.com/politica-de-privacidad";
+const HREF = `https://wa.me/${PHONE}?text=${encodeURIComponent(MESSAGE)}`;
+
 export function WhatsAppButton() {
   return (
     <a
-      href="/api/asignar-asesor"
+      href={HREF}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"
