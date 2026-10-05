@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const FALLBACK_PHONE = "573028331190";
-const WA_TEXT = "Hola%2C+me+gustaría+obtener+más+información+sobre+los+eventos+en+Hacienda+El+Encanto.";
+const WA_TEXT = "%C2%A1Hola+Encantalover!+%F0%9F%8D%80+Me+gustaría+conocer+más+sobre+Hacienda+El+Encanto+y+hacer+realidad+el+evento+de+mis+sueños.+%E2%84%B9%EF%B8%8F+Al+continuar+acepto+la+Política+de+Tratamiento+de+Datos%3A+https%3A%2F%2Fwww.hacienda-encanto.com%2Fpolitica-de-privacidad";
 
 export async function GET() {
   const admin = createAdminClient();
