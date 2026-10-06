@@ -25,8 +25,16 @@ export const metadata: Metadata = {
     title: "Hacienda El Encanto | Casa de Eventos",
     description:
       "Celebra tus momentos más especiales en Hacienda El Encanto, Cota, Cundinamarca.",
+    images: ["/logo-hacienda.png"],
     locale: "es_CO",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hacienda El Encanto | Casa de Eventos",
+    description:
+      "Celebra tus momentos más especiales en Hacienda El Encanto, Cota, Cundinamarca.",
+    images: ["/logo-hacienda.png"],
   },
 };
 
