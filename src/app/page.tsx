@@ -36,8 +36,9 @@ export default async function HomePage() {
   type BlogPostRow = { id: string; titulo: string; slug: string; resumen: string | null; foto_url: string | null; published_at: string | null };
   let testimonials: TestimonioRow[] = [];
   let sliderImages: { url: string; title: string | null }[] = [];
-  let staffMembers: StaffRow[] = [];
-  let aliados: StaffRow[] = [];
+  // null = Supabase no respondió (se usan fallbacks); [] = sin miembros activos
+  let staffMembers: StaffRow[] | null = null;
+  let aliados: StaffRow[] | null = null;
   let blogPosts: BlogPostRow[] = [];
   let promos: PromocionRow[] = [];
   const siteImages = Object.fromEntries(
@@ -92,9 +93,11 @@ export default async function HomePage() {
 
     testimonials = testimonialsData ?? [];
     sliderImages = pickRandomSliderImages(sliderImagesRaw ?? []);
-    const allStaff = (staffData ?? []) as StaffRow[];
-    staffMembers = allStaff.filter((m) => !m.is_aliado_externo);
-    aliados = allStaff.filter((m) => m.is_aliado_externo);
+    if (staffData) {
+      const allStaff = staffData as StaffRow[];
+      staffMembers = allStaff.filter((m) => !m.is_aliado_externo);
+      aliados = allStaff.filter((m) => m.is_aliado_externo);
+    }
     blogPosts = (blogData ?? []) as BlogPostRow[];
     promos = (promosData ?? []) as PromocionRow[];
     for (const row of siteImageRows ?? []) {
@@ -106,8 +109,8 @@ export default async function HomePage() {
     // Supabase no disponible — el sitio sigue funcionando con videos hardcodeados y secciones vacías
   }
 
-  // Si Supabase no devolvió aliados, mostrar Jaime Guarín como fallback
-  if (aliados.length === 0) {
+  // Si Supabase no respondió, mostrar Jaime Guarín como fallback (los inactivos nunca se muestran)
+  if (aliados === null) {
     aliados = [
       {
         id: "fa1",
