@@ -93,6 +93,59 @@ export async function updateStaffMember(
   return { row: row as StaffRow };
 }
 
+// ─── Foto (Colombia Hosting — carpeta galeria/staff/) ─────────────────────────
+
+const STAFF_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const STAFF_PHOTO_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
+
+export async function requestStaffPhotoUpload(meta: {
+  fileName: string;
+  contentType: string;
+  size: number;
+}): Promise<{ uploadUrl?: string; token?: string; folder?: string; error?: string }> {
+  const { error: authErr } = await verifyEditor();
+  if (authErr) return { error: authErr };
+
+  if (!STAFF_PHOTO_ALLOWED_MIME.includes(meta.contentType))
+    return { error: `Formato no permitido: ${meta.contentType}` };
+  if (meta.size <= 0)
+    return { error: "El archivo está vacío" };
+  if (meta.size > STAFF_PHOTO_MAX_BYTES)
+    return { error: `El archivo supera el límite de 5 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
+
+  const uploadUrl = process.env.HOSTING_UPLOAD_URL;
+  const token = process.env.HOSTING_UPLOAD_TOKEN;
+  if (!uploadUrl || !token)
+    return { error: "Servidor de archivos no configurado (HOSTING_UPLOAD_URL / HOSTING_UPLOAD_TOKEN)" };
+
+  return { uploadUrl, token, folder: "galeria/staff" };
+}
+
+export async function confirmStaffPhotoUpload(meta: {
+  id: string;
+  url: string;
+}): Promise<{ row?: StaffRow; error?: string }> {
+  const { error: authErr } = await verifyEditor();
+  if (authErr) return { error: authErr };
+
+  // Forzar HTTPS — salvaguarda server-side antes de persistir en BD
+  const safeUrl = meta.url.replace(/^http:\/\//i, "https://");
+  if (!safeUrl.startsWith("https://"))
+    return { error: `URL inválida: debe comenzar con https:// (recibida: ${meta.url})` };
+
+  const db = createRawAdminClient();
+  const { data: row, error } = await db
+    .from("staff")
+    .update({ foto_url: safeUrl, updated_at: new Date().toISOString() })
+    .eq("id", meta.id)
+    .select("id,nombre,cargo,descripcion,foto_url,sort_order,is_active,is_aliado_externo,frase")
+    .single();
+
+  if (error) return { error: `Error al guardar la foto: ${(error as { message: string }).message}` };
+  revalidate();
+  return { row: row as StaffRow };
+}
+
 export async function deleteStaffMember(id: string): Promise<{ error?: string }> {
   const { error: authErr } = await verifyEditor();
   if (authErr) return { error: authErr };

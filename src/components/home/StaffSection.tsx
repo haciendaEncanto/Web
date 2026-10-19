@@ -39,8 +39,10 @@ const FALLBACK_STAFF: StaffMember[] = [
   },
 ];
 
-export function StaffSection({ members }: { members: StaffMember[] }) {
-  const effectiveMembers = members.length > 0 ? members : FALLBACK_STAFF;
+// members === null → Supabase no respondió, se usa el fallback hardcodeado
+export function StaffSection({ members }: { members: StaffMember[] | null }) {
+  const effectiveMembers = members ?? FALLBACK_STAFF;
+  if (effectiveMembers.length === 0) return null;
 
   return (
     <section id="equipo" className="py-20 bg-blanco">
