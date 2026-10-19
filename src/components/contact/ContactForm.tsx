@@ -2,6 +2,7 @@
 
 import { useActionState, startTransition, useEffect, useRef, useState } from "react";
 import { submitContactForm } from "@/app/actions/contact";
+import { hoyColombia } from "@/lib/fecha";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PrivacyCheckbox } from "@/components/contact/PrivacyCheckbox";
 import { WhatsAppSuccessButton } from "@/components/contact/WhatsAppSuccessButton";
@@ -147,6 +148,7 @@ export function ContactForm() {
             id="contact-event-date"
             name="event_date"
             type="date"
+            min={hoyColombia()}
             required
             className={inputClass}
           />
