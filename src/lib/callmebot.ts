@@ -9,7 +9,7 @@ export function buildLeadMessage(params: {
   event_date: string | null;
   guest_count: string | null;
   message: string;
-  asesorName: string;
+  asesorName?: string;
   isResend?: boolean;
 }): string {
   return [
@@ -22,7 +22,7 @@ export function buildLeadMessage(params: {
     `📅 Fecha estimada: ${params.event_date || "No especificada"}`,
     `👥 Invitados: ${params.guest_count || "No especificado"}`,
     `💬 Mensaje: ${params.message}`,
-    `🤝 Asignado a: ${params.asesorName}`,
+    ...(params.asesorName ? [`🤝 Asignado a: ${params.asesorName}`] : []),
     "",
     "ℹ️ Al continuar esta conversación aceptas nuestra Política de Tratamiento de Datos: https://www.hacienda-encanto.com/politica-de-privacidad",
   ].join("\n");
@@ -70,9 +70,6 @@ export async function sendWhatsAppNotification(message: string): Promise<void> {
   }
 
   await callMeBot(phone, apiKey, message, "central");
-
-  // Receptor temporal adicional — eliminar cuando los asesores confirmen recepción correcta
-  void callMeBot("573017187553", "8776082", message, "temp-3017187553");
 }
 
 // Envía directamente al número personal de un asesor (requiere su API key registrada en CallMeBot).

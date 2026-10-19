@@ -2,9 +2,9 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, createRawAdminClient } from "@/lib/supabase/admin";
+import { createRawAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { sendWhatsAppNotification, sendWhatsAppToPhone, buildLeadMessage } from "@/lib/callmebot";
+import { sendWhatsAppNotification, buildLeadMessage } from "@/lib/callmebot";
 
 export type ContactState = { success?: boolean; error?: string } | null;
 
@@ -120,73 +120,8 @@ export async function submitContactForm(
     }
   }
 
-  // Round-robin: asignar al asesor activo con menos asignaciones
-  const admin = createAdminClient();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let assignments: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let asesorProfiles: any[] = [];
-  try {
-    const [assignmentsRes, profilesRes] = await Promise.all([
-      admin
-        .from("asesor_assignments")
-        .select("asesor_id, total_assignments, last_assigned_at")
-        .order("total_assignments", { ascending: true })
-        .order("last_assigned_at", { ascending: true, nullsFirst: true }),
-      admin
-        .from("profiles")
-        .select("id, full_name, is_active, phone, callmebot_api_key")
-        .in("role", ["asesor_comercial", "wedding_planner"]),
-    ]);
-    assignments = assignmentsRes.data ?? [];
-    asesorProfiles = profilesRes.data ?? [];
-  } catch {
-    // Supabase no disponible — contacto sin asesor asignado
-  }
-
-  // Round-robin: incluir asesores activos aunque no tengan fila en asesor_assignments
-  const activeAsesores = asesorProfiles.filter((p) => p.is_active);
-  console.log(
-    "[round-robin] perfiles encontrados:",
-    asesorProfiles.map((p) => `${p.full_name}(is_active=${p.is_active})`)
-  );
-  console.log("[round-robin] activos:", activeAsesores.length);
-
-  const assignmentMap = new Map(
-    assignments.map((a) => [a.asesor_id, a])
-  );
-  const virtualList = activeAsesores.map((p) => ({
-    asesor_id: p.id,
-    total_assignments: assignmentMap.get(p.id)?.total_assignments ?? 0,
-    last_assigned_at: assignmentMap.get(p.id)?.last_assigned_at ?? null,
-  }));
-  // Comparador válido: null === null → 0 (empate), null antes que fecha
-  virtualList.sort((a, b) => {
-    if (a.total_assignments !== b.total_assignments)
-      return a.total_assignments - b.total_assignments;
-    if (a.last_assigned_at === null && b.last_assigned_at === null) return 0;
-    if (a.last_assigned_at === null) return -1;
-    if (b.last_assigned_at === null) return 1;
-    return a.last_assigned_at < b.last_assigned_at ? -1 : 1;
-  });
-
-  console.log(
-    "[round-robin] orden:",
-    virtualList.map((v) => {
-      const p = asesorProfiles.find((x) => x.id === v.asesor_id);
-      return `${p?.full_name}(total=${v.total_assignments},last=${v.last_assigned_at ?? "null"})`;
-    })
-  );
-
-  const selected = virtualList[0] ?? null;
-  const assignedAsesorId = selected?.asesor_id ?? null;
-  const assignedAsesor = asesorProfiles.find((p) => p.id === assignedAsesorId) ?? null;
-  const asesorName = assignedAsesor?.full_name ?? "el equipo";
-  console.log("[round-robin] seleccionado:", asesorName);
-
-  // Construir mensaje WA antes del insert — disponible tanto en éxito como en fallback
-  const waMsg = buildLeadMessage({ name, whatsapp, email: email || null, subject, event_date, guest_count, message, asesorName });
+  // Sin asignación automática — el lead se asigna manualmente desde /admin/leads
+  const waMsg = buildLeadMessage({ name, whatsapp, email: email || null, subject, event_date, guest_count, message });
 
   // Guardar en base de datos
   try {
@@ -200,22 +135,9 @@ export async function submitContactForm(
       event_date,
       guest_count,
       whatsapp,
-      assigned_asesor_id: assignedAsesorId,
     });
 
     if (error) throw new Error(error.message);
-
-    // Incrementar contador — upsert maneja tanto nuevo registro como actualización
-    if (selected) {
-      await admin.from("asesor_assignments").upsert(
-        {
-          asesor_id: selected.asesor_id,
-          total_assignments: selected.total_assignments + 1,
-          last_assigned_at: new Date().toISOString(),
-        },
-        { onConflict: "asesor_id" }
-      );
-    }
   } catch {
     // Supabase no disponible — intentar notificación CallMeBot y guiar al usuario a WhatsApp
     void sendWhatsAppNotification(waMsg);
@@ -225,11 +147,8 @@ export async function submitContactForm(
     };
   }
 
-  // Notificaciones CallMeBot — fire and forget
+  // Notificación CallMeBot al número central — fire and forget
   void sendWhatsAppNotification(waMsg);
-  if (assignedAsesor?.phone && assignedAsesor?.callmebot_api_key) {
-    void sendWhatsAppToPhone(assignedAsesor.phone, assignedAsesor.callmebot_api_key, waMsg);
-  }
 
   return { success: true };
 }
