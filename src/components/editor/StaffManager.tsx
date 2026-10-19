@@ -13,7 +13,7 @@ import {
 } from "@/app/actions/editor/staff";
 import { uploadToHosting } from "@/lib/uploads/client";
 
-const PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 const PHOTO_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
 const TIPO_OPTIONS = [
@@ -68,7 +68,7 @@ function StaffForm({
     const f = e.target.files?.[0];
     if (photoRef.current) photoRef.current.value = "";
     if (!f) return;
-    if (f.size > PHOTO_MAX_BYTES) { setError("La foto supera 10 MB"); return; }
+    if (f.size > PHOTO_MAX_BYTES) { setError("La foto supera 5 MB"); return; }
     if (!PHOTO_ALLOWED_MIME.includes(f.type)) { setError("Solo JPG, PNG o WebP"); return; }
 
     setError(null);
@@ -181,7 +181,7 @@ function StaffForm({
               {pendingFile.name} — se subirá al guardar
             </p>
           ) : (
-            <p className="text-[0.7rem] text-gris">JPG, PNG o WebP · máx. 10 MB</p>
+            <p className="text-[0.7rem] text-gris">JPG, PNG o WebP · máx. 5 MB</p>
           )}
           {shownPhoto && (
             <button

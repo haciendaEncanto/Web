@@ -95,7 +95,7 @@ export async function updateStaffMember(
 
 // ─── Foto (Colombia Hosting — carpeta galeria/staff/) ─────────────────────────
 
-const STAFF_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+const STAFF_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 const STAFF_PHOTO_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
 export async function requestStaffPhotoUpload(meta: {
@@ -111,7 +111,7 @@ export async function requestStaffPhotoUpload(meta: {
   if (meta.size <= 0)
     return { error: "El archivo está vacío" };
   if (meta.size > STAFF_PHOTO_MAX_BYTES)
-    return { error: `El archivo supera el límite de 10 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
+    return { error: `El archivo supera el límite de 5 MB (${(meta.size / 1024 / 1024).toFixed(1)} MB)` };
 
   const uploadUrl = process.env.HOSTING_UPLOAD_URL;
   const token = process.env.HOSTING_UPLOAD_TOKEN;
